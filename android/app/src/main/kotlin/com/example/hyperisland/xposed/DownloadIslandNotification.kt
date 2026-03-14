@@ -1,6 +1,11 @@
 package com.example.hyperisland.xposed
 
 import android.app.Notification
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.content.Context
@@ -42,14 +47,12 @@ object DownloadIslandNotification {
                 else       -> "下载中"
             }
 
-            val downloadIconRes = if (isComplete) android.R.drawable.stat_sys_download_done
-                else android.R.drawable.stat_sys_download
             val tintColor = when {
                 isComplete -> 0xFF4CAF50.toInt()  // 绿
                 isPaused   -> 0xFFFF9800.toInt()  // 橙
                 else       -> 0xFF2196F3.toInt()  // 蓝
             }
-            val fallbackIcon = Icon.createWithResource(context, downloadIconRes).apply { setTint(tintColor) }
+            val fallbackIcon = createDownloadIcon(context, tintColor, isComplete)
             val downloadIcon = appIcon ?: fallbackIcon
 
             // 主按钮：暂停中→恢复，下载中→暂停
@@ -172,6 +175,56 @@ object DownloadIslandNotification {
         } catch (e: Exception) {
             XposedBridge.log("HyperIsland: Island injection error: ${e.message}")
         }
+    }
+
+    // 下载图标矢量图
+    private fun createDownloadIcon(context: Context, color: Int, done: Boolean): Icon {
+        val density = context.resources.displayMetrics.density
+        val size = (48 * density + 0.5f).toInt()
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.color = color
+            style = Paint.Style.FILL
+        }
+        val s = size / 24f
+        val path = Path()
+        if (done) {
+            // Material "done" checkmark: M9,16.17L4.83,12L3.41,13.41L9,19L21,7L19.59,5.59Z
+            path.moveTo(9 * s, 16.17f * s)
+            path.lineTo(4.83f * s, 12 * s)
+            path.lineTo(3.41f * s, 13.41f * s)
+            path.lineTo(9 * s, 19 * s)
+            path.lineTo(21 * s, 7 * s)
+            path.lineTo(19.59f * s, 5.59f * s)
+            path.close()
+            canvas.drawPath(path, paint)
+        } else {
+            // Material "download" arrow: M19,9H15V3H9V9H5L12,16L19,9Z
+            path.moveTo(19 * s, 9 * s)
+            path.lineTo(15 * s, 9 * s)
+            path.lineTo(15 * s, 3 * s)
+            path.lineTo(9 * s, 3 * s)
+            path.lineTo(9 * s, 9 * s)
+            path.lineTo(5 * s, 9 * s)
+            path.lineTo(12 * s, 16 * s)
+            path.close()
+            canvas.drawPath(path, paint)
+            // 底部弧线（60° 圆弧，托盘状）
+            // 弦长 = 14 units (x: 5→19)，60° 圆心角 → 半径 = 14
+            // 圆心在弦上方：cy = 19 - 14·cos(30°)
+            val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color
+                style = Paint.Style.STROKE
+                strokeWidth = 2 * s
+                strokeCap = Paint.Cap.ROUND
+            }
+            val r = 14f * s
+            val cx = 12f * s
+            val cy = (19f - 14f * Math.cos(Math.toRadians(30.0)).toFloat()) * s
+            canvas.drawArc(RectF(cx - r, cy - r, cx + r, cy + r), 60f, 60f, false, arcPaint)
+        }
+        return Icon.createWithBitmap(bmp)
     }
 
 }
