@@ -22,7 +22,9 @@ class GenericProgressHook : IXposedHookLoadPackage {
         private val SKIP_PACKAGES = setOf(
             "com.example.hyperisland",
             "com.android.providers.downloads",
-            "com.xiaomi.android.app.downloadmanager"
+            "com.xiaomi.android.app.downloadmanager",
+            "com.android.mtp",
+            "com.android.providers.media"
         )
     }
 
