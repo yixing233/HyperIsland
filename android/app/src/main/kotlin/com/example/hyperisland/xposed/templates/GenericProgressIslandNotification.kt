@@ -154,7 +154,7 @@ object GenericProgressIslandNotification : IslandTemplate {
                                 this.title = stateLabel
                             }
                         }
-                        if (!isComplete && !isPaused && !isWaiting) {
+                        if (!isComplete && progress > 0) {
                             progressTextInfo {
                                 textInfo {
                                     this.title = rightContent
@@ -197,7 +197,7 @@ object GenericProgressIslandNotification : IslandTemplate {
                 }
 
                 val effectiveActions = actions.take(2)
-                if (!isComplete && !isPaused && !isWaiting && effectiveActions.isNotEmpty()) {
+                if (effectiveActions.isNotEmpty()) {
                     textButton {
                         effectiveActions.forEachIndexed { index, action ->
                             addActionInfo {

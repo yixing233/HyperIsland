@@ -35,6 +35,10 @@ class GenericProgressHook : IXposedHookLoadPackage {
         // 渠道模板缓存：key 为 "packageName/channelId"，首次遇到时懒加载。
         private val cachedTemplates = mutableMapOf<String, String>()
 
+        // 进度缓存：key 为 "packageName#notifId"，记录每条通知最后一次已知进度（0-100）。
+        // 用于通知进度条消失后（暂停/等待）回显上次进度。
+        private val lastProgressCache = mutableMapOf<String, Int>()
+
         /** 读取指定渠道的模板设置，结果会懒缓存，SystemUI 重启后刷新。 */
         fun loadChannelTemplate(
             context: android.content.Context,
@@ -142,13 +146,17 @@ class GenericProgressHook : IXposedHookLoadPackage {
                 if (extras.getBoolean("hyperisland_generic_processed", false)) return
             }
 
+            val cacheKey = "$pkg#${sbn.id}"
             val progressPercent: Int
             if (hasProgressBar) {
                 val progressRaw = extras.getInt(Notification.EXTRA_PROGRESS, -1)
                 if (progressRaw < 0) return
                 progressPercent = (progressRaw * 100 / progressMax).coerceIn(0, 100)
+                // 缓存本次进度，供后续无进度条的状态变化通知回显
+                if (progressPercent in 0..99) lastProgressCache[cacheKey] = progressPercent
             } else {
-                progressPercent = -1   // 无进度条，交给模板通过文本判断具体状态
+                // 无进度条：尝试回填上次已知进度（如暂停时保留进度显示）；无缓存则为 -1
+                progressPercent = lastProgressCache[cacheKey] ?: -1
             }
 
             // ── 提取标题 / 副标题 ─────────────────────────────────────────────────
