@@ -2,8 +2,52 @@ package com.example.hyperisland.xposed
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.os.Bundle
+
+/**
+ * 将 Icon 转为圆角版本。失败时原样返回。
+ * @param radiusFraction 圆角半径占图标尺寸的比例，默认 0.25（25%）
+ */
+fun Icon.toRounded(context: Context, radiusFraction: Float = 0.25f): Icon {
+    if (!isRoundIconEnabled(context)) return this
+    return try {
+        val drawable = loadDrawable(context) ?: return this
+        val size = 192
+        val src = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, size, size)
+        drawable.draw(Canvas(src))
+
+        val dst = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(dst)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val r = size * radiusFraction
+        canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), r, r, paint)
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(src, 0f, 0f, paint)
+        src.recycle()
+
+        Icon.createWithBitmap(dst)
+    } catch (_: Exception) {
+        this
+    }
+}
+
+private fun isRoundIconEnabled(context: Context): Boolean {
+    return try {
+        val uri = android.net.Uri.parse("content://com.example.hyperisland.settings/pref_round_icon")
+        context.contentResolver.query(uri, null, null, null, null)
+            ?.use { if (it.moveToFirst()) it.getInt(0) != 0 else true } ?: true
+    } catch (_: Exception) {
+        true
+    }
+}
 
 /**
  * 灵动岛通知模板接口。

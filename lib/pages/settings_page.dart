@@ -51,6 +51,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  Future<void> _onRoundIconChanged(bool value) async {
+    await _ctrl.setRoundIcon(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -73,7 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SectionLabel('下载管理器行为'),
+                  const SectionLabel('行为'),
                   const SizedBox(height: 8),
                   Card(
                     elevation: 0,
@@ -83,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: SwitchListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
-                      title: const Text('暂停后保留焦点通知'),
+                      title: const Text('下载管理器暂停后保留焦点通知'),
                       subtitle: const Text('显示一条通知，点击以继续下载，可能导致状态不同步'),
                       value: _ctrl.resumeNotification,
                       onChanged: _onResumeNotificationChanged,
@@ -92,22 +96,37 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const SectionLabel('下载管理器外观'),
+                  const SectionLabel('外观'),
                   const SizedBox(height: 8),
                   Card(
                     elevation: 0,
                     color: cs.surfaceContainerHighest,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
-                    child: SwitchListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
-                      title: const Text('使用应用图标'),
-                      subtitle: const Text('下载管理器通知使用应用图标'),
-                      value: _ctrl.useHookAppIcon,
-                      onChanged: _onUseHookAppIconChanged,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: const Text('使用应用图标'),
+                          subtitle: const Text('下载管理器通知使用应用图标'),
+                          value: _ctrl.useHookAppIcon,
+                          onChanged: _onUseHookAppIconChanged,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: const Text('图标圆角'),
+                          subtitle: const Text('为通知图标添加圆角效果'),
+                          value: _ctrl.roundIcon,
+                          onChanged: _onRoundIconChanged,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

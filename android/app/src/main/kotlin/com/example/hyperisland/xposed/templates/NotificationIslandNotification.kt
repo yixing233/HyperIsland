@@ -6,6 +6,7 @@ import android.graphics.drawable.Icon
 import android.os.Bundle
 import com.example.hyperisland.xposed.IslandTemplate
 import com.example.hyperisland.xposed.NotifData
+import com.example.hyperisland.xposed.toRounded
 import com.xzakota.hyper.notification.focus.FocusNotification
 import de.robv.android.xposed.XposedBridge
 
@@ -54,8 +55,9 @@ object NotificationIslandNotification : IslandTemplate {
         timeoutSecs: Int,
     ) {
         try {
-            val displayIcon = largeIcon ?: notifIcon ?: appIconRaw
-                ?: Icon.createWithResource(context, android.R.drawable.ic_dialog_info)
+            val displayIcon = (largeIcon ?: notifIcon ?: appIconRaw
+                ?: Icon.createWithResource(context, android.R.drawable.ic_dialog_info))
+                .toRounded(context)
 
             val leftText       = title
             val rightContent   = subtitle.ifEmpty { title }
