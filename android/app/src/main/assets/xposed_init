@@ -1,2 +1,3 @@
+com.example.hyperisland.xposed.SelfHook
 com.example.hyperisland.xposed.DownloadHook
 com.example.hyperisland.xposed.GenericProgressHook
