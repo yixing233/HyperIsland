@@ -7,8 +7,9 @@ const _channel = MethodChannel('com.example.hyperisland/test');
 const kPrefGenericWhitelist = 'pref_generic_whitelist';
 
 /// 可用的灵动岛通知模板标识符。
-const kTemplateGenericProgress = 'generic_progress';
-const kTemplateDownload = 'download';
+const kTemplateGenericProgress    = 'generic_progress';
+const kTemplateNotificationIsland = 'notification_island';
+const kTemplateDownload           = 'download';
 
 // 图标模式选项
 const kIconModeAuto       = 'auto';
@@ -25,11 +26,13 @@ class AppInfo {
   final String packageName;
   final String appName;
   final Uint8List icon;
+  final bool isSystem;
 
   const AppInfo({
     required this.packageName,
     required this.appName,
     required this.icon,
+    this.isSystem = false,
   });
 }
 
@@ -52,6 +55,7 @@ class WhitelistController extends ChangeNotifier {
   Set<String> enabledPackages = {};
   bool loading = true;
   String _searchQuery = '';
+  bool showSystemApps = false;
 
   WhitelistController() {
     _load();
@@ -59,9 +63,10 @@ class WhitelistController extends ChangeNotifier {
 
   List<AppInfo> get filteredApps {
     final q = _searchQuery.toLowerCase();
+    final source = showSystemApps ? _allApps : _allApps.where((a) => !a.isSystem).toList();
     final list = q.isEmpty
-        ? List<AppInfo>.from(_allApps)
-        : _allApps
+        ? List<AppInfo>.from(source)
+        : source
             .where((a) =>
                 a.appName.toLowerCase().contains(q) ||
                 a.packageName.toLowerCase().contains(q))
@@ -87,13 +92,15 @@ class WhitelistController extends ChangeNotifier {
           csv.isEmpty ? {} : csv.split(',').where((s) => s.isNotEmpty).toSet();
 
       final rawList =
-          await _channel.invokeMethod<List<dynamic>>('getInstalledApps') ?? [];
+          await _channel.invokeMethod<List<dynamic>>(
+              'getInstalledApps', {'includeSystem': true}) ?? [];
       _allApps = rawList.map((raw) {
         final map = Map<String, dynamic>.from(raw as Map);
         return AppInfo(
           packageName: map['packageName'] as String,
           appName: map['appName'] as String,
           icon: Uint8List.fromList((map['icon'] as List).cast<int>()),
+          isSystem: map['isSystem'] as bool? ?? false,
         );
       }).toList();
     } catch (e) {
@@ -117,6 +124,25 @@ class WhitelistController extends ChangeNotifier {
 
   void setSearch(String query) {
     _searchQuery = query;
+    notifyListeners();
+  }
+
+  void setShowSystemApps(bool value) {
+    showSystemApps = value;
+    notifyListeners();
+  }
+
+  Future<void> enableAll() async {
+    for (final a in filteredApps) enabledPackages.add(a.packageName);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kPrefGenericWhitelist, enabledPackages.join(','));
+    notifyListeners();
+  }
+
+  Future<void> disableAll() async {
+    for (final a in filteredApps) enabledPackages.remove(a.packageName);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kPrefGenericWhitelist, enabledPackages.join(','));
     notifyListeners();
   }
 
@@ -172,7 +198,7 @@ class WhitelistController extends ChangeNotifier {
       }));
     } catch (e) {
       debugPrint('getTemplates error: $e');
-      return {kTemplateGenericProgress: '通用进度条'};
+      return {kTemplateNotificationIsland: '通知超级岛'};
     }
   }
 
@@ -183,7 +209,7 @@ class WhitelistController extends ChangeNotifier {
     return Map.fromEntries(channelIds.map((id) {
       final template =
           prefs.getString('pref_channel_template_${packageName}_$id') ??
-              kTemplateGenericProgress;
+              kTemplateNotificationIsland;
       return MapEntry(id, template);
     }));
   }

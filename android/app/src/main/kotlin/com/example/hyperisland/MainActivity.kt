@@ -89,8 +89,9 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "getInstalledApps" -> {
+                    val includeSystem = call.argument<Boolean>("includeSystem") ?: false
                     Thread {
-                        val apps = getInstalledUserApps()
+                        val apps = getInstalledApps(includeSystem)
                         runOnUiThread { result.success(apps) }
                     }.start()
                 }
@@ -373,11 +374,15 @@ class MainActivity : FlutterActivity() {
         return result
     }
 
-    /** 返回所有已安装应用（排除自身），每项含 packageName / appName / icon（PNG bytes）。*/
-    private fun getInstalledUserApps(): List<Map<String, Any>> {
+    /** 返回已安装应用列表（排除自身），每项含 packageName / appName / icon / isSystem。
+     *  includeSystem=false 时仅返回第三方应用。 */
+    private fun getInstalledApps(includeSystem: Boolean): List<Map<String, Any>> {
         val pm = packageManager
         return pm.getInstalledApplications(0)
-            .filter { it.packageName != packageName && (it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 }
+            .filter { app ->
+                app.packageName != packageName &&
+                (includeSystem || (app.flags and ApplicationInfo.FLAG_SYSTEM) == 0)
+            }
             .mapNotNull { app ->
                 try {
                     val label    = pm.getApplicationLabel(app).toString()
@@ -387,7 +392,8 @@ class MainActivity : FlutterActivity() {
                     mapOf(
                         "packageName" to app.packageName,
                         "appName"     to label,
-                        "icon"        to stream.toByteArray()
+                        "icon"        to stream.toByteArray(),
+                        "isSystem"    to ((app.flags and ApplicationInfo.FLAG_SYSTEM) != 0)
                     )
                 } catch (_: Exception) { null }
             }

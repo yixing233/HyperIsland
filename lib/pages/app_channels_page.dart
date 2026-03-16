@@ -290,7 +290,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                     final isFirst = index == 0;
                     final isLast = index == channels.length - 1;
                     final channelEnabled = _isEnabled(ch.id);
-                    final template = _channelTemplates[ch.id] ?? kTemplateGenericProgress;
+                    final template = _channelTemplates[ch.id] ?? kTemplateNotificationIsland;
                     final extras = _channelExtras[ch.id] ?? {};
 
                     return _ChannelTile(
