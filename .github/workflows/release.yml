@@ -102,7 +102,7 @@ jobs:
       # 第五步：缓存 Pub 依赖
       # 使用 pubspec.lock 作为 key，依赖变更时自动失效缓存
       - name: Cache Pub dependencies
-        uses: actions/cache@v4.1.2
+        uses: actions/cache@v4
         with:
           path: |
             ${{ env.PUB_CACHE }}
