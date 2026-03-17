@@ -36,6 +36,46 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  void _showSponsorDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 4, 0),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      '赞助支持',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: Image.asset(
+                'assets/images/wechat.jpg',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showRestartDialog() async {
     bool restartSystemUI = true;
     bool restartDownloadManager = true;
@@ -130,6 +170,11 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: cs.surface,
             centerTitle: false,
             actions: [
+              IconButton(
+                tooltip: '赞助作者',
+                icon: const Icon(Icons.favorite_border),
+                onPressed: _showSponsorDialog,
+              ),
               _restarting
                   ? const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),

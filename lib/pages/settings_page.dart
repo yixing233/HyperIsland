@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../controllers/config_io_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../widgets/section_label.dart';
 
@@ -55,6 +56,49 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _onRoundIconChanged(bool value) async {
     await _ctrl.setRoundIcon(value);
+  }
+
+  void _showSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  Future<void> _exportToFile() async {
+    try {
+      final path = await ConfigIOController.exportToFile();
+      _showSnack('已导出到：$path');
+    } catch (e) {
+      _showSnack('导出失败：$e');
+    }
+  }
+
+  Future<void> _exportToClipboard() async {
+    try {
+      await ConfigIOController.exportToClipboard();
+      _showSnack('配置已复制到剪贴板');
+    } catch (e) {
+      _showSnack('导出失败：$e');
+    }
+  }
+
+  Future<void> _importFromFile() async {
+    try {
+      final count = await ConfigIOController.importFromFile();
+      _showSnack('导入成功，共 $count 项配置，请重启应用生效');
+    } catch (e) {
+      _showSnack('导入失败：$e');
+    }
+  }
+
+  Future<void> _importFromClipboard() async {
+    try {
+      final count = await ConfigIOController.importFromClipboard();
+      _showSnack('导入成功，共 $count 项配置，请重启应用生效');
+    } catch (e) {
+      _showSnack('导入失败：$e');
+    }
   }
 
   @override
@@ -127,6 +171,60 @@ class _SettingsPageState extends State<SettingsPage> {
                           onChanged: _onRoundIconChanged,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const SectionLabel('配置'),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: cs.surfaceContainerHighest,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      children: [
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16))),
+                          leading: const Icon(Icons.upload_file_outlined),
+                          title: const Text('导出到文件'),
+                          subtitle: const Text('将配置保存为 JSON 文件'),
+                          onTap: _exportToFile,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          leading: const Icon(Icons.copy_outlined),
+                          title: const Text('导出到剪贴板'),
+                          subtitle: const Text('将配置复制为 JSON 文本'),
+                          onTap: _exportToClipboard,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          leading: const Icon(Icons.download_outlined),
+                          title: const Text('从文件导入'),
+                          subtitle: const Text('从 JSON 文件恢复配置'),
+                          onTap: _importFromFile,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  bottom: Radius.circular(16))),
+                          leading: const Icon(Icons.paste_outlined),
+                          title: const Text('从剪贴板导入'),
+                          subtitle: const Text('从剪贴板中的 JSON 文本恢复配置'),
+                          onTap: _importFromClipboard,
                         ),
                       ],
                     ),

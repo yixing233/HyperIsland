@@ -1,10 +1,8 @@
 package com.example.hyperisland
 
-import android.Manifest
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -18,15 +16,13 @@ import java.io.ByteArrayOutputStream
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.hyperisland/test"
     private val TAG = "HyperIsland"
-    private val REQUEST_NOTIFICATION_PERMISSION = 1001
-    private val REQUEST_APP_LIST_PERMISSION     = 1002
+    private val REQUEST_APP_LIST_PERMISSION = 1002
 
     private var pendingAppsResult: MethodChannel.Result? = null
     private var pendingAppsIncludeSystem: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        checkAndRequestNotificationPermission()
         if (isModuleActive()) {
             val icon = packageManager.getAppIcon(packageName)
             com.example.hyperisland.xposed.IslandDispatcher.sendBroadcast(
@@ -107,15 +103,6 @@ class MainActivity : FlutterActivity() {
 
                 "isModuleActive" -> {
                     result.success(isModuleActive())
-                }
-
-                "checkPermission" -> {
-                    result.success(checkNotificationPermission())
-                }
-
-                "requestPermission" -> {
-                    requestNotificationPermission()
-                    result.success(null)
                 }
 
                 else -> {
@@ -404,43 +391,6 @@ class MainActivity : FlutterActivity() {
         )
     }
 
-    private fun checkNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-    }
-
-    private fun checkAndRequestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                    REQUEST_NOTIFICATION_PERMISSION
-                )
-            }
-        }
-    }
-
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_NOTIFICATION_PERMISSION
-            )
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -461,11 +411,6 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
-            if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "Notification permission denied")
-            }
-        }
     }
 
     private fun handleShowTest(result: MethodChannel.Result) {
@@ -474,8 +419,8 @@ class MainActivity : FlutterActivity() {
             com.example.hyperisland.xposed.IslandDispatcher.sendBroadcast(
                 this,
                 com.example.hyperisland.xposed.IslandRequest(
-                    title            = "HyperIsland",
-                    content          = "欢迎使用",
+                    title            = "欢迎使用",
+                    content          = "HyperIsland",
                     icon             = icon,
                     firstFloat       = false,
                     highlightColor   = "#E040FB",
