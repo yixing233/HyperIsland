@@ -27,9 +27,19 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         checkAndRequestNotificationPermission()
-        // 模块已激活时通过广播触发 SystemUI 发出岛通知，无需本地通知权限
         if (isModuleActive()) {
-            HyperIslandHelper.sendIslandNotification(this, "HyperIsland", "模块已激活")
+            val icon = packageManager.getAppIcon(packageName)
+            com.example.hyperisland.xposed.IslandDispatcher.sendBroadcast(
+                this,
+                com.example.hyperisland.xposed.IslandRequest(
+                    title            = "HyperIsland",
+                    content          = "欢迎使用",
+                    icon             = icon,
+                    firstFloat       = false,
+                    highlightColor   = "#E040FB",
+                    showNotification = false,
+                )
+            )
         }
     }
 
@@ -464,11 +474,12 @@ class MainActivity : FlutterActivity() {
             com.example.hyperisland.xposed.IslandDispatcher.sendBroadcast(
                 this,
                 com.example.hyperisland.xposed.IslandRequest(
-                    title          = "HyperIsland",
-                    content        = "欢迎使用",
-                    icon           = icon,
-                    firstFloat     = false,
-                    highlightColor = "#E040FB",  // 炫酷紫红
+                    title            = "HyperIsland",
+                    content          = "欢迎使用",
+                    icon             = icon,
+                    firstFloat       = false,
+                    highlightColor   = "#E040FB",
+                    showNotification = true,
                 )
             )
             result.success(true)
