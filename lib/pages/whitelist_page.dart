@@ -102,9 +102,9 @@ class _WhitelistPageState extends State<WhitelistPage> {
     final selected = _selectedPackages.toList();
     final result = await BatchChannelSettingsSheet.show(
       context,
-      scope: GlobalScope(
+      mode: BatchChannelMode(scope: GlobalScope(
         subtitle: '将应用到已选 ${selected.length} 个应用的已启用渠道',
-      ),
+      )),
       templateLabels: templateLabels,
     );
     if (result == null || !mounted) return;

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/whitelist_controller.dart';
 import '../widgets/batch_channel_settings_sheet.dart';
-import '../widgets/channel_settings_dialog.dart';
 
 class AppChannelsPage extends StatefulWidget {
   final AppInfo app;
@@ -168,6 +167,16 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
     await widget.controller.setChannelTimeout(widget.app.packageName, channelId, value);
   }
 
+  Future<void> _applyChannelSettings(String channelId, Map<String, String?> settings) async {
+    if (settings['template'] case final t?) await _setTemplate(channelId, t);
+    if (settings['icon'] case final v?) await _setIconMode(channelId, v);
+    if (settings['focus_icon'] case final v?) await _setFocusIconMode(channelId, v);
+    if (settings['focus'] case final v?) await _setFocusNotif(channelId, v);
+    if (settings['first_float'] case final v?) await _setFirstFloat(channelId, v);
+    if (settings['enable_float'] case final v?) await _setEnableFloat(channelId, v);
+    if (settings['timeout'] case final v?) await _setIslandTimeout(channelId, v);
+  }
+
   // ── 批量操作 ────────────────────────────────────────────────────────────────
 
   /// 仅重新加载 prefs 侧的渠道配置，不重新调用原生接口。
@@ -199,9 +208,9 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
 
     final result = await BatchChannelSettingsSheet.show(
       context,
-      scope: GlobalScope(
+      mode: BatchChannelMode(scope: GlobalScope(
         subtitle: '将应用到已启用的 ${enabledIds.length} 个渠道',
-      ),
+      )),
       templateLabels: _templateLabels,
     );
     if (result == null || !mounted) return;
@@ -391,13 +400,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                       enableFloat: extras['enable_float'] ?? kTriOptDefault,
                       islandTimeout: extras['timeout'] ?? '5',
                       onToggle: (v) => _toggle(ch.id, v),
-                      onTemplateChanged: (t) => _setTemplate(ch.id, t),
-                      onIconModeChanged: (v) => _setIconMode(ch.id, v),
-                      onFocusIconModeChanged: (v) => _setFocusIconMode(ch.id, v),
-                      onFocusNotifChanged: (v) => _setFocusNotif(ch.id, v),
-                      onFirstFloatChanged: (v) => _setFirstFloat(ch.id, v),
-                      onEnableFloatChanged: (v) => _setEnableFloat(ch.id, v),
-                      onIslandTimeoutChanged: (v) => _setIslandTimeout(ch.id, v),
+                      onSettingsApplied: (s) => _applyChannelSettings(ch.id, s),
                     );
                   },
                   childCount: channels.length,
@@ -430,13 +433,7 @@ class _ChannelTile extends StatelessWidget {
     required this.enableFloat,
     required this.islandTimeout,
     required this.onToggle,
-    required this.onTemplateChanged,
-    required this.onIconModeChanged,
-    required this.onFocusIconModeChanged,
-    required this.onFocusNotifChanged,
-    required this.onFirstFloatChanged,
-    required this.onEnableFloatChanged,
-    required this.onIslandTimeoutChanged,
+    required this.onSettingsApplied,
   });
 
   final ChannelInfo channel;
@@ -454,36 +451,24 @@ class _ChannelTile extends StatelessWidget {
   final String enableFloat;
   final String islandTimeout;
   final ValueChanged<bool> onToggle;
-  final ValueChanged<String> onTemplateChanged;
-  final ValueChanged<String> onIconModeChanged;
-  final ValueChanged<String> onFocusIconModeChanged;
-  final ValueChanged<String> onFocusNotifChanged;
-  final ValueChanged<String> onFirstFloatChanged;
-  final ValueChanged<String> onEnableFloatChanged;
-  final ValueChanged<String> onIslandTimeoutChanged;
+  final ValueChanged<Map<String, String?>> onSettingsApplied;
 
-  void _openSettings(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => ChannelSettingsDialog(
-        channelName: channel.name,
-        template: template,
-        templateLabels: templateLabels,
-        iconMode: iconMode,
+  void _openSettings(BuildContext context) async {
+    final result = await BatchChannelSettingsSheet.show(
+      context,
+      mode: SingleChannelMode(
+        channelName:   channel.name,
+        template:      template,
+        iconMode:      iconMode,
         focusIconMode: focusIconMode,
-        focusNotif: focusNotif,
-        firstFloat: firstFloat,
-        enableFloat: enableFloat,
+        focusNotif:    focusNotif,
+        firstFloat:    firstFloat,
+        enableFloat:   enableFloat,
         islandTimeout: islandTimeout,
-        onTemplateChanged: onTemplateChanged,
-        onIconModeChanged: onIconModeChanged,
-        onFocusIconModeChanged: onFocusIconModeChanged,
-        onFocusNotifChanged: onFocusNotifChanged,
-        onFirstFloatChanged: onFirstFloatChanged,
-        onEnableFloatChanged: onEnableFloatChanged,
-        onIslandTimeoutChanged: onIslandTimeoutChanged,
       ),
+      templateLabels: templateLabels,
     );
+    if (result != null) onSettingsApplied(result.settings);
   }
 
   @override

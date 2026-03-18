@@ -2,7 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../controllers/whitelist_controller.dart';
 
-// ── 应用范围（sealed class）─────────────────────────────────────────────────
+// ── 操作模式（sealed class）──────────────────────────────────────────────────
+
+/// 渠道设置弹窗的工作模式。
+sealed class ChannelSettingsMode {
+  const ChannelSettingsMode();
+}
+
+/// 单渠道模式：对单个渠道设置，字段预填当前值，无"不更改"选项。
+class SingleChannelMode extends ChannelSettingsMode {
+  const SingleChannelMode({
+    required this.channelName,
+    required this.template,
+    required this.iconMode,
+    required this.focusIconMode,
+    required this.focusNotif,
+    required this.firstFloat,
+    required this.enableFloat,
+    required this.islandTimeout,
+  });
+
+  final String channelName;
+  final String template;
+  final String iconMode;
+  final String focusIconMode;
+  final String focusNotif;
+  final String firstFloat;
+  final String enableFloat;
+  final String islandTimeout;
+}
+
+/// 批量模式：对多个渠道批量操作，字段默认"不更改"。
+class BatchChannelMode extends ChannelSettingsMode {
+  const BatchChannelMode({required this.scope});
+
+  final BatchScope scope;
+}
+
+// ── 批量操作范围（sealed class）───────────────────────────────────────────────
 
 /// 批量操作的目标范围。
 sealed class BatchScope {
@@ -29,8 +66,9 @@ class GlobalScope extends BatchScope {
 
 // ── 返回值 ───────────────────────────────────────────────────────────────────
 
-/// 批量应用渠道配置的结果。
-/// [settings] 中 null 表示该项不更改；[onlyEnabled] 仅在 [SingleAppScope] 下有意义。
+/// 渠道配置的应用结果。
+/// 单渠道模式下 [settings] 的值均非 null；批量模式下 null 表示该项不更改。
+/// [onlyEnabled] 仅在 [BatchChannelMode] + [SingleAppScope] 下有意义。
 class BatchApplyResult {
   final Map<String, String?> settings;
   final bool onlyEnabled;
@@ -43,23 +81,22 @@ class BatchApplyResult {
 
 // ── 主体组件 ─────────────────────────────────────────────────────────────────
 
-/// 批量设置渠道配置底部弹窗。
+/// 渠道配置底部弹窗，支持单渠道和批量两种模式。
 ///
 /// 通过静态方法 [show] 打开，返回用户确认的 [BatchApplyResult]（取消时返回 null）。
-/// [scope] 决定显示模式：[SingleAppScope] 带渠道范围切换，[GlobalScope] 仅显示固定副标题。
 class BatchChannelSettingsSheet extends StatefulWidget {
   const BatchChannelSettingsSheet({
     super.key,
-    required this.scope,
+    required this.mode,
     required this.templateLabels,
   });
 
-  final BatchScope scope;
+  final ChannelSettingsMode mode;
   final Map<String, String> templateLabels;
 
   static Future<BatchApplyResult?> show(
     BuildContext context, {
-    required BatchScope scope,
+    required ChannelSettingsMode mode,
     required Map<String, String> templateLabels,
   }) {
     return showModalBottomSheet<BatchApplyResult>(
@@ -70,7 +107,7 @@ class BatchChannelSettingsSheet extends StatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => BatchChannelSettingsSheet(
-        scope: scope,
+        mode: mode,
         templateLabels: templateLabels,
       ),
     );
@@ -83,7 +120,6 @@ class BatchChannelSettingsSheet extends StatefulWidget {
 
 class _BatchChannelSettingsSheetState
     extends State<BatchChannelSettingsSheet> {
-  // null = 不更改该项
   String? _template;
   String? _iconMode;
   String? _focusIconMode;
@@ -92,16 +128,31 @@ class _BatchChannelSettingsSheetState
   String? _enableFloat;
   String? _islandTimeout;
 
-  // 仅 SingleAppScope 下使用
+  // 仅 BatchChannelMode + SingleAppScope 下使用
   bool _onlyEnabled = false;
 
-  final _scrollController   = ScrollController();
-  final _timeoutController  = TextEditingController();
-  final _timeoutFocusNode   = FocusNode();
+  final _scrollController = ScrollController();
+  late final TextEditingController _timeoutController;
+  final _timeoutFocusNode = FocusNode();
+
+  bool get _isSingle => widget.mode is SingleChannelMode;
 
   @override
   void initState() {
     super.initState();
+    if (widget.mode case SingleChannelMode m) {
+      _template      = m.template;
+      _iconMode      = m.iconMode;
+      _focusIconMode = m.focusIconMode;
+      _focusNotif    = m.focusNotif;
+      _firstFloat    = m.firstFloat;
+      _enableFloat   = m.enableFloat;
+      _islandTimeout = m.islandTimeout;
+      _timeoutController = TextEditingController(text: m.islandTimeout);
+    } else {
+      _timeoutController = TextEditingController();
+    }
+
     _timeoutFocusNode.addListener(() {
       if (_timeoutFocusNode.hasFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -126,6 +177,7 @@ class _BatchChannelSettingsSheetState
   }
 
   bool get _hasAnyChange =>
+      _isSingle ||
       _template != null ||
       _iconMode != null ||
       _focusIconMode != null ||
@@ -134,15 +186,20 @@ class _BatchChannelSettingsSheetState
       _enableFloat != null ||
       _islandTimeout != null;
 
-  String _subtitle() => switch (widget.scope) {
-        SingleAppScope(
-          :final totalChannels,
-          :final enabledChannels,
-        ) =>
-          _onlyEnabled
-              ? '将应用到已启用的 $enabledChannels 个渠道'
-              : '将应用到全部 $totalChannels 个渠道',
-        GlobalScope(:final subtitle) => subtitle,
+  String _title() => switch (widget.mode) {
+        SingleChannelMode m => m.channelName,
+        BatchChannelMode _ => '批量设置渠道配置',
+      };
+
+  String _subtitle() => switch (widget.mode) {
+        SingleChannelMode _ => '渠道设置',
+        BatchChannelMode(scope: final s) => switch (s) {
+            SingleAppScope(:final totalChannels, :final enabledChannels) =>
+              _onlyEnabled
+                  ? '将应用到已启用的 $enabledChannels 个渠道'
+                  : '将应用到全部 $totalChannels 个渠道',
+            GlobalScope(:final subtitle) => subtitle,
+          },
       };
 
   void _submit() {
@@ -158,9 +215,9 @@ class _BatchChannelSettingsSheetState
           'enable_float': _enableFloat,
           'timeout':      _islandTimeout,
         },
-        onlyEnabled: switch (widget.scope) {
-          SingleAppScope() => _onlyEnabled,
-          GlobalScope()    => false,
+        onlyEnabled: switch (widget.mode) {
+          BatchChannelMode(scope: SingleAppScope()) => _onlyEnabled,
+          _ => false,
         },
       ),
     );
@@ -194,7 +251,12 @@ class _BatchChannelSettingsSheetState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('批量设置渠道配置', style: text.titleLarge),
+                Text(
+                  _title(),
+                  style: text.titleLarge,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   _subtitle(),
@@ -214,10 +276,12 @@ class _BatchChannelSettingsSheetState
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 范围切换卡片（仅 SingleAppScope）
-                  if (widget.scope case SingleAppScope(
-                    :final totalChannels,
-                    :final enabledChannels,
+                  // 范围切换卡片（仅 BatchChannelMode + SingleAppScope）
+                  if (widget.mode case BatchChannelMode(
+                    scope: SingleAppScope(
+                      :final totalChannels,
+                      :final enabledChannels,
+                    ),
                   )) ...[
                     _ScopeToggleCard(
                       totalChannels: totalChannels,
@@ -236,6 +300,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '模板',
                     value: _template,
+                    showNotChange: !_isSingle,
                     items: widget.templateLabels.entries
                         .map((e) => DropdownMenuItem<String?>(
                               value: e.key,
@@ -250,6 +315,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '超级岛图标',
                     value: _iconMode,
+                    showNotChange: !_isSingle,
                     items: const [
                       DropdownMenuItem(value: kIconModeAuto,       child: Text('自动')),
                       DropdownMenuItem(value: kIconModeNotifSmall, child: Text('通知小图标')),
@@ -264,6 +330,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '焦点图标',
                     value: _focusIconMode,
+                    showNotChange: !_isSingle,
                     items: const [
                       DropdownMenuItem(value: kIconModeAuto,       child: Text('自动')),
                       DropdownMenuItem(value: kIconModeNotifSmall, child: Text('通知小图标')),
@@ -278,6 +345,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '焦点通知',
                     value: _focusNotif,
+                    showNotChange: !_isSingle,
                     items: const [
                       DropdownMenuItem(value: kTriOptDefault, child: Text('默认')),
                       DropdownMenuItem(value: kTriOptOff,     child: Text('关闭')),
@@ -290,6 +358,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '初次展开',
                     value: _firstFloat,
+                    showNotChange: !_isSingle,
                     items: const [
                       DropdownMenuItem(value: kTriOptDefault, child: Text('默认')),
                       DropdownMenuItem(value: kTriOptOn,      child: Text('开启')),
@@ -303,6 +372,7 @@ class _BatchChannelSettingsSheetState
                   _BatchSettingRow(
                     label: '更新展开',
                     value: _enableFloat,
+                    showNotChange: !_isSingle,
                     items: const [
                       DropdownMenuItem(value: kTriOptDefault, child: Text('默认')),
                       DropdownMenuItem(value: kTriOptOn,      child: Text('开启')),
@@ -329,11 +399,9 @@ class _BatchChannelSettingsSheetState
                           controller: _timeoutController,
                           focusNode: _timeoutFocusNode,
                           keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
-                            hintText: '不更改',
+                            hintText: _isSingle ? null : '不更改',
                             suffixText: _islandTimeout != null ? '秒' : null,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14,
@@ -348,11 +416,14 @@ class _BatchChannelSettingsSheetState
                           onChanged: (v) {
                             final trimmed = v.trim();
                             final n = int.tryParse(trimmed);
+                            final valid = trimmed.isNotEmpty && n != null && n >= 1;
                             setState(() {
-                              _islandTimeout =
-                                  (trimmed.isEmpty || n == null || n < 1)
-                                      ? null
-                                      : trimmed;
+                              // 单渠道模式：无效输入时保留上一个合法值
+                              if (valid) {
+                                _islandTimeout = trimmed;
+                              } else if (!_isSingle) {
+                                _islandTimeout = null;
+                              }
                             });
                           },
                         ),
@@ -464,7 +535,7 @@ class _ScopeToggleCard extends StatelessWidget {
   }
 }
 
-// ── 设置行（带"不更改"选项的下拉框）──────────────────────────────────────────
+// ── 设置行（下拉框）──────────────────────────────────────────────────────────
 
 class _BatchSettingRow extends StatelessWidget {
   const _BatchSettingRow({
@@ -472,12 +543,14 @@ class _BatchSettingRow extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.showNotChange = true,
   });
 
   final String label;
   final String? value;
   final List<DropdownMenuItem<String?>> items;
   final ValueChanged<String?> onChanged;
+  final bool showNotChange;
 
   @override
   Widget build(BuildContext context) {
@@ -500,10 +573,11 @@ class _BatchSettingRow extends StatelessWidget {
             value: value,
             isExpanded: true,
             items: [
-              const DropdownMenuItem<String?>(
-                value: null,
-                child: Text('不更改'),
-              ),
+              if (showNotChange)
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('不更改'),
+                ),
               ...items,
             ],
             onChanged: onChanged,
@@ -521,4 +595,3 @@ class _BatchSettingRow extends StatelessWidget {
     );
   }
 }
-
