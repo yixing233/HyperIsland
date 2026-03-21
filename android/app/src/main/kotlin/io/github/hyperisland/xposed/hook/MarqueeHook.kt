@@ -192,6 +192,11 @@ class MarqueeHook : IXposedHookLoadPackage {
         private var startTimeNanos = 0L
         private var lastFrameTimeNanos = 0L
         private val choreographer = Choreographer.getInstance()
+        
+        // 滚动动画的当前执行状态：
+        // 0: 初始延迟等待阶段（等待 delayMs 时间不移动）
+        // 1: 正在水平滚动阶段（匀速向左滚动直到末尾）
+        // 2: 滚动到末尾的停顿阶段（停顿 PAUSE_AT_END_MS 后重新开始）
         private var state = 0
 
         private var currentText = ""
@@ -249,21 +254,25 @@ class MarqueeHook : IXposedHookLoadPackage {
             val elapsedMs = (frameTimeNanos - startTimeNanos) / 1_000_000
 
             when (state) {
+                // 状态 0：初始等待阶段。启动后首先等待 delayMs 毫秒，然后再进入滚动状态
                 0 -> if (elapsedMs >= delayMs) {
                     state = 1
                     lastFrameTimeNanos = frameTimeNanos
                 }
 
+                // 状态 1：持续平滑滚动阶段。根据时间差动态计算水平位移
                 1 -> {
                     currentScrollX += speedPxPerSec * ((frameTimeNanos - lastFrameTimeNanos) / 1_000_000_000f)
                     if (currentScrollX >= maxScroll) {
                         currentScrollX = maxScroll
+                        // 滚动已到达文本末端，切换到状态 2（末端停顿状态）
                         state = 2
                         startTimeNanos = frameTimeNanos
                     }
                     view.scrollTo(currentScrollX.toInt(), 0)
                 }
 
+                // 状态 2：末尾停顿阶段。在文本末端停留 PAUSE_AT_END_MS 毫秒，之后重置位置并恢复为状态 0 开始下一次循环
                 2 -> if (elapsedMs > PAUSE_AT_END_MS) {
                     currentScrollX = 0f
                     view.scrollTo(0, 0)

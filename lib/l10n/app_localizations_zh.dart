@@ -164,7 +164,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get marqueeFeatureTitle => '滚动岛 (实验性)';
 
   @override
-  String get marqueeFeatureSubtitle => '长文本通知（例如歌词）自动滚动显示';
+  String get marqueeFeatureSubtitle => '长文本通知自动滚动显示';
 
   @override
   String get themeModeTitle => '颜色模式';

@@ -397,7 +397,7 @@ abstract class AppLocalizations {
   /// No description provided for @marqueeFeatureSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'长文本通知（例如歌词）自动滚动显示'**
+  /// **'长文本通知自动滚动显示'**
   String get marqueeFeatureSubtitle;
 
   /// No description provided for @themeModeTitle.
