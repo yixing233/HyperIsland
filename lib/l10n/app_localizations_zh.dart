@@ -177,6 +177,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roundIconSubtitle => '为通知图标添加圆角效果';
 
   @override
+  String get preserveStatusBarSmallIconTitle => '保留状态栏小图标';
+
+  @override
+  String get preserveStatusBarSmallIconSubtitle =>
+      '为代理焦点通知保留左上角状态栏小图标，可被渠道设置单独覆盖';
+
+  @override
   String get marqueeChannelTitle => '消息滚动';
 
   @override
@@ -446,6 +453,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get focusNotificationLabel => '焦点通知';
+
+  @override
+  String get preserveStatusBarSmallIconLabel => '状态栏图标';
 
   @override
   String get firstFloatLabel => '初次展开';

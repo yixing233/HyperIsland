@@ -418,6 +418,18 @@ abstract class AppLocalizations {
   /// **'为通知图标添加圆角效果'**
   String get roundIconSubtitle;
 
+  /// No description provided for @preserveStatusBarSmallIconTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'保留状态栏小图标'**
+  String get preserveStatusBarSmallIconTitle;
+
+  /// No description provided for @preserveStatusBarSmallIconSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'为代理焦点通知保留左上角状态栏小图标，可被渠道设置单独覆盖'**
+  String get preserveStatusBarSmallIconSubtitle;
+
   /// No description provided for @marqueeChannelTitle.
   ///
   /// In zh, this message translates to:
@@ -891,6 +903,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'焦点通知'**
   String get focusNotificationLabel;
+
+  /// No description provided for @preserveStatusBarSmallIconLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态栏图标'**
+  String get preserveStatusBarSmallIconLabel;
 
   /// No description provided for @firstFloatLabel.
   ///

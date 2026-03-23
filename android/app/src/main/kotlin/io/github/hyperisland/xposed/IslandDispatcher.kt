@@ -207,13 +207,16 @@ object IslandDispatcher {
             notif.extras.putString("miui.focus.param", jsonParam)
             if (request.showNotification) {
                 notif.extras.putBoolean("hyperisland_focus_proxy", true)
-                FocusNotifStatusBarIconHook.markDirectProxyPosted(request.timeoutSecs)
-                XposedBridge.log(
-                    "$TAG focus proxy marker written: title=${request.title} | notifId=${request.notifId} | showNotification=${request.showNotification}"
-                )
-            } else {
-                FocusNotifStatusBarIconHook.clearDirectProxyPosted()
             }
+            val shouldPreserveStatusBarSmallIcon =
+                request.showNotification && request.preserveStatusBarSmallIcon
+            if (shouldPreserveStatusBarSmallIcon) {
+                notif.extras.putBoolean("hyperisland_preserve_status_bar_small_icon", true)
+                FocusNotifStatusBarIconHook.markDirectProxyPosted(request.timeoutSecs)
+            }
+            XposedBridge.log(
+                "$TAG preserve marker written=$shouldPreserveStatusBarSmallIcon: title=${request.title} | notifId=${request.notifId} | showNotification=${request.showNotification}"
+            )
 
             val isFirstPost = !postedIds.contains(request.notifId)
             if (isFirstPost) {

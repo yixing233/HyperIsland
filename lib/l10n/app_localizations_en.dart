@@ -188,6 +188,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roundIconSubtitle => 'Add rounded corners to notification icons';
 
   @override
+  String get preserveStatusBarSmallIconTitle =>
+      'Preserve status bar small icon';
+
+  @override
+  String get preserveStatusBarSmallIconSubtitle =>
+      'Keep the top-left status bar small icon for proxy focus notifications, with per-channel overrides';
+
+  @override
   String get marqueeChannelTitle => 'Text Scrolling Island';
 
   @override
@@ -464,6 +472,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get focusNotificationLabel => 'Focus notification';
+
+  @override
+  String get preserveStatusBarSmallIconLabel => 'Status bar icon';
 
   @override
   String get firstFloatLabel => 'First float';

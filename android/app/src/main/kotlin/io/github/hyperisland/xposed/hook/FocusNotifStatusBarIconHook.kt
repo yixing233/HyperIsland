@@ -87,7 +87,7 @@ class FocusNotifStatusBarIconHook : IXposedHookLoadPackage {
                         try {
                             XposedHelpers.setBooleanField(model, "isFocusNotification", false)
                             XposedBridge.log(
-                                "$TAG: forced ActiveNotificationModel.isFocusNotification=false for HyperIsland proxy"
+                                "$TAG: forced ActiveNotificationModel.isFocusNotification=false for preserve-enabled HyperIsland proxy"
                             )
                         } catch (e: Throwable) {
                             XposedBridge.log(
@@ -199,10 +199,7 @@ class FocusNotifStatusBarIconHook : IXposedHookLoadPackage {
 
     private fun isHyperIslandFocusProxy(extras: Bundle?): Boolean {
         if (extras == null) return false
-        if (extras.getBoolean("hyperisland_focus_proxy", false)) return true
-        if (extras.getBoolean("hyperisland_generic_processed", false)) return true
-        if (extras.getBoolean("hyperisland_processed", false)) return true
-        return false
+        return extras.getBoolean("hyperisland_preserve_status_bar_small_icon", false)
     }
 
     /**

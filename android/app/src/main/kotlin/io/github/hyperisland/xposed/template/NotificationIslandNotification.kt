@@ -54,6 +54,7 @@ object NotificationIslandNotification : IslandTemplate {
             iconMode        = data.iconMode,
             focusIconMode   = data.focusIconMode,
             focusNotif      = data.focusNotif,
+            preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon,
             firstFloat      = data.firstFloat,
             enableFloatMode = data.enableFloatMode,
             timeoutSecs     = data.islandTimeout,
@@ -89,6 +90,7 @@ object NotificationIslandNotification : IslandTemplate {
                     firstFloat       = resolvedFirstFloat,
                     enableFloat      = resolvedEnableFloat,
                     showNotification = false,
+                    preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon,
                     contentIntent    = data.contentIntent,
                     isOngoing        = data.isOngoing,
                     actions          = data.actions.take(2),
@@ -116,6 +118,7 @@ object NotificationIslandNotification : IslandTemplate {
         iconMode: String?,
         focusIconMode: String?,
         focusNotif: String,
+        preserveStatusBarSmallIcon: Boolean,
         firstFloat: String,
         enableFloatMode: String,
         timeoutSecs: Int,
@@ -145,6 +148,8 @@ object NotificationIslandNotification : IslandTemplate {
             val resolvedFirstFloat  = firstFloat      == "on"
             val resolvedEnableFloat = enableFloatMode == "on"
             val showNotification    = focusNotif != "off"
+            val shouldPreserveStatusBarSmallIcon =
+                showNotification && preserveStatusBarSmallIcon
 
             val builder = HyperIslandNotification.Builder(context, "notif_island", title)
 
@@ -205,11 +210,14 @@ object NotificationIslandNotification : IslandTemplate {
             extras.putString("miui.focus.param", jsonParam)
             if (showNotification) {
                 extras.putBoolean("hyperisland_focus_proxy", true)
-                FocusNotifStatusBarIconHook.markDirectProxyPosted(timeoutSecs)
-                XposedBridge.log(
-                    "HyperIsland[NotifIsland]: focus proxy marker written — title=$title | notifId=$notifId | showNotification=$showNotification"
-                )
             }
+            if (shouldPreserveStatusBarSmallIcon) {
+                extras.putBoolean("hyperisland_preserve_status_bar_small_icon", true)
+                FocusNotifStatusBarIconHook.markDirectProxyPosted(timeoutSecs)
+            }
+            XposedBridge.log(
+                "HyperIsland[NotifIsland]: preserve marker written=$shouldPreserveStatusBarSmallIcon | title=$title | notifId=$notifId | showNotification=$showNotification"
+            )
 
             XposedBridge.log(
                 "HyperIsland[NotifIsland]: Island injected — $title | left=$leftText | right=$rightContent | buttons=${actions.size} | isOngoing=${isOngoing}"
