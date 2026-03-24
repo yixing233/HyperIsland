@@ -64,7 +64,7 @@ object IslandDispatcher {
     /** 默认通知 ID。固定 ID 保证同一时刻只有一条岛通知存在。*/
     const val NOTIF_ID = 0x48594944  // "HYID"
 
-    private const val CHANNEL_ID   = "hyperisland_dispatcher"
+    const val CHANNEL_ID            = "hyperisland_dispatcher"
     private const val CHANNEL_NAME = "HyperIsland 超级岛"
     private const val TAG          = "HyperIsland[Dispatcher]"
 

@@ -295,10 +295,16 @@ class GenericProgressHook : IXposedHookLoadPackage {
 
     private fun handleSbn(sbn: StatusBarNotification, lpparam: XC_LoadPackage.LoadPackageParam) {
         try {
+            val pkg = sbn.packageName ?: return
+
+            // IslandDispatcher 代发的代理通知（com.android.systemui / hyperisland_dispatcher）
+            // 会再次触发此回调，但不应重置 pendingMarqueeEnabled——那是原始通知处理时设置的，
+            // MarqueeHook 需要在代理通知的大岛视图创建时读取该值。
+            if (pkg == "com.android.systemui" &&
+                sbn.notification?.channelId == IslandDispatcher.CHANNEL_ID) return
+
             // 提前重置，防止上一条通知的 true 值在本次提前返回时污染后续岛视图
             MarqueeHook.pendingMarqueeEnabled = false
-
-            val pkg = sbn.packageName ?: return
 
             // 先取 context，用于加载白名单
             val context = getContext(lpparam) ?: return
