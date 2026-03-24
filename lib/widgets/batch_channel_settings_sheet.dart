@@ -127,16 +127,10 @@ class BatchChannelSettingsSheet extends StatefulWidget {
 class _BatchChannelSettingsSheetState
     extends State<BatchChannelSettingsSheet> {
   AppLocalizations _l10n(BuildContext context) => AppLocalizations.of(context)!;
+  SettingsController get _ctrl => SettingsController.instance;
 
-  String _defaultOnLabel(BuildContext context) => _l10n(context).optDefaultOn;
-
-  String _defaultOffLabel(BuildContext context) => _l10n(context).optDefaultOff;
-
-  String _preserveSmallIconDefaultLabel(BuildContext context) {
-    final l10n = _l10n(context);
-    final enabled = SettingsController.instance.preserveStatusBarSmallIcon;
-    return enabled ? l10n.optDefaultOn : l10n.optDefaultOff;
-  }
+  String _defaultLabel(BuildContext context, bool value) =>
+      value ? _l10n(context).optDefaultOn : _l10n(context).optDefaultOff;
 
   String? _template;
   String? _iconMode;
@@ -361,7 +355,7 @@ class _BatchChannelSettingsSheetState
                     value: _firstFloat,
                     showNotChange: !_isSingle,
                     items: [
-                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultOffLabel(context))),
+                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultLabel(context, _ctrl.defaultFirstFloat))),
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
@@ -373,7 +367,7 @@ class _BatchChannelSettingsSheetState
                     value: _enableFloat,
                     showNotChange: !_isSingle,
                     items: [
-                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultOffLabel(context))),
+                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultLabel(context, _ctrl.defaultEnableFloat))),
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
@@ -385,8 +379,9 @@ class _BatchChannelSettingsSheetState
                     value: _marquee,
                     showNotChange: !_isSingle,
                     items: [
-                      DropdownMenuItem(value: kTriOptOn,  child: Text(l10n.optOn)),
-                      DropdownMenuItem(value: kTriOptOff, child: Text(l10n.optOff)),
+                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultLabel(context, _ctrl.defaultMarquee))),
+                      DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
+                      DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
                     onChanged: (v) => setState(() => _marquee = v),
                   ),
@@ -462,7 +457,7 @@ class _BatchChannelSettingsSheetState
                     value: _focusNotif,
                     showNotChange: !_isSingle,
                     items: [
-                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultOnLabel(context))),
+                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultLabel(context, _ctrl.defaultFocusNotif))),
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
@@ -477,7 +472,7 @@ class _BatchChannelSettingsSheetState
                     value: _focusNotif == kTriOptOff ? kTriOptOff : _preserveSmallIcon,
                     showNotChange: !_isSingle,
                     items: [
-                      DropdownMenuItem(value: kTriOptDefault, child: Text(_preserveSmallIconDefaultLabel(context))),
+                      DropdownMenuItem(value: kTriOptDefault, child: Text(_defaultLabel(context, _ctrl.defaultPreserveSmallIcon))),
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],

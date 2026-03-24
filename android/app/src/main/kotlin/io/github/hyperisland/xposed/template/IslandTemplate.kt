@@ -98,8 +98,8 @@ data class NotifData(
     val focusIconMode: String = "auto",
     /** 焦点通知（island 块）：“default” / “off” */
     val focusNotif: String = "default",
-    /** 是否保留状态栏左上角小图标（已解析最终结果） */
-    val preserveStatusBarSmallIcon: Boolean = true,
+    /** 是否保留状态栏左上角小图标："default" / "on" / "off" */
+    val preserveStatusBarSmallIcon: String = "default",
     /** 初次自动展开 islandFirstFloat：“default” / “on” / “off” */
     val firstFloat: String = "default",
     /** 更新时自动展开 enableFloat："default" / "on" / "off" */

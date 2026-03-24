@@ -45,6 +45,7 @@
   "note4": "4. General adaptation is supported, try checking an appropriate template",
 
   "behaviorSection": "Behavior",
+  "defaultConfigSection": "Default Channel Settings",
   "appearanceSection": "Appearance",
   "configSection": "Configuration",
   "aboutSection": "About",
@@ -62,8 +63,6 @@
   "useAppIconSubtitle": "Use app icon for Download Manager notifications",
   "roundIconTitle": "Round icon corners",
   "roundIconSubtitle": "Add rounded corners to notification icons",
-  "preserveStatusBarSmallIconTitle": "Preserve status bar small icon",
-  "preserveStatusBarSmallIconSubtitle": "Keep the top-left status bar small icon for proxy focus notifications, with per-channel overrides",
   "marqueeChannelTitle": "Text Scrolling Island",
   "marqueeSpeedTitle": "Scroll Speed",
   "marqueeSpeedLabel": "{speed} px/s",
@@ -72,7 +71,7 @@
       "speed": { "type": "int" }
     }
   },
-  "wrapLongTextTitle": "Auto Wrap (Experimental)",
+  "wrapLongTextTitle": "Auto Wrap",
   "wrapLongTextSubtitle": "Split long focus notification text into two lines",
   "themeModeTitle": "Color mode",
   "themeModeSystem": "Follow system",

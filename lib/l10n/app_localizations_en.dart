@@ -130,6 +130,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get behaviorSection => 'Behavior';
 
   @override
+  String get defaultConfigSection => 'Default Channel Settings';
+
+  @override
   String get appearanceSection => 'Appearance';
 
   @override
@@ -188,14 +191,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roundIconSubtitle => 'Add rounded corners to notification icons';
 
   @override
-  String get preserveStatusBarSmallIconTitle =>
-      'Preserve status bar small icon';
-
-  @override
-  String get preserveStatusBarSmallIconSubtitle =>
-      'Keep the top-left status bar small icon for proxy focus notifications, with per-channel overrides';
-
-  @override
   String get marqueeChannelTitle => 'Text Scrolling Island';
 
   @override
@@ -207,7 +202,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wrapLongTextTitle => 'Auto Wrap (Experimental)';
+  String get wrapLongTextTitle => 'Auto Wrap';
 
   @override
   String get wrapLongTextSubtitle =>

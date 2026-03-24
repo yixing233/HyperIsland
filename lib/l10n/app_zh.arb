@@ -60,6 +60,7 @@
   "note4": "4.支持通用适配，自行勾选合适的模板尝试",
 
   "behaviorSection": "行为",
+  "defaultConfigSection": "渠道默认配置",
   "appearanceSection": "外观",
   "configSection": "配置",
   "aboutSection": "关于",
@@ -77,8 +78,6 @@
   "useAppIconSubtitle": "下载管理器通知使用应用图标",
   "roundIconTitle": "图标圆角",
   "roundIconSubtitle": "为通知图标添加圆角效果",
-  "preserveStatusBarSmallIconTitle": "保留状态栏小图标",
-  "preserveStatusBarSmallIconSubtitle": "为代理焦点通知保留左上角状态栏小图标，可被渠道设置单独覆盖",
   "marqueeChannelTitle": "消息滚动",
   "marqueeSpeedTitle": "滚动速度",
   "marqueeSpeedLabel": "{speed} 像素/秒",
@@ -87,7 +86,7 @@
       "speed": { "type": "int" }
     }
   },
-  "wrapLongTextTitle": "自动折行 (实验性)",
+  "wrapLongTextTitle": "自动折行",
   "wrapLongTextSubtitle": "焦点通知长文本自动拆分为两行显示",
   "themeModeTitle": "颜色模式",
   "themeModeSystem": "跟随系统",

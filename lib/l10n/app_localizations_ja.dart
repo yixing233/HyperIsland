@@ -127,6 +127,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get behaviorSection => '動作';
 
   @override
+  String get defaultConfigSection => 'チャンネルのデフォルト設定';
+
+  @override
   String get appearanceSection => '外観';
 
   @override
@@ -180,13 +183,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get roundIconSubtitle => '通知アイコンの角を丸めます';
 
   @override
-  String get preserveStatusBarSmallIconTitle => 'ステータスバーの小さなアイコンを保持';
-
-  @override
-  String get preserveStatusBarSmallIconSubtitle =>
-      'プロキシのフォーカス通知で左上のステータスバー小アイコンを保持し、チャンネルごとに上書きできます';
-
-  @override
   String get marqueeChannelTitle => 'Island のテキストをスクロール';
 
   @override
@@ -198,7 +194,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get wrapLongTextTitle => '自動で折り返す (試験的)';
+  String get wrapLongTextTitle => '自動で折り返す';
 
   @override
   String get wrapLongTextSubtitle => '長いフォーカス通知テキストを二行に分割します';

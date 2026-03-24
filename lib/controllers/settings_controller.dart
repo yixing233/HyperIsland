@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const kPrefResumeNotification          = 'pref_resume_notification';
-const kPrefPreserveStatusBarSmallIcon = 'pref_preserve_status_bar_small_icon';
 const kPrefUseHookAppIcon             = 'pref_use_hook_app_icon';
 const kPrefRoundIcon                  = 'pref_round_icon';
 const kPrefMarqueeFeature             = 'pref_marquee_feature';
@@ -13,6 +12,12 @@ const kPrefUnlockFocusAuth            = 'pref_unlock_focus_auth';
 const kPrefThemeMode                  = 'pref_theme_mode';
 const kPrefLocale                     = 'pref_locale';
 const kPrefCheckUpdateOnLaunch        = 'pref_check_update_on_launch';
+const kPrefDefaultFirstFloat          = 'pref_default_first_float';
+const kPrefDefaultEnableFloat         = 'pref_default_enable_float';
+const kPrefDefaultMarquee             = 'pref_default_marquee';
+const kPrefDefaultFocusNotif          = 'pref_default_focus_notif';
+const kPrefDefaultPreserveSmallIcon   = 'pref_default_preserve_small_icon';
+
 class SettingsController extends ChangeNotifier {
   static final SettingsController instance = SettingsController._();
 
@@ -21,7 +26,6 @@ class SettingsController extends ChangeNotifier {
   }
 
   bool resumeNotification = true;
-  bool preserveStatusBarSmallIcon = false;
   bool useHookAppIcon = true;
   bool roundIcon = true;
   bool marqueeFeature = false;
@@ -30,6 +34,11 @@ class SettingsController extends ChangeNotifier {
   bool unlockAllFocus = false;
   bool unlockFocusAuth = false;
   bool checkUpdateOnLaunch = true;
+  bool defaultFirstFloat = false;
+  bool defaultEnableFloat = false;
+  bool defaultMarquee = false;
+  bool defaultFocusNotif = true;
+  bool defaultPreserveSmallIcon = false;
   ThemeMode themeMode = ThemeMode.system;
   Locale? locale; // null = follow system
   bool loading = true;
@@ -37,8 +46,6 @@ class SettingsController extends ChangeNotifier {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     resumeNotification        = prefs.getBool(kPrefResumeNotification) ?? true;
-    preserveStatusBarSmallIcon =
-        prefs.getBool(kPrefPreserveStatusBarSmallIcon) ?? false;
     useHookAppIcon            = prefs.getBool(kPrefUseHookAppIcon) ?? true;
     roundIcon                 = prefs.getBool(kPrefRoundIcon) ?? true;
     marqueeFeature        = prefs.getBool(kPrefMarqueeFeature) ?? false;
@@ -46,7 +53,12 @@ class SettingsController extends ChangeNotifier {
     wrapLongText          = prefs.getBool(kPrefWrapLongText) ?? false;
     unlockAllFocus        = prefs.getBool(kPrefUnlockAllFocus) ?? false;
     unlockFocusAuth       = prefs.getBool(kPrefUnlockFocusAuth) ?? false;
-    checkUpdateOnLaunch   = prefs.getBool(kPrefCheckUpdateOnLaunch) ?? true;
+    checkUpdateOnLaunch        = prefs.getBool(kPrefCheckUpdateOnLaunch) ?? true;
+    defaultFirstFloat          = prefs.getBool(kPrefDefaultFirstFloat) ?? false;
+    defaultEnableFloat         = prefs.getBool(kPrefDefaultEnableFloat) ?? false;
+    defaultMarquee             = prefs.getBool(kPrefDefaultMarquee) ?? false;
+    defaultFocusNotif          = prefs.getBool(kPrefDefaultFocusNotif) ?? true;
+    defaultPreserveSmallIcon   = prefs.getBool(kPrefDefaultPreserveSmallIcon) ?? false;
     themeMode = switch (prefs.getString(kPrefThemeMode)) {
       'light'  => ThemeMode.light,
       'dark'   => ThemeMode.dark,
@@ -62,13 +74,6 @@ class SettingsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kPrefResumeNotification, value);
     resumeNotification = value;
-    notifyListeners();
-  }
-
-  Future<void> setPreserveStatusBarSmallIcon(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(kPrefPreserveStatusBarSmallIcon, value);
-    preserveStatusBarSmallIcon = value;
     notifyListeners();
   }
 
@@ -126,6 +131,41 @@ class SettingsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kPrefCheckUpdateOnLaunch, value);
     checkUpdateOnLaunch = value;
+    notifyListeners();
+  }
+
+  Future<void> setDefaultFirstFloat(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefDefaultFirstFloat, value);
+    defaultFirstFloat = value;
+    notifyListeners();
+  }
+
+  Future<void> setDefaultEnableFloat(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefDefaultEnableFloat, value);
+    defaultEnableFloat = value;
+    notifyListeners();
+  }
+
+  Future<void> setDefaultMarquee(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefDefaultMarquee, value);
+    defaultMarquee = value;
+    notifyListeners();
+  }
+
+  Future<void> setDefaultFocusNotif(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefDefaultFocusNotif, value);
+    defaultFocusNotif = value;
+    notifyListeners();
+  }
+
+  Future<void> setDefaultPreserveSmallIcon(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefDefaultPreserveSmallIcon, value);
+    defaultPreserveSmallIcon = value;
     notifyListeners();
   }
 

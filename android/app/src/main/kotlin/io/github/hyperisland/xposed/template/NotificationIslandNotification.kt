@@ -90,7 +90,7 @@ object NotificationIslandNotification : IslandTemplate {
                     firstFloat       = resolvedFirstFloat,
                     enableFloat      = resolvedEnableFloat,
                     showNotification = false,
-                    preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon,
+                    preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon != "off",
                     contentIntent    = data.contentIntent,
                     isOngoing        = data.isOngoing,
                     actions          = data.actions.take(2),
@@ -118,7 +118,7 @@ object NotificationIslandNotification : IslandTemplate {
         iconMode: String?,
         focusIconMode: String?,
         focusNotif: String,
-        preserveStatusBarSmallIcon: Boolean,
+        preserveStatusBarSmallIcon: String,
         firstFloat: String,
         enableFloatMode: String,
         timeoutSecs: Int,
@@ -149,7 +149,7 @@ object NotificationIslandNotification : IslandTemplate {
             val resolvedEnableFloat = enableFloatMode == "on"
             val showNotification    = focusNotif != "off"
             val shouldPreserveStatusBarSmallIcon =
-                showNotification && preserveStatusBarSmallIcon
+                showNotification && preserveStatusBarSmallIcon != "off"
 
             val builder = HyperIslandNotification.Builder(context, "notif_island", title)
 

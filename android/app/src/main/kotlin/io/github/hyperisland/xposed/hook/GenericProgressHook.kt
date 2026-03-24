@@ -141,6 +141,14 @@ class GenericProgressHook : IXposedHookLoadPackage {
             }
         }
 
+        /** 将渠道 tri-state 字符串结合全局默认解析为 "on"/"off"。 */
+        private fun resolveTriOpt(channelValue: String, globalDefault: Boolean): String =
+            when (channelValue) {
+                "on"  -> "on"
+                "off" -> "off"
+                else  -> if (globalDefault) "on" else "off"
+            }
+
         private fun clearAllCaches(reason: String) {
             cachedWhitelist = null
             cachedTemplates.clear()
@@ -357,27 +365,27 @@ class GenericProgressHook : IXposedHookLoadPackage {
                 context, "icon:$pkg/$channelId",
                 "pref_channel_icon_${pkg}_$channelId", "auto"
             )
-            val focusNotif = loadChannelStringSetting(
-                context, "focus:$pkg/$channelId",
-                "pref_channel_focus_${pkg}_$channelId", "default"
+            val defaultFirstFloat       = loadBooleanSetting(context, "global:default_first_float",        "pref_default_first_float",        false)
+            val defaultEnableFloat      = loadBooleanSetting(context, "global:default_enable_float",       "pref_default_enable_float",       false)
+            val defaultMarquee          = loadBooleanSetting(context, "global:default_marquee",            "pref_default_marquee",            false)
+            val defaultFocusNotif       = loadBooleanSetting(context, "global:default_focus_notif",        "pref_default_focus_notif",        true)
+            val defaultPreserveSmallIcon = loadBooleanSetting(context, "global:default_preserve_small_icon", "pref_default_preserve_small_icon", false)
+
+            val focusNotif = resolveTriOpt(
+                loadChannelStringSetting(context, "focus:$pkg/$channelId", "pref_channel_focus_${pkg}_$channelId", "default"),
+                defaultFocusNotif
             )
-            val preserveSmallIconGlobal = loadBooleanSetting(
-                context, "global:preserve_small_icon",
-                "pref_preserve_status_bar_small_icon", true
+            val preserveStatusBarSmallIcon = resolveTriOpt(
+                loadChannelStringSetting(context, "preserve_small_icon:$pkg/$channelId", "pref_channel_preserve_small_icon_${pkg}_$channelId", "default"),
+                defaultPreserveSmallIcon
             )
-            val preserveSmallIconChannel = loadChannelStringSetting(
-                context, "preserve_small_icon:$pkg/$channelId",
-                "pref_channel_preserve_small_icon_${pkg}_$channelId", "default"
+            val firstFloat = resolveTriOpt(
+                loadChannelStringSetting(context, "first_float:$pkg/$channelId", "pref_channel_first_float_${pkg}_$channelId", "default"),
+                defaultFirstFloat
             )
-            val preserveStatusBarSmallIcon =
-                resolveTriStateBoolean(preserveSmallIconGlobal, preserveSmallIconChannel)
-            val firstFloat = loadChannelStringSetting(
-                context, "first_float:$pkg/$channelId",
-                "pref_channel_first_float_${pkg}_$channelId", "default"
-            )
-            val enableFloatMode = loadChannelStringSetting(
-                context, "efloat:$pkg/$channelId",
-                "pref_channel_enable_float_${pkg}_$channelId", "default"
+            val enableFloatMode = resolveTriOpt(
+                loadChannelStringSetting(context, "efloat:$pkg/$channelId", "pref_channel_enable_float_${pkg}_$channelId", "default"),
+                defaultEnableFloat
             )
             val islandTimeoutStr = loadChannelStringSetting(
                 context, "timeout:$pkg/$channelId",
@@ -388,14 +396,14 @@ class GenericProgressHook : IXposedHookLoadPackage {
                 context, "focus_icon:$pkg/$channelId",
                 "pref_channel_focus_icon_${pkg}_$channelId", "auto"
             )
-            val marqueeEnabled = loadChannelStringSetting(
-                context, "marquee:$pkg/$channelId",
-                "pref_channel_marquee_${pkg}_$channelId", "off"
-            ) == "on"
+            val marqueeEnabled = resolveTriStateBoolean(
+                defaultMarquee,
+                loadChannelStringSetting(context, "marquee:$pkg/$channelId", "pref_channel_marquee_${pkg}_$channelId", "default")
+            )
             MarqueeHook.pendingMarqueeEnabled = marqueeEnabled
 
             XposedBridge.log(
-                "HyperIsland[Generic]: $pkg/$channelId | $title | $progressPercent% | template=$template | buttons=${actions.size} | largeIcon=${largeIcon != null} | preserveSmallIcon(global=$preserveSmallIconGlobal, channel=$preserveSmallIconChannel, effective=$preserveStatusBarSmallIcon)"
+                "HyperIsland[Generic]: $pkg/$channelId | $title | $progressPercent% | template=$template | buttons=${actions.size} | largeIcon=${largeIcon != null} | preserveSmallIcon=$preserveStatusBarSmallIcon"
             )
 
             TemplateRegistry.dispatch(

@@ -125,6 +125,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get behaviorSection => '行为';
 
   @override
+  String get defaultConfigSection => '渠道默认配置';
+
+  @override
   String get appearanceSection => '外观';
 
   @override
@@ -177,13 +180,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get roundIconSubtitle => '为通知图标添加圆角效果';
 
   @override
-  String get preserveStatusBarSmallIconTitle => '保留状态栏小图标';
-
-  @override
-  String get preserveStatusBarSmallIconSubtitle =>
-      '为代理焦点通知保留左上角状态栏小图标，可被渠道设置单独覆盖';
-
-  @override
   String get marqueeChannelTitle => '消息滚动';
 
   @override
@@ -195,7 +191,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get wrapLongTextTitle => '自动折行 (实验性)';
+  String get wrapLongTextTitle => '自动折行';
 
   @override
   String get wrapLongTextSubtitle => '焦点通知长文本自动拆分为两行显示';

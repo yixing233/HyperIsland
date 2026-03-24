@@ -417,7 +417,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                       firstFloat: extras['first_float'] ?? kTriOptDefault,
                       enableFloat: extras['enable_float'] ?? kTriOptDefault,
                       islandTimeout: extras['timeout'] ?? '5',
-                      marquee: extras['marquee'] ?? kTriOptOff,
+                      marquee: extras['marquee'] ?? kTriOptDefault,
                       onToggle: (v) => _toggle(ch.id, v),
                       onSettingsApplied: (s) => _applyChannelSettings(ch.id, s),
                     );

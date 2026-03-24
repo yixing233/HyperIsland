@@ -60,10 +60,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _onPreserveStatusBarSmallIconChanged(bool value) async {
-    await _ctrl.setPreserveStatusBarSmallIcon(value);
-  }
-
   Future<void> _onRoundIconChanged(bool value) async {
     await _ctrl.setRoundIcon(value);
   }
@@ -279,15 +275,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         SwitchListTile(
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 4),
-                          title: Text(l10n.preserveStatusBarSmallIconTitle),
-                          subtitle: Text(l10n.preserveStatusBarSmallIconSubtitle),
-                          value: _ctrl.preserveStatusBarSmallIcon,
-                          onChanged: _onPreserveStatusBarSmallIconChanged,
-                        ),
-                        const Divider(height: 1, indent: 16, endIndent: 16),
-                        SwitchListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
                           title: Text(l10n.unlockAllFocusTitle),
                           subtitle: Text(l10n.unlockAllFocusSubtitle),
                           value: _ctrl.unlockAllFocus,
@@ -311,6 +298,64 @@ class _SettingsPageState extends State<SettingsPage> {
                           value: _ctrl.checkUpdateOnLaunch,
                           onChanged: _ctrl.setCheckUpdateOnLaunch,
                           shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  bottom: Radius.circular(16))),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SectionLabel(l10n.defaultConfigSection),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: cs.surfaceContainerHighest,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: Text(l10n.firstFloatLabel),
+                          value: _ctrl.defaultFirstFloat,
+                          onChanged: _ctrl.setDefaultFirstFloat,
+                          shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16))),
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: Text(l10n.updateFloatLabel),
+                          value: _ctrl.defaultEnableFloat,
+                          onChanged: _ctrl.setDefaultEnableFloat,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: Text(l10n.marqueeChannelTitle),
+                          value: _ctrl.defaultMarquee,
+                          onChanged: _ctrl.setDefaultMarquee,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: Text(l10n.focusNotificationLabel),
+                          value: _ctrl.defaultFocusNotif,
+                          onChanged: _ctrl.setDefaultFocusNotif,
+                        ),
+                        const Divider(height: 1, indent: 16, endIndent: 16),
+                        SwitchListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          title: Text(l10n.preserveStatusBarSmallIconLabel),
+                          value: _ctrl.defaultPreserveSmallIcon,
+                          onChanged: _ctrl.setDefaultPreserveSmallIcon,
+                          shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
                                   bottom: Radius.circular(16))),
                         ),
@@ -358,7 +403,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(l10n.marqueeSpeedTitle,
+                                  Text('${l10n.marqueeChannelTitle}|${l10n.marqueeSpeedTitle}',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium),

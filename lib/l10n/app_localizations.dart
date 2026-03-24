@@ -316,6 +316,12 @@ abstract class AppLocalizations {
   /// **'行为'**
   String get behaviorSection;
 
+  /// No description provided for @defaultConfigSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'渠道默认配置'**
+  String get defaultConfigSection;
+
   /// No description provided for @appearanceSection.
   ///
   /// In zh, this message translates to:
@@ -418,18 +424,6 @@ abstract class AppLocalizations {
   /// **'为通知图标添加圆角效果'**
   String get roundIconSubtitle;
 
-  /// No description provided for @preserveStatusBarSmallIconTitle.
-  ///
-  /// In zh, this message translates to:
-  /// **'保留状态栏小图标'**
-  String get preserveStatusBarSmallIconTitle;
-
-  /// No description provided for @preserveStatusBarSmallIconSubtitle.
-  ///
-  /// In zh, this message translates to:
-  /// **'为代理焦点通知保留左上角状态栏小图标，可被渠道设置单独覆盖'**
-  String get preserveStatusBarSmallIconSubtitle;
-
   /// No description provided for @marqueeChannelTitle.
   ///
   /// In zh, this message translates to:
@@ -451,7 +445,7 @@ abstract class AppLocalizations {
   /// No description provided for @wrapLongTextTitle.
   ///
   /// In zh, this message translates to:
-  /// **'自动折行 (实验性)'**
+  /// **'自动折行'**
   String get wrapLongTextTitle;
 
   /// No description provided for @wrapLongTextSubtitle.

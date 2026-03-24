@@ -45,6 +45,7 @@
   "note4": "4. 一般的なアダプティブ表示に対応しています。適切なテンプレートを確認してみてください。",
 
   "behaviorSection": "動作",
+  "defaultConfigSection": "チャンネルのデフォルト設定",
   "appearanceSection": "外観",
   "configSection": "構成",
   "aboutSection": "アプリについて",
@@ -62,8 +63,6 @@
   "useAppIconSubtitle": "ダウンロードマネージャーの通知でアプリアイコンを使用します",
   "roundIconTitle": "アイコンの角を丸める",
   "roundIconSubtitle": "通知アイコンの角を丸めます",
-  "preserveStatusBarSmallIconTitle": "ステータスバーの小さなアイコンを保持",
-  "preserveStatusBarSmallIconSubtitle": "プロキシのフォーカス通知で左上のステータスバー小アイコンを保持し、チャンネルごとに上書きできます",
   "marqueeChannelTitle": "Island のテキストをスクロール",
   "marqueeSpeedTitle": "スクロールの速度",
   "marqueeSpeedLabel": "{speed} px/s",
@@ -72,7 +71,7 @@
       "speed": { "type": "int" }
     }
   },
-  "wrapLongTextTitle": "自動で折り返す (試験的)",
+  "wrapLongTextTitle": "自動で折り返す",
   "wrapLongTextSubtitle": "長いフォーカス通知テキストを二行に分割します",
   "themeModeTitle": "カラーモード",
   "themeModeSystem": "システムに従う",
