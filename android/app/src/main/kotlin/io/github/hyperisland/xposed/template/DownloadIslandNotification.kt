@@ -115,7 +115,7 @@ object DownloadIslandNotification {
             }
 
             // 大岛：下载中时左侧状态+右侧环形进度，其他状态左侧状态+右侧文本
-            if (!isComplete && !isWaiting && !isPaused) {
+            if (!isComplete && !isWaiting && !isPaused && progress > 0) {
                 builder.setBigIslandInfo(
                     left = ImageTextInfoLeft(
                         type     = 1,
