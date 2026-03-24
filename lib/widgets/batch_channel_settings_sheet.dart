@@ -649,7 +649,7 @@ class _BatchSettingRow extends StatelessWidget {
         Expanded(
           child: DropdownButtonFormField<String?>(
             key: ValueKey(value),
-            initialValue: value,
+            value: value,
             isExpanded: true,
             items: [
               if (showNotChange)
