@@ -235,7 +235,7 @@ class _BatchChannelSettingsSheetState
           'icon':                  _iconMode,
           'focus_icon':            _focusIconMode,
           'focus':                 _focusNotif,
-          'preserve_small_icon':   _preserveSmallIcon,
+          'preserve_small_icon':   _focusNotif == kTriOptOff ? kTriOptOff : _preserveSmallIcon,
           'first_float':           _firstFloat,
           'enable_float':          _enableFloat,
           'timeout':               _islandTimeout,
@@ -466,19 +466,22 @@ class _BatchChannelSettingsSheetState
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
-                    onChanged: (v) => setState(() => _focusNotif = v),
+                    onChanged: (v) => setState(() {
+                      _focusNotif = v;
+                      if (v == kTriOptOff) _preserveSmallIcon = kTriOptOff;
+                    }),
                   ),
                   const SizedBox(height: 12),
                   _BatchSettingRow(
                     label: l10n.preserveStatusBarSmallIconLabel,
-                    value: _preserveSmallIcon,
+                    value: _focusNotif == kTriOptOff ? kTriOptOff : _preserveSmallIcon,
                     showNotChange: !_isSingle,
                     items: [
                       DropdownMenuItem(value: kTriOptDefault, child: Text(_preserveSmallIconDefaultLabel(context))),
                       DropdownMenuItem(value: kTriOptOn,      child: Text(l10n.optOn)),
                       DropdownMenuItem(value: kTriOptOff,     child: Text(l10n.optOff)),
                     ],
-                    onChanged: (v) => setState(() => _preserveSmallIcon = v),
+                    onChanged: _focusNotif == kTriOptOff ? null : (v) => setState(() => _preserveSmallIcon = v),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -627,7 +630,7 @@ class _BatchSettingRow extends StatelessWidget {
   final String label;
   final String? value;
   final List<DropdownMenuItem<String?>> items;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String?>? onChanged;
   final bool showNotChange;
 
   @override

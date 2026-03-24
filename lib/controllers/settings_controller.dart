@@ -21,7 +21,7 @@ class SettingsController extends ChangeNotifier {
   }
 
   bool resumeNotification = true;
-  bool preserveStatusBarSmallIcon = true;
+  bool preserveStatusBarSmallIcon = false;
   bool useHookAppIcon = true;
   bool roundIcon = true;
   bool marqueeFeature = false;
@@ -38,7 +38,7 @@ class SettingsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     resumeNotification        = prefs.getBool(kPrefResumeNotification) ?? true;
     preserveStatusBarSmallIcon =
-        prefs.getBool(kPrefPreserveStatusBarSmallIcon) ?? true;
+        prefs.getBool(kPrefPreserveStatusBarSmallIcon) ?? false;
     useHookAppIcon            = prefs.getBool(kPrefUseHookAppIcon) ?? true;
     roundIcon                 = prefs.getBool(kPrefRoundIcon) ?? true;
     marqueeFeature        = prefs.getBool(kPrefMarqueeFeature) ?? false;
