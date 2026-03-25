@@ -74,6 +74,9 @@ object DownloadLiteIslandNotification : IslandTemplate {
                     it.contains("paused", ignoreCase = true)
                 }
             )
+            val hasValidProgress = progress in 0..100
+            val safeProgress = progress.coerceIn(0, 100)
+            val shouldShowProgress = !isComplete && !isPaused && hasValidProgress
 
             val iconRes   = if (isComplete) android.R.drawable.stat_sys_download_done
                             else            android.R.drawable.stat_sys_download
@@ -121,15 +124,15 @@ object DownloadLiteIslandNotification : IslandTemplate {
             builder.setShowNotification(showNotification)
             builder.setIslandConfig(timeout = timeoutSecs)
 
-            // 摘要态：小岛带环形进度（下载中），否则仅图标
-            if (!isComplete && progress > 0) {
-                builder.setSmallIslandCircularProgress("key_dl_lite_icon", progress)
+            // 摘要态：仅在进度合法时显示环形进度，否则仅图标
+            if (shouldShowProgress) {
+                builder.setSmallIslandCircularProgress("key_dl_lite_icon", safeProgress)
             } else {
                 builder.setSmallIsland("key_dl_lite_icon")
             }
 
-            // 大岛：左侧仅图标（无文字），右侧仅环形进度（无文字）
-            if (!isComplete && !isPaused && progress > 0) {
+            // 大岛：仅在进度合法时显示右侧环形进度，否则退化为纯图标
+            if (shouldShowProgress) {
                 builder.setBigIslandInfo(
                     left = ImageTextInfoLeft(
                         type     = 1,
@@ -137,7 +140,7 @@ object DownloadLiteIslandNotification : IslandTemplate {
                         textInfo = TextInfo(title = ""),
                     ),
                     progressText = ProgressTextInfo(
-                        progressInfo = CircularProgressInfo(progress = progress),
+                        progressInfo = CircularProgressInfo(progress = safeProgress),
                         textInfo     = TextInfo(title = ""),
                     ),
                 )
@@ -177,7 +180,13 @@ object DownloadLiteIslandNotification : IslandTemplate {
             )
             extras.putString("miui.focus.param", jsonParam)
 
-            XposedBridge.log("HyperIsland[DownloadLite]: Island injected — $title (${progress}%) buttons=${actions.size}")
+            val stateTag = when {
+                isComplete       -> "done"
+                isPaused         -> "paused"
+                hasValidProgress -> "${safeProgress}%"
+                else             -> "unknown"
+            }
+            XposedBridge.log("HyperIsland[DownloadLite]: Island injected — $title ($stateTag) buttons=${actions.size}")
 
         } catch (e: Exception) {
             XposedBridge.log("HyperIsland[DownloadLite]: Island injection error: ${e.message}")
