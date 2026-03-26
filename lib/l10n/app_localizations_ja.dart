@@ -565,4 +565,63 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get preserveStatusBarSmallIconLabelSubtitle =>
       'フォーカス通知表示時にステータスバーアイコンを強制的に保持するかどうか';
+
+  @override
+  String get aiConfigSection => 'AI 強化';
+
+  @override
+  String get aiConfigTitle => 'AI 通知サマリー';
+
+  @override
+  String get aiConfigSubtitleEnabled => '有効 · タップして AI パラメータを設定';
+
+  @override
+  String get aiConfigSubtitleDisabled => '無効 · タップして設定';
+
+  @override
+  String get aiEnabledTitle => 'AI サマリーを有効にする';
+
+  @override
+  String get aiEnabledSubtitle =>
+      'AI が Island の左右テキストを生成。タイムアウト・エラー時は自動でフォールバック';
+
+  @override
+  String get aiApiSection => 'API パラメータ';
+
+  @override
+  String get aiUrlLabel => 'API URL';
+
+  @override
+  String get aiUrlHint => 'https://api.openai.com/v1/chat/completions';
+
+  @override
+  String get aiApiKeyLabel => 'API キー';
+
+  @override
+  String get aiApiKeyHint => 'sk-...';
+
+  @override
+  String get aiModelLabel => 'モデル';
+
+  @override
+  String get aiModelHint => 'gpt-4o-mini';
+
+  @override
+  String get aiTestButton => '接続テスト';
+
+  @override
+  String get aiTestUrlEmpty => 'API URL を入力してください';
+
+  @override
+  String get aiConfigSaveButton => '保存';
+
+  @override
+  String get aiConfigSaved => 'AI 設定を保存しました';
+
+  @override
+  String get aiConfigTips =>
+      'AI は通知のパッケージ名・タイトル・本文を受け取り、左側（ソース）と右側（内容）の短いテキストを返します。OpenAI 互換 API（DeepSeek、Claude など）に対応。3 秒以内に応答がない場合はデフォルトロジックにフォールバックします。';
+
+  @override
+  String get templateAiNotificationIslandName => 'AI 通知Island';
 }

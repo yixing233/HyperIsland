@@ -559,4 +559,62 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get preserveStatusBarSmallIconLabelSubtitle => '焦点通知打开时，是否强制保留状态栏小图标';
+
+  @override
+  String get aiConfigSection => 'AI 增强';
+
+  @override
+  String get aiConfigTitle => 'AI 通知摘要';
+
+  @override
+  String get aiConfigSubtitleEnabled => '已启用 · 点击配置 AI 参数';
+
+  @override
+  String get aiConfigSubtitleDisabled => '已关闭 · 点击进行配置';
+
+  @override
+  String get aiEnabledTitle => '启用 AI 摘要';
+
+  @override
+  String get aiEnabledSubtitle => '由 AI 生成超级岛左右文本，超时或失败时自动回退';
+
+  @override
+  String get aiApiSection => 'API 参数';
+
+  @override
+  String get aiUrlLabel => 'API 地址';
+
+  @override
+  String get aiUrlHint => 'https://api.openai.com/v1/chat/completions';
+
+  @override
+  String get aiApiKeyLabel => 'API 密钥';
+
+  @override
+  String get aiApiKeyHint => 'sk-...';
+
+  @override
+  String get aiModelLabel => '模型';
+
+  @override
+  String get aiModelHint => 'gpt-4o-mini';
+
+  @override
+  String get aiTestButton => '测试连接';
+
+  @override
+  String get aiTestUrlEmpty => '请先填写 API 地址';
+
+  @override
+  String get aiConfigSaveButton => '保存';
+
+  @override
+  String get aiConfigSaved => 'AI 配置已保存';
+
+  @override
+  String get aiConfigTips =>
+      'AI 将收到通知的应用包名、标题和正文，返回左侧（来源）和右侧（内容）短文本。支持兼容 OpenAI 格式的接口（如 DeepSeek、Claude 等）。超过 3 秒未响应时自动回退到默认逻辑。';
+
+  @override
+  String get templateAiNotificationIslandName => 'AI 通知超级岛';
 }

@@ -7,6 +7,7 @@ import '../controllers/settings_controller.dart';
 import '../controllers/update_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/section_label.dart';
+import 'ai_config_page.dart';
 import 'blacklist_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -220,6 +221,32 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  SectionLabel(l10n.aiConfigSection),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: cs.surfaceContainerHighest,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      leading: const Icon(Icons.psychology_outlined),
+                      title: Text(l10n.aiConfigTitle),
+                      subtitle: Text(_ctrl.aiEnabled
+                          ? l10n.aiConfigSubtitleEnabled
+                          : l10n.aiConfigSubtitleDisabled),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const AiConfigPage()),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   SectionLabel(l10n.navBlacklist),
                   const SizedBox(height: 8),
                   Card(

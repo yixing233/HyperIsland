@@ -583,4 +583,64 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get preserveStatusBarSmallIconLabelSubtitle =>
       'Whether to force keep status bar icon when focus notification is displayed';
+
+  @override
+  String get aiConfigSection => 'AI Enhancement';
+
+  @override
+  String get aiConfigTitle => 'AI Notification Summary';
+
+  @override
+  String get aiConfigSubtitleEnabled =>
+      'Enabled · Tap to configure AI parameters';
+
+  @override
+  String get aiConfigSubtitleDisabled => 'Disabled · Tap to configure';
+
+  @override
+  String get aiEnabledTitle => 'Enable AI Summary';
+
+  @override
+  String get aiEnabledSubtitle =>
+      'AI generates Island left/right text, falls back on timeout or error';
+
+  @override
+  String get aiApiSection => 'API Parameters';
+
+  @override
+  String get aiUrlLabel => 'API URL';
+
+  @override
+  String get aiUrlHint => 'https://api.openai.com/v1/chat/completions';
+
+  @override
+  String get aiApiKeyLabel => 'API Key';
+
+  @override
+  String get aiApiKeyHint => 'sk-...';
+
+  @override
+  String get aiModelLabel => 'Model';
+
+  @override
+  String get aiModelHint => 'gpt-4o-mini';
+
+  @override
+  String get aiTestButton => 'Test Connection';
+
+  @override
+  String get aiTestUrlEmpty => 'Please enter an API URL first';
+
+  @override
+  String get aiConfigSaveButton => 'Save';
+
+  @override
+  String get aiConfigSaved => 'AI configuration saved';
+
+  @override
+  String get aiConfigTips =>
+      'AI receives the app package, title, and content of each notification, and returns short left (source) and right (content) text. Compatible with OpenAI-format APIs (e.g. DeepSeek, Claude). Falls back to default logic if no response within 3 seconds.';
+
+  @override
+  String get templateAiNotificationIslandName => 'AI Notification Island';
 }

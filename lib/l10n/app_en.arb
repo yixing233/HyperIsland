@@ -194,5 +194,25 @@
   "updateFloatLabelSubtitle": "Whether to expand notification when Island updates",
   "marqueeChannelTitleSubtitle": "Whether to scroll long messages on Island",
   "focusNotificationLabelSubtitle": "Replace notification with focus notification (shows original notification when disabled)",
-  "preserveStatusBarSmallIconLabelSubtitle": "Whether to force keep status bar icon when focus notification is displayed"
+  "preserveStatusBarSmallIconLabelSubtitle": "Whether to force keep status bar icon when focus notification is displayed",
+
+  "aiConfigSection": "AI Enhancement",
+  "aiConfigTitle": "AI Notification Summary",
+  "aiConfigSubtitleEnabled": "Enabled · Tap to configure AI parameters",
+  "aiConfigSubtitleDisabled": "Disabled · Tap to configure",
+  "aiEnabledTitle": "Enable AI Summary",
+  "aiEnabledSubtitle": "AI generates Island left/right text, falls back on timeout or error",
+  "aiApiSection": "API Parameters",
+  "aiUrlLabel": "API URL",
+  "aiUrlHint": "https://api.openai.com/v1/chat/completions",
+  "aiApiKeyLabel": "API Key",
+  "aiApiKeyHint": "sk-...",
+  "aiModelLabel": "Model",
+  "aiModelHint": "gpt-4o-mini",
+  "aiTestButton": "Test Connection",
+  "aiTestUrlEmpty": "Please enter an API URL first",
+  "aiConfigSaveButton": "Save",
+  "aiConfigSaved": "AI configuration saved",
+  "aiConfigTips": "AI receives the app package, title, and content of each notification, and returns short left (source) and right (content) text. Compatible with OpenAI-format APIs (e.g. DeepSeek, Claude). Falls back to default logic if no response within 3 seconds.",
+  "templateAiNotificationIslandName": "AI Notification Island"
 }

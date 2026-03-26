@@ -2,6 +2,7 @@ package io.github.hyperisland.xposed
 
 import android.content.Context
 import android.os.Bundle
+import io.github.hyperisland.xposed.templates.AINotificationIslandNotification
 import io.github.hyperisland.xposed.templates.DownloadLiteIslandNotification
 import io.github.hyperisland.xposed.templates.GenericProgressIslandNotification
 import io.github.hyperisland.xposed.templates.NotificationIslandLiteNotification
@@ -23,6 +24,7 @@ object TemplateRegistry {
         NotificationIslandNotification,
         NotificationIslandLiteNotification,
         DownloadLiteIslandNotification,
+        AINotificationIslandNotification,
     ).associateBy { it.id }
 
     fun dispatch(

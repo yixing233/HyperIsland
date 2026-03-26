@@ -18,6 +18,11 @@ const kPrefDefaultMarquee             = 'pref_default_marquee';
 const kPrefDefaultFocusNotif          = 'pref_default_focus_notif';
 const kPrefDefaultPreserveSmallIcon   = 'pref_default_preserve_small_icon';
 
+const kPrefAiEnabled  = 'pref_ai_enabled';
+const kPrefAiUrl      = 'pref_ai_url';
+const kPrefAiApiKey   = 'pref_ai_api_key';
+const kPrefAiModel    = 'pref_ai_model';
+
 class SettingsController extends ChangeNotifier {
   static final SettingsController instance = SettingsController._();
 
@@ -39,6 +44,10 @@ class SettingsController extends ChangeNotifier {
   bool defaultMarquee = false;
   bool defaultFocusNotif = true;
   bool defaultPreserveSmallIcon = false;
+  bool aiEnabled = false;
+  String aiUrl = '';
+  String aiApiKey = '';
+  String aiModel = '';
   ThemeMode themeMode = ThemeMode.system;
   Locale? locale; // null = follow system
   bool loading = true;
@@ -59,6 +68,10 @@ class SettingsController extends ChangeNotifier {
     defaultMarquee             = prefs.getBool(kPrefDefaultMarquee) ?? false;
     defaultFocusNotif          = prefs.getBool(kPrefDefaultFocusNotif) ?? true;
     defaultPreserveSmallIcon   = prefs.getBool(kPrefDefaultPreserveSmallIcon) ?? false;
+    aiEnabled  = prefs.getBool(kPrefAiEnabled) ?? false;
+    aiUrl      = prefs.getString(kPrefAiUrl) ?? '';
+    aiApiKey   = prefs.getString(kPrefAiApiKey) ?? '';
+    aiModel    = prefs.getString(kPrefAiModel) ?? '';
     themeMode = switch (prefs.getString(kPrefThemeMode)) {
       'light'  => ThemeMode.light,
       'dark'   => ThemeMode.dark,
@@ -166,6 +179,34 @@ class SettingsController extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(kPrefDefaultPreserveSmallIcon, value);
     defaultPreserveSmallIcon = value;
+    notifyListeners();
+  }
+
+  Future<void> setAiEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(kPrefAiEnabled, value);
+    aiEnabled = value;
+    notifyListeners();
+  }
+
+  Future<void> setAiUrl(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kPrefAiUrl, value);
+    aiUrl = value;
+    notifyListeners();
+  }
+
+  Future<void> setAiApiKey(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kPrefAiApiKey, value);
+    aiApiKey = value;
+    notifyListeners();
+  }
+
+  Future<void> setAiModel(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kPrefAiModel, value);
+    aiModel = value;
     notifyListeners();
   }
 

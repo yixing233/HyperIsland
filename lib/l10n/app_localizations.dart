@@ -1101,6 +1101,120 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'焦点通知打开时，是否强制保留状态栏小图标'**
   String get preserveStatusBarSmallIconLabelSubtitle;
+
+  /// No description provided for @aiConfigSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 增强'**
+  String get aiConfigSection;
+
+  /// No description provided for @aiConfigTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 通知摘要'**
+  String get aiConfigTitle;
+
+  /// No description provided for @aiConfigSubtitleEnabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已启用 · 点击配置 AI 参数'**
+  String get aiConfigSubtitleEnabled;
+
+  /// No description provided for @aiConfigSubtitleDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'已关闭 · 点击进行配置'**
+  String get aiConfigSubtitleDisabled;
+
+  /// No description provided for @aiEnabledTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用 AI 摘要'**
+  String get aiEnabledTitle;
+
+  /// No description provided for @aiEnabledSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'由 AI 生成超级岛左右文本，超时或失败时自动回退'**
+  String get aiEnabledSubtitle;
+
+  /// No description provided for @aiApiSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'API 参数'**
+  String get aiApiSection;
+
+  /// No description provided for @aiUrlLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'API 地址'**
+  String get aiUrlLabel;
+
+  /// No description provided for @aiUrlHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'https://api.openai.com/v1/chat/completions'**
+  String get aiUrlHint;
+
+  /// No description provided for @aiApiKeyLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'API 密钥'**
+  String get aiApiKeyLabel;
+
+  /// No description provided for @aiApiKeyHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'sk-...'**
+  String get aiApiKeyHint;
+
+  /// No description provided for @aiModelLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'模型'**
+  String get aiModelLabel;
+
+  /// No description provided for @aiModelHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'gpt-4o-mini'**
+  String get aiModelHint;
+
+  /// No description provided for @aiTestButton.
+  ///
+  /// In zh, this message translates to:
+  /// **'测试连接'**
+  String get aiTestButton;
+
+  /// No description provided for @aiTestUrlEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先填写 API 地址'**
+  String get aiTestUrlEmpty;
+
+  /// No description provided for @aiConfigSaveButton.
+  ///
+  /// In zh, this message translates to:
+  /// **'保存'**
+  String get aiConfigSaveButton;
+
+  /// No description provided for @aiConfigSaved.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 配置已保存'**
+  String get aiConfigSaved;
+
+  /// No description provided for @aiConfigTips.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 将收到通知的应用包名、标题和正文，返回左侧（来源）和右侧（内容）短文本。支持兼容 OpenAI 格式的接口（如 DeepSeek、Claude 等）。超过 3 秒未响应时自动回退到默认逻辑。'**
+  String get aiConfigTips;
+
+  /// No description provided for @templateAiNotificationIslandName.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 通知超级岛'**
+  String get templateAiNotificationIslandName;
 }
 
 class _AppLocalizationsDelegate
