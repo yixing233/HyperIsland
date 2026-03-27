@@ -149,7 +149,7 @@ class MainActivity : FlutterActivity() {
      * 获取指定包的通知渠道列表。
      *
      * 通知渠道持久化在 /data/system/notification_policy.xml，
-     * 用 root 读取后用 XmlPullParser 解析，无需调用任何受限 API。
+     * 用 root 直接读取 ABX 原始数据后在应用内解码为文本 XML，再交给 XmlPullParser 解析。
      */
     private fun getNotificationChannelsForPackage(pkg: String): List<Map<String, Any?>>? {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) return emptyList()
@@ -160,7 +160,7 @@ class MainActivity : FlutterActivity() {
         val xml = try {
             convertAbxPolicyToXml()
         } catch (e: Exception) {
-            Log.e(TAG, "convertAbxPolicyToXml failed for $pkg: ${e.message}")
+            Log.e(TAG, "convertAbxPolicyToXml failed for $pkg: ${e.message}", e)
             return null
         }
         if (xml.isEmpty()) {
@@ -214,34 +214,74 @@ class MainActivity : FlutterActivity() {
     }
 
     /**
-     * 调用系统内置 abx2xml 命令将 notification_policy.xml（ABX 二进制格式）转换为文本 XML。
-     * abx2xml 在 Android 12+ 设备上由系统提供（/system/bin/abx2xml）。
+     * 将 notification_policy.xml（ABX 二进制格式）转换为文本 XML。
+     *
+     * 保持原有“拿到文本 XML 再解析”的调用边界，但底层不再依赖系统 abx2xml，
+     * 而是直接读取源文件字节并交给 [AbxXmlDecoder] 处理。
      */
     private fun convertAbxPolicyToXml(): String {
-        val input = "/data/system/notification_policy.xml"
-        val tmp   = "/data/local/tmp/.hyp_policy.xml"
+        cleanupLegacyPolicyTempFiles()
 
-        // 依次尝试几种调用姿势，兼容不同 ROM 和 Android 版本
-        val cmds = listOf(
-            "abx2xml $input /dev/stdout 2>/dev/null",
-            "abx2xml $input - 2>/dev/null",
-            "abx2xml $input $tmp 2>/dev/null && cat $tmp; rm -f $tmp",
-        )
-
-        for (cmd in cmds) {
-            try {
-                val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-                val out  = proc.inputStream.bufferedReader().readText()
-                proc.waitFor()
-                if (out.length > 50 && out.contains('<')) {
-                    Log.d(TAG, "abx2xml ok: ${out.length} chars")
-                    return out
-                }
-            } catch (e: Exception) {
-                Log.d(TAG, "abx2xml attempt failed: ${e.message}")
-            }
+        val policyBytes = try {
+            readNotificationPolicyBytes()
+        } catch (e: Exception) {
+            Log.e(TAG, "readNotificationPolicyBytes failed: ${e.message}", e)
+            cleanupLegacyPolicyTempFiles()
+            return ""
         }
-        return ""
+
+        if (policyBytes.isEmpty()) {
+            cleanupLegacyPolicyTempFiles()
+            return ""
+        }
+
+        return try {
+            val xml = AbxXmlDecoder.decode(policyBytes)
+            Log.d(TAG, "local abx2xml ok: abx=${policyBytes.size} bytes, xml=${xml.length} chars")
+            xml
+        } catch (e: Exception) {
+            Log.e(TAG, "AbxXmlDecoder failed: ${e.message}", e)
+            ""
+        } finally {
+            cleanupLegacyPolicyTempFiles()
+        }
+    }
+
+    /** 直接从系统 notification_policy.xml 读取 ABX 原始字节。 */
+    private fun readNotificationPolicyBytes(): ByteArray {
+        val input = "/data/system/notification_policy.xml"
+        val result = RootShell.run("cat $input")
+        if (result.exitCode != 0) {
+            Log.d(
+                TAG,
+                "notification_policy read failed: exit=${result.exitCode}, bytes=${result.stdout.size}, stderr=${result.stderr.take(120)}"
+            )
+            return byteArrayOf()
+        }
+
+        if (!AbxXmlDecoder.isAbx(result.stdout)) {
+            Log.d(TAG, "notification_policy read failed: expected ABX, got ${result.stdout.size} bytes")
+            return byteArrayOf()
+        }
+
+        Log.d(TAG, "notification_policy read ok: ${result.stdout.size} bytes")
+        return result.stdout
+    }
+
+    /** 清理旧方案遗留的临时 policy 快照文件。 */
+    private fun cleanupLegacyPolicyTempFiles() {
+        val tempFiles = listOf(
+            "/data/local/tmp/.hyp_policy.xml",
+            "/data/local/tmp/.hyp_policy_snapshot.abx",
+        )
+        try {
+            val result = RootShell.run("rm -f ${tempFiles.joinToString(separator = " ")} 2>/dev/null")
+            if (result.exitCode != 0) {
+                Log.d(TAG, "policy temp cleanup failed: exit=${result.exitCode}, stderr=${result.stderr.take(120)}")
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "policy temp cleanup failed: ${e.message}")
+        }
     }
 
     /** 文本 XML 严格解析。命中目标 package 后在该 package 结束时立即返回。 */
