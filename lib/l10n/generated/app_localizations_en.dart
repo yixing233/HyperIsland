@@ -229,6 +229,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageJa => '日本語';
 
   @override
+  String get languageTr => 'Türkçe';
+
+  @override
   String get exportToFile => 'Export to file';
 
   @override
@@ -462,7 +465,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rendererLabel => 'Style';
 
   @override
-  String get rendererImageTextWithButtons4Name => 'Image+Text+Buttons 4';
+  String get rendererImageTextWithButtons4Name =>
+      'Image+Text+Bottom Text Buttons';
 
   @override
   String get rendererCoverInfoName => 'Cover Info+Auto Wrap';
