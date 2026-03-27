@@ -10,7 +10,7 @@ import io.github.hyperisland.xposed.IslandTemplate
 import io.github.hyperisland.xposed.IslandViewModel
 import io.github.hyperisland.xposed.NotifData
 import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsWrapRenderer
+import io.github.hyperisland.xposed.renderer.resolveRenderer
 import io.github.hyperisland.xposed.toRounded
 
 /**
@@ -38,9 +38,7 @@ object NotificationIslandLiteNotification : IslandTemplate {
         }
         try {
             val vm = process(context, data, cleanedTitle, cleanedSubtitle)
-            val renderer = if (data.renderer == ImageTextWithButtonsWrapRenderer.RENDERER_ID) ImageTextWithButtonsWrapRenderer
-                           else ImageTextWithButtonsRenderer
-            renderer.render(context, extras, vm)
+            resolveRenderer(data.renderer).render(context, extras, vm)
             XposedBridge.log(
                 "HyperIsland[NotifIslandLite]: injected — raw=${data.title} | clean=$cleanedTitle | right=${cleanedSubtitle.ifEmpty { cleanedTitle }} | notifId=${data.notifId}"
             )

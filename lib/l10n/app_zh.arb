@@ -86,7 +86,6 @@
       "speed": { "type": "int" }
     }
   },
-  "wrapLongTextTitle": "自动折行",
   "themeModeTitle": "颜色模式",
   "themeModeSystem": "跟随系统",
   "themeModeLight": "浅色",
@@ -250,6 +249,7 @@
   "rendererLabel": "样式",
   "rendererImageTextWithButtons4Name": "新图文组件+按钮组件4",
   "rendererCoverInfoName": "封面组件+自动换行",
+  "rendererImageTextWithRightTextButtonName": "新图文组件+右侧文本按钮",
   "islandIcon": "超级岛图标",
   "focusIconLabel": "焦点图标",
   "focusNotificationLabel": "焦点通知",

@@ -10,7 +10,7 @@ import io.github.hyperisland.xposed.IslandViewModel
 import io.github.hyperisland.xposed.NotifData
 import io.github.hyperisland.xposed.moduleContext
 import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsWrapRenderer
+import io.github.hyperisland.xposed.renderer.resolveRenderer
 import io.github.hyperisland.xposed.toRounded
 
 /**
@@ -28,9 +28,7 @@ object GenericProgressIslandNotification : IslandTemplate {
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
         try {
             val vm = process(context, data)
-            val renderer = if (data.renderer == ImageTextWithButtonsWrapRenderer.RENDERER_ID) ImageTextWithButtonsWrapRenderer
-                           else ImageTextWithButtonsRenderer
-            renderer.render(context, extras, vm)
+            resolveRenderer(data.renderer).render(context, extras, vm)
             val stateTag = when {
                 vm.circularProgress != null -> "${vm.circularProgress}%"
                 vm.updatable                -> "in-progress"

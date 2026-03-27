@@ -194,9 +194,6 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get wrapLongTextTitle => '自動で折り返す';
-
-  @override
   String get themeModeTitle => 'カラーモード';
 
   @override
@@ -456,6 +453,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get rendererCoverInfoName => 'カバー情報+自動で折り返す';
+
+  @override
+  String get rendererImageTextWithRightTextButtonName => '画像+テキスト+右テキストボタン';
 
   @override
   String get islandIcon => 'Island のアイコン';

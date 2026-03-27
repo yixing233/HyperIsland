@@ -18,7 +18,7 @@ import io.github.hyperisland.xposed.IslandViewModel
 import io.github.hyperisland.xposed.NotifData
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
 import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsWrapRenderer
+import io.github.hyperisland.xposed.renderer.resolveRenderer
 import io.github.hyperisland.xposed.toRounded
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -63,9 +63,7 @@ object AINotificationIslandNotification : IslandTemplate {
         }
         try {
             val vm = process(context, data, leftText, rightText)
-            val renderer = if (data.renderer == ImageTextWithButtonsWrapRenderer.RENDERER_ID) ImageTextWithButtonsWrapRenderer
-                           else ImageTextWithButtonsRenderer
-            renderer.render(context, extras, vm)
+            resolveRenderer(data.renderer).render(context, extras, vm)
             XposedBridge.log(
                 "HyperIsland[AINotifIsland]: Injected — title=${data.title} | left=$leftText | right=$rightText | notifId=${data.notifId}"
             )

@@ -83,7 +83,6 @@ class SettingsProvider : ContentProvider() {
         } else {
             // 以下 key 默认关闭（0）；其余 key 默认开启（1）
             if (segment == "pref_marquee_feature" ||
-                segment == "pref_wrap_long_text" ||
                 segment == "pref_unlock_all_focus" ||
                 segment == "pref_unlock_focus_auth" ||
                 segment == "pref_default_first_float" ||

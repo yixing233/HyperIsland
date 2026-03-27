@@ -202,9 +202,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wrapLongTextTitle => 'Auto Wrap';
-
-  @override
   String get themeModeTitle => 'Color mode';
 
   @override
@@ -469,6 +466,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rendererCoverInfoName => 'Cover Info+Auto Wrap';
+
+  @override
+  String get rendererImageTextWithRightTextButtonName =>
+      'Image+Text+Right Text Button';
 
   @override
   String get islandIcon => 'Island icon';

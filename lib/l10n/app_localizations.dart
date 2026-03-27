@@ -442,12 +442,6 @@ abstract class AppLocalizations {
   /// **'{speed} 像素/秒'**
   String marqueeSpeedLabel(int speed);
 
-  /// No description provided for @wrapLongTextTitle.
-  ///
-  /// In zh, this message translates to:
-  /// **'自动折行'**
-  String get wrapLongTextTitle;
-
   /// No description provided for @themeModeTitle.
   ///
   /// In zh, this message translates to:
@@ -903,6 +897,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'封面组件+自动换行'**
   String get rendererCoverInfoName;
+
+  /// No description provided for @rendererImageTextWithRightTextButtonName.
+  ///
+  /// In zh, this message translates to:
+  /// **'新图文组件+右侧文本按钮'**
+  String get rendererImageTextWithRightTextButtonName;
 
   /// No description provided for @islandIcon.
   ///

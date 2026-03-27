@@ -71,7 +71,6 @@
       "speed": { "type": "int" }
     }
   },
-  "wrapLongTextTitle": "Auto Wrap",
   "themeModeTitle": "Color mode",
   "themeModeSystem": "Follow system",
   "themeModeLight": "Light",
@@ -152,6 +151,7 @@
   "rendererLabel": "Style",
   "rendererImageTextWithButtons4Name": "Image+Text+Buttons 4",
   "rendererCoverInfoName": "Cover Info+Auto Wrap",
+  "rendererImageTextWithRightTextButtonName": "Image+Text+Right Text Button",
   "islandIcon": "Island icon",
   "focusIconLabel": "Focus icon",
   "focusNotificationLabel": "Focus notification",

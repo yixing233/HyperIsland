@@ -36,8 +36,8 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
         renderWith(context, extras, vm, applyWrap = false)
     }
 
-    /** 供 [ImageTextWithButtonsWrapRenderer] 复用，避免重复布局代码。 */
-    internal fun renderWith(context: Context, extras: Bundle, vm: IslandViewModel, applyWrap: Boolean) {
+    /** 供 [ImageTextWithButtonsWrapRenderer] 和 [ImageTextWithRightTextButtonRenderer] 复用，避免重复布局代码。 */
+    internal fun renderWith(context: Context, extras: Bundle, vm: IslandViewModel, applyWrap: Boolean, maxButtons: Int = 2) {
         try {
             val iconKey      = "key_${vm.templateId}_island"
             val focusIconKey = "key_${vm.templateId}_focus"
@@ -90,7 +90,7 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
             }
 
             // 按钮（showNotification=false 时不添加）
-            val effectiveActions = vm.actions.take(2)
+            val effectiveActions = vm.actions.take(maxButtons)
             if (effectiveActions.isNotEmpty() && vm.showNotification) {
                 val hyperActions = effectiveActions.mapIndexed { index, action ->
                     HyperAction(
@@ -121,7 +121,11 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
                 FocusNotifStatusBarIconHook.markDirectProxyPosted(vm.timeoutSecs)
             }
 
-            val rendererTag = if (applyWrap) ImageTextWithButtonsWrapRenderer.RENDERER_ID else RENDERER_ID
+            val rendererTag = when {
+                applyWrap       -> ImageTextWithButtonsWrapRenderer.RENDERER_ID
+                maxButtons == 1 -> ImageTextWithRightTextButtonRenderer.RENDERER_ID
+                else            -> RENDERER_ID
+            }
             XposedBridge.log("HyperIsland[$rendererTag]: rendered template=${vm.templateId}")
         } catch (e: Exception) {
             XposedBridge.log("HyperIsland[$RENDERER_ID]: render error: ${e.message}")

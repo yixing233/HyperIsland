@@ -16,8 +16,9 @@ const kTemplateNotificationIslandLite  = 'notification_island_lite';
 const kTemplateAiNotificationIsland    = 'ai_notification_island';
 
 /// 可用的灵动岛渲染器（样式）标识符。
-const kRendererImageTextWithButtons4     = 'image_text_with_buttons_4';
-const kRendererImageTextWithButtons4Wrap = 'image_text_with_buttons_4_wrap';
+const kRendererImageTextWithButtons4              = 'image_text_with_buttons_4';
+const kRendererImageTextWithButtons4Wrap          = 'image_text_with_buttons_4_wrap';
+const kRendererImageTextWithRightTextButton       = 'image_text_with_right_text_button';
 
 // 图标模式选项（图标样式 & 焦点图标共用）
 const kIconModeAuto       = 'auto';
@@ -239,8 +240,9 @@ class WhitelistController extends ChangeNotifier {
 
   /// 返回所有可用渲染器（样式）的 id → 显示名称 映射。
   Map<String, String> getRenderers(AppLocalizations l10n) => {
-    kRendererImageTextWithButtons4:     l10n.rendererImageTextWithButtons4Name,
-    kRendererImageTextWithButtons4Wrap: l10n.rendererCoverInfoName,
+    kRendererImageTextWithButtons4:              l10n.rendererImageTextWithButtons4Name,
+    kRendererImageTextWithButtons4Wrap:          l10n.rendererCoverInfoName,
+    kRendererImageTextWithRightTextButton:       l10n.rendererImageTextWithRightTextButtonName,
   };
 
   /// 批量读取指定包内各渠道的模板设置，返回 channelId → template 映射。
