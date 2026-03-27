@@ -37,7 +37,7 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
     }
 
     /** 供 [ImageTextWithButtonsWrapRenderer] 和 [ImageTextWithRightTextButtonRenderer] 复用，避免重复布局代码。 */
-    internal fun renderWith(context: Context, extras: Bundle, vm: IslandViewModel, applyWrap: Boolean, maxButtons: Int = 2) {
+    internal fun renderWith(context: Context, extras: Bundle, vm: IslandViewModel, applyWrap: Boolean, maxButtons: Int = 2, useActionsButton: Boolean = false) {
         try {
             val iconKey      = "key_${vm.templateId}_island"
             val focusIconKey = "key_${vm.templateId}_focus"
@@ -92,16 +92,28 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
             // 按钮（showNotification=false 时不添加）
             val effectiveActions = vm.actions.take(maxButtons)
             if (effectiveActions.isNotEmpty() && vm.showNotification) {
-                val hyperActions = effectiveActions.mapIndexed { index, action ->
-                    HyperAction(
-                        key              = "action_${vm.templateId}_$index",
+                if (useActionsButton) {
+                    // 按钮组件1 type=2：右侧文字按钮，无图标，仅支持 1 个
+                    val action = effectiveActions.first()
+                    builder.addAction(HyperAction(
+                        key              = "action_${vm.templateId}_0",
                         title            = action.title ?: "",
                         pendingIntent    = action.actionIntent,
                         actionIntentType = 2,
-                    )
+                    ))
+                } else {
+                    // 按钮组件4：textButton，最多 maxButtons 个
+                    val hyperActions = effectiveActions.mapIndexed { index, action ->
+                        HyperAction(
+                            key              = "action_${vm.templateId}_$index",
+                            title            = action.title ?: "",
+                            pendingIntent    = action.actionIntent,
+                            actionIntentType = 2,
+                        )
+                    }
+                    hyperActions.forEach { builder.addHiddenAction(it) }
+                    builder.setTextButtons(*hyperActions.toTypedArray())
                 }
-                hyperActions.forEach { builder.addHiddenAction(it) }
-                builder.setTextButtons(*hyperActions.toTypedArray())
             }
 
             val resourceBundle = builder.buildResourceBundle()
@@ -122,9 +134,9 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
             }
 
             val rendererTag = when {
-                applyWrap       -> ImageTextWithButtonsWrapRenderer.RENDERER_ID
-                maxButtons == 1 -> ImageTextWithRightTextButtonRenderer.RENDERER_ID
-                else            -> RENDERER_ID
+                applyWrap          -> ImageTextWithButtonsWrapRenderer.RENDERER_ID
+                useActionsButton   -> ImageTextWithRightTextButtonRenderer.RENDERER_ID
+                else               -> RENDERER_ID
             }
             XposedBridge.log("HyperIsland[$rendererTag]: rendered template=${vm.templateId}")
         } catch (e: Exception) {
