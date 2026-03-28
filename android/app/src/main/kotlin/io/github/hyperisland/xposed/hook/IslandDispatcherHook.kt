@@ -28,6 +28,8 @@ class IslandDispatcherHook : IXposedHookLoadPackage {
                     override fun afterHookedMethod(param: MethodHookParam) {
                         val app = param.thisObject as? android.app.Application ?: return
                         IslandDispatcher.register(app)
+                        // 在 SystemUI 进程早期初始化 ConfigManager，后续 Hook 无需等待 app 后台
+                        ConfigManager.init()
                     }
                 }
             )

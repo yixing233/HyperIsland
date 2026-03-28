@@ -1,9 +1,7 @@
 package io.github.hyperisland.xposed.hook
 
-import android.app.Application
-import android.content.Context
-import android.net.Uri
 import de.robv.android.xposed.IXposedHookLoadPackage
+import io.github.hyperisland.xposed.ConfigManager
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
@@ -37,42 +35,27 @@ class UnlockFocusAuthHook : IXposedHookLoadPackage {
         private const val AUTH_SESSION_CLASS = "com.xiaomi.xms.auth.AuthSession"
     }
 
-    @Volatile private var appContext: Context? = null
-
     // ─── 开关读取 ─────────────────────────────────────────────────────────────
 
     /**
-     * 通过 SettingsProvider 查询「移除焦点通知白名单签名验证」是否已启用。
-     * 查询失败时默认返回 false（保守策略，不影响系统正常行为）。
+     * 通过 ConfigManager 查询「移除焦点通知白名单签名验证」是否已启用。
+     * 直接读取 SharedPreferences XML 文件，无需 HyperIsland 模块后台运行。
      */
-    private fun isEnabled(ctx: Context): Boolean {
-        return try {
-            val uri = Uri.parse(
-                "content://io.github.hyperisland.settings/$SETTINGS_KEY"
-            )
-            ctx.contentResolver
-                .query(uri, null, null, null, null)
-                ?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getInt(0) == 1 else false
-                } ?: false
-        } catch (e: Throwable) {
-            XposedBridge.log("$TAG: failed to read setting — ${e.message}")
-            false
-        }
-    }
+    private fun isEnabled(): Boolean =
+        ConfigManager.getBoolean(SETTINGS_KEY, false)
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         // 仅 Hook 小米服务框架进程
         if (lpparam.packageName != TARGET_PACKAGE) return
 
-        // 通过 Application.onCreate 捕获进程 Context
+        // 在 XMSF 进程的 Application.onCreate 初始化 ConfigManager 文件监控
         XposedHelpers.findAndHookMethod(
             "android.app.Application",
             lpparam.classLoader,
             "onCreate",
             object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    appContext = param.thisObject as? Application
+                    ConfigManager.init()
                 }
             }
         )
@@ -111,8 +94,7 @@ class UnlockFocusAuthHook : IXposedHookLoadPackage {
                     val error = param.args[0] ?: return // error 为 null 说明验证已成功，无需干预
 
                     // 检查用户开关，未启用则不干预
-                    val ctx = appContext ?: return
-                    if (!isEnabled(ctx)) return
+                    if (!isEnabled()) return
 
                     try {
                         // 读取原始错误码，仅用于日志

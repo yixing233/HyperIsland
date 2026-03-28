@@ -11,6 +11,7 @@ import io.github.d4viddf.hyperisland_kit.models.ImageTextInfoLeft
 import io.github.d4viddf.hyperisland_kit.models.ImageTextInfoRight
 import io.github.d4viddf.hyperisland_kit.models.PicInfo
 import io.github.d4viddf.hyperisland_kit.models.TextInfo
+import io.github.hyperisland.xposed.ConfigManager
 import io.github.hyperisland.xposed.IslandDispatcher
 import io.github.hyperisland.xposed.IslandRequest
 import io.github.hyperisland.xposed.IslandTemplate
@@ -83,26 +84,12 @@ object AINotificationIslandNotification : IslandTemplate {
 
     private data class AiIslandText(val left: String, val right: String)
 
-    private fun loadAiConfig(context: Context): AiConfig {
-        fun readString(key: String): String = try {
-            val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/$key")
-            context.contentResolver.query(uri, null, null, null, null)
-                ?.use { if (it.moveToFirst()) it.getString(0) else "" } ?: ""
-        } catch (_: Exception) { "" }
-
-        fun readBool(key: String): Boolean = try {
-            val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/$key")
-            context.contentResolver.query(uri, null, null, null, null)
-                ?.use { if (it.moveToFirst()) it.getInt(0) != 0 else false } ?: false
-        } catch (_: Exception) { false }
-
-        return AiConfig(
-            enabled = readBool("pref_ai_enabled"),
-            url     = readString("pref_ai_url"),
-            apiKey  = readString("pref_ai_api_key"),
-            model   = readString("pref_ai_model"),
-        )
-    }
+    private fun loadAiConfig(context: Context): AiConfig = AiConfig(
+        enabled = ConfigManager.getBoolean("pref_ai_enabled", false),
+        url     = ConfigManager.getString("pref_ai_url"),
+        apiKey  = ConfigManager.getString("pref_ai_api_key"),
+        model   = ConfigManager.getString("pref_ai_model"),
+    )
 
     // ── AI 调用（带超时） ──────────────────────────────────────────────────────
 

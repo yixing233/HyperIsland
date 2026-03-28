@@ -37,44 +37,19 @@ class GenericProgressHook : IXposedHookLoadPackage {
 
         @Volatile private var observerRegistered = false
 
-        /** 在 SystemUI 进程首次处理通知时注册，监听设置变化并实时清空缓存。 */
+        /**
+         * 在 SystemUI 进程首次处理通知时初始化 ConfigManager 文件监控。
+         * FileObserver 检测到 SharedPreferences XML 变化时统一清空所有缓存，
+         * 无需 HyperIsland 模块在后台运行。
+         */
         fun ensureObserver(context: android.content.Context) {
             if (observerRegistered) return
-            val settingsUri = android.net.Uri.parse("content://io.github.hyperisland.settings/")
-            context.contentResolver.registerContentObserver(
-                settingsUri, true,
-                object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
-                    override fun onChange(selfChange: Boolean) {
-                        clearAllCaches("root")
-                    }
-
-                    override fun onChange(selfChange: Boolean, uri: android.net.Uri?) {
-                        val segment = uri?.lastPathSegment
-                        when {
-                            segment == null || segment.isBlank() -> clearAllCaches("root")
-                            segment == "pref_generic_whitelist" || segment.startsWith("pref_channels_") -> {
-                                cachedWhitelist = null
-                                XposedBridge.log("HyperIsland[Generic]: whitelist cache cleared for $segment")
-                            }
-                            segment.startsWith("pref_channel_template_") -> {
-                                val suffix = segment.removePrefix("pref_channel_template_")
-                                cachedTemplates.removeSuffixMatch(suffix)
-                                XposedBridge.log("HyperIsland[Generic]: template cache cleared for $segment")
-                            }
-                            segment.startsWith("pref_channel_") ||
-                            segment == "pref_preserve_status_bar_small_icon" ||
-                            segment == "pref_marquee_speed" ||
-                            segment == "pref_round_icon"  -> {
-                                cachedChannelSettings.clear()
-                                XposedBridge.log("HyperIsland[Generic]: channel settings cache cleared for $segment")
-                            }
-                            else -> clearAllCaches(segment)
-                        }
-                    }
-                }
-            )
+            ConfigManager.init()
+            ConfigManager.addChangeListener {
+                clearAllCaches("file_observer")
+            }
             observerRegistered = true
-            XposedBridge.log("HyperIsland[Generic]: ContentObserver registered in SystemUI")
+            XposedBridge.log("HyperIsland[Generic]: ConfigManager FileObserver registered in SystemUI")
         }
 
         // 进度缓存：key 为 "packageName#notifId"，记录每条通知最后一次已知进度（0-100）。
@@ -87,49 +62,26 @@ class GenericProgressHook : IXposedHookLoadPackage {
 
         /** 通用字符串设置懒加载，带缓存。 */
         private fun loadChannelStringSetting(
-            context: android.content.Context,
             cacheKey: String,
             prefKey: String,
             default: String
         ): String {
             cachedChannelSettings[cacheKey]?.let { return it }
-            return try {
-                val uri = android.net.Uri.parse(
-                    "content://io.github.hyperisland.settings/$prefKey"
-                )
-                val value = context.contentResolver
-                    .query(uri, null, null, null, null)
-                    ?.use { if (it.moveToFirst()) it.getString(0).takeIf { s -> s.isNotBlank() } else null }
-                    ?: default
-                cachedChannelSettings[cacheKey] = value
-                value
-            } catch (e: Exception) {
-                XposedBridge.log("HyperIsland[Generic]: loadChannelStringSetting($prefKey) failed: ${e.message}")
-                default
-            }
+            val value = ConfigManager.getString(prefKey, default)
+                .takeIf { it.isNotBlank() } ?: default
+            cachedChannelSettings[cacheKey] = value
+            return value
         }
 
         private fun loadBooleanSetting(
-            context: android.content.Context,
             cacheKey: String,
             prefKey: String,
             default: Boolean
         ): Boolean {
             cachedChannelSettings[cacheKey]?.let { return it == "1" }
-            return try {
-                val uri = android.net.Uri.parse(
-                    "content://io.github.hyperisland.settings/$prefKey"
-                )
-                val value = context.contentResolver
-                    .query(uri, null, null, null, null)
-                    ?.use { if (it.moveToFirst()) it.getInt(0) != 0 else default }
-                    ?: default
-                cachedChannelSettings[cacheKey] = if (value) "1" else "0"
-                value
-            } catch (e: Exception) {
-                XposedBridge.log("HyperIsland[Generic]: loadBooleanSetting($prefKey) failed: ${e.message}")
-                default
-            }
+            val value = ConfigManager.getBoolean(prefKey, default)
+            cachedChannelSettings[cacheKey] = if (value) "1" else "0"
+            return value
         }
 
         private fun resolveTriStateBoolean(global: Boolean, channelValue: String): Boolean {
@@ -166,60 +118,33 @@ class GenericProgressHook : IXposedHookLoadPackage {
 
         /** 读取指定渠道的模板设置，结果会懒缓存，SystemUI 重启后刷新。 */
         fun loadChannelTemplate(
-            context: android.content.Context,
             pkg: String,
             channelId: String
         ): String {
             val cacheKey = "$pkg/$channelId"
             cachedTemplates[cacheKey]?.let { return it }
-            return try {
-                val key = "pref_channel_template_${pkg}_$channelId"
-                val uri = android.net.Uri.parse(
-                    "content://io.github.hyperisland.settings/$key"
-                )
-                val template = context.contentResolver
-                    .query(uri, null, null, null, null)
-                    ?.use { if (it.moveToFirst()) it.getString(0).takeIf { s -> s.isNotBlank() } else null }
-                    ?: NotificationIslandNotification.TEMPLATE_ID
-                cachedTemplates[cacheKey] = template
-                template
-            } catch (e: Exception) {
-                XposedBridge.log("HyperIsland[Generic]: loadChannelTemplate failed: ${e.message}")
-                NotificationIslandNotification.TEMPLATE_ID
-            }
+            val key = "pref_channel_template_${pkg}_$channelId"
+            val template = ConfigManager.getString(key)
+                .takeIf { it.isNotBlank() } ?: NotificationIslandNotification.TEMPLATE_ID
+            cachedTemplates[cacheKey] = template
+            return template
         }
 
-        private fun loadWhitelist(context: android.content.Context): Map<String, Set<String>> {
+        private fun loadWhitelist(): Map<String, Set<String>> {
             cachedWhitelist?.let { return it }
-            return try {
-                val uri = android.net.Uri.parse(
-                    "content://io.github.hyperisland.settings/pref_generic_whitelist"
-                )
-                val csv = context.contentResolver.query(uri, null, null, null, null)
-                    ?.use { if (it.moveToFirst()) it.getString(0) else "" }
-                    ?: ""
-                val map = csv.split(",")
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-                    .associate { pkg ->
-                        val channelUri = android.net.Uri.parse(
-                            "content://io.github.hyperisland.settings/pref_channels_$pkg"
-                        )
-                        val channelCsv = context.contentResolver
-                            .query(channelUri, null, null, null, null)
-                            ?.use { if (it.moveToFirst()) it.getString(0) else "" }
-                            ?: ""
-                        val channels = if (channelCsv.isBlank()) emptySet()
-                        else channelCsv.split(",").filter { it.isNotBlank() }.toSet()
-                        pkg to channels
-                    }
-                if (map.isNotEmpty()) cachedWhitelist = map
-                XposedBridge.log("HyperIsland[Generic]: whitelist loaded (${map.size} apps): ${map.keys}")
-                map
-            } catch (e: Exception) {
-                XposedBridge.log("HyperIsland[Generic]: loadWhitelist failed: ${e.message}")
-                emptyMap()
-            }
+            val csv = ConfigManager.getString("pref_generic_whitelist")
+            val map = csv.split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .associate { pkg ->
+                    val channelCsv = ConfigManager.getString("pref_channels_$pkg")
+                    val channels = if (channelCsv.isBlank()) emptySet()
+                    else channelCsv.split(",").filter { it.isNotBlank() }.toSet()
+                    pkg to channels
+                }
+            if (map.isNotEmpty()) cachedWhitelist = map
+            XposedBridge.log("HyperIsland[Generic]: whitelist loaded (${map.size} apps): ${map.keys}")
+            return map
         }
     }
 
@@ -309,8 +234,8 @@ class GenericProgressHook : IXposedHookLoadPackage {
             val context = getContext(lpparam) ?: return
             ensureObserver(context)
 
-            // 白名单检查（动态从 SettingsProvider 读取）
-            val allowedChannels = loadWhitelist(context)[pkg] ?: return
+            // 白名单检查（从 ConfigManager 文件缓存读取）
+            val allowedChannels = loadWhitelist()[pkg] ?: return
             val notif = sbn.notification ?: return
             val channelId = notif.channelId ?: ""
             if (allowedChannels.isNotEmpty() && channelId !in allowedChannels) return
@@ -361,54 +286,54 @@ class GenericProgressHook : IXposedHookLoadPackage {
 
             val actions: List<Notification.Action> = notif.actions?.take(2) ?: emptyList()
 
-            val template = loadChannelTemplate(context, pkg, channelId)
+            val template = loadChannelTemplate(pkg, channelId)
 
             val appIconRaw = context.packageManager.getAppIcon(pkg)
             val largeIcon  = extractLargeIcon(extras)
 
             val iconMode = loadChannelStringSetting(
-                context, "icon:$pkg/$channelId",
+                "icon:$pkg/$channelId",
                 "pref_channel_icon_${pkg}_$channelId", "auto"
             )
-            val defaultFirstFloat       = loadBooleanSetting(context, "global:default_first_float",        "pref_default_first_float",        false)
-            val defaultEnableFloat      = loadBooleanSetting(context, "global:default_enable_float",       "pref_default_enable_float",       false)
-            val defaultMarquee          = loadBooleanSetting(context, "global:default_marquee",            "pref_default_marquee",            false)
-            val defaultFocusNotif       = loadBooleanSetting(context, "global:default_focus_notif",        "pref_default_focus_notif",        true)
-            val defaultPreserveSmallIcon = loadBooleanSetting(context, "global:default_preserve_small_icon", "pref_default_preserve_small_icon", false)
+            val defaultFirstFloat       = loadBooleanSetting("global:default_first_float",        "pref_default_first_float",        false)
+            val defaultEnableFloat      = loadBooleanSetting("global:default_enable_float",       "pref_default_enable_float",       false)
+            val defaultMarquee          = loadBooleanSetting("global:default_marquee",            "pref_default_marquee",            false)
+            val defaultFocusNotif       = loadBooleanSetting("global:default_focus_notif",        "pref_default_focus_notif",        true)
+            val defaultPreserveSmallIcon = loadBooleanSetting("global:default_preserve_small_icon", "pref_default_preserve_small_icon", false)
 
             val focusNotif = resolveTriOpt(
-                loadChannelStringSetting(context, "focus:$pkg/$channelId", "pref_channel_focus_${pkg}_$channelId", "default"),
+                loadChannelStringSetting("focus:$pkg/$channelId", "pref_channel_focus_${pkg}_$channelId", "default"),
                 defaultFocusNotif
             )
             val preserveStatusBarSmallIcon = resolveTriOpt(
-                loadChannelStringSetting(context, "preserve_small_icon:$pkg/$channelId", "pref_channel_preserve_small_icon_${pkg}_$channelId", "default"),
+                loadChannelStringSetting("preserve_small_icon:$pkg/$channelId", "pref_channel_preserve_small_icon_${pkg}_$channelId", "default"),
                 defaultPreserveSmallIcon
             )
             val firstFloat = resolveTriOpt(
-                loadChannelStringSetting(context, "first_float:$pkg/$channelId", "pref_channel_first_float_${pkg}_$channelId", "default"),
+                loadChannelStringSetting("first_float:$pkg/$channelId", "pref_channel_first_float_${pkg}_$channelId", "default"),
                 defaultFirstFloat
             )
             val enableFloatMode = resolveTriOpt(
-                loadChannelStringSetting(context, "efloat:$pkg/$channelId", "pref_channel_enable_float_${pkg}_$channelId", "default"),
+                loadChannelStringSetting("efloat:$pkg/$channelId", "pref_channel_enable_float_${pkg}_$channelId", "default"),
                 defaultEnableFloat
             )
             val islandTimeoutStr = loadChannelStringSetting(
-                context, "timeout:$pkg/$channelId",
+                "timeout:$pkg/$channelId",
                 "pref_channel_timeout_${pkg}_$channelId", "5"
             )
             val islandTimeout = islandTimeoutStr.toIntOrNull() ?: 5
             val focusIconMode = loadChannelStringSetting(
-                context, "focus_icon:$pkg/$channelId",
+                "focus_icon:$pkg/$channelId",
                 "pref_channel_focus_icon_${pkg}_$channelId", "auto"
             )
             val isOngoing = (notif.flags and Notification.FLAG_ONGOING_EVENT) != 0
             val marqueeEnabled = !isOngoing && resolveTriStateBoolean(
                 defaultMarquee,
-                loadChannelStringSetting(context, "marquee:$pkg/$channelId", "pref_channel_marquee_${pkg}_$channelId", "default")
+                loadChannelStringSetting("marquee:$pkg/$channelId", "pref_channel_marquee_${pkg}_$channelId", "default")
             )
             MarqueeHook.pendingMarqueeEnabled = marqueeEnabled
             val renderer = loadChannelStringSetting(
-                context, "renderer:$pkg/$channelId",
+                "renderer:$pkg/$channelId",
                 "pref_channel_renderer_${pkg}_$channelId", "image_text_with_buttons_4"
             )
 

@@ -76,10 +76,10 @@ object InProcessController {
 
     // ── 初始化：注册进程内 Receiver ────────────────────────────────────────────
 
-    /** 从 ContentProvider 加载所有设置，进程首次初始化时调用一次 */
-    private fun loadSettings(context: Context) {
-        resumeNotificationEnabled = readBooleanSetting(context, "pref_resume_notification", true)
-        useHookAppIconEnabled     = readBooleanSetting(context, "pref_use_hook_app_icon", true)
+    /** 从 ConfigManager（文件缓存）加载设置 */
+    private fun loadSettings() {
+        resumeNotificationEnabled = ConfigManager.getBoolean("pref_resume_notification", true)
+        useHookAppIconEnabled     = ConfigManager.getBoolean("pref_use_hook_app_icon", true)
         XposedBridge.log("HyperIsland: settings loaded — resumeNotification=$resumeNotificationEnabled useHookAppIcon=$useHookAppIconEnabled")
     }
 
@@ -87,20 +87,13 @@ object InProcessController {
         if (registered) return
         val appCtx = context.applicationContext ?: context
 
-        // 读取设置（进程首次初始化时）
-        loadSettings(appCtx)
-
-        // 注册 ContentObserver，实时监听设置变化
-        val settingsUri = android.net.Uri.parse("content://io.github.hyperisland.settings/")
-        appCtx.contentResolver.registerContentObserver(
-            settingsUri, true,
-            object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
-                override fun onChange(selfChange: Boolean) {
-                    loadSettings(appCtx)
-                    XposedBridge.log("HyperIsland: settings reloaded via ContentObserver")
-                }
-            }
-        )
+        // 初始化文件监控配置管理器（无需 app 后台，直接读 SharedPreferences XML）
+        ConfigManager.init()
+        loadSettings()
+        ConfigManager.addChangeListener {
+            loadSettings()
+            XposedBridge.log("HyperIsland: settings reloaded via FileObserver")
+        }
 
         // 打印当前进程的 DownloadManager 实际类型，方便调试
         runCatching {
@@ -461,18 +454,6 @@ object InProcessController {
             XposedBridge.log("HyperIsland: cancelPausedOverlay")
         } catch (e: Exception) {
             XposedBridge.log("HyperIsland: cancelPausedOverlay failed: ${e.message}")
-        }
-    }
-
-    /** 通过模块 ContentProvider 查询布尔设置，默认值 [default] */
-    private fun readBooleanSetting(context: Context, key: String, default: Boolean): Boolean {
-        return try {
-            val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/$key")
-            val cursor = context.contentResolver.query(uri, null, null, null, null)
-            cursor?.use { if (it.moveToFirst()) it.getInt(0) != 0 else default } ?: default
-        } catch (e: Exception) {
-            XposedBridge.log("HyperIsland: readBooleanSetting($key) failed: ${e.message}")
-            default
         }
     }
 

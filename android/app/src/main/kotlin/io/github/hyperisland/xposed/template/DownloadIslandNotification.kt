@@ -11,6 +11,7 @@ import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.os.Bundle
 import io.github.hyperisland.R
+import io.github.hyperisland.xposed.ConfigManager
 import io.github.hyperisland.xposed.InProcessController
 import io.github.hyperisland.xposed.moduleContext
 import de.robv.android.xposed.XposedBridge
@@ -208,15 +209,9 @@ object DownloadIslandNotification {
         }
     }
 
-    private fun loadRendererSetting(context: Context, packageName: String, channelId: String): String {
-        return try {
-            val key = "pref_channel_renderer_${packageName}_$channelId"
-            val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/$key")
-            context.contentResolver.query(uri, null, null, null, null)
-                ?.use { if (it.moveToFirst()) it.getString(0).takeIf { s -> s.isNotBlank() } else null }
-                ?: "image_text_with_buttons_4"
-        } catch (_: Exception) { "image_text_with_buttons_4" }
-    }
+    private fun loadRendererSetting(context: Context, packageName: String, channelId: String): String =
+        ConfigManager.getString("pref_channel_renderer_${packageName}_$channelId")
+            .takeIf { it.isNotBlank() } ?: "image_text_with_buttons_4"
 
     private fun createDownloadIcon(context: Context, color: Int, iconType: IconType): Icon {
         val density = context.resources.displayMetrics.density

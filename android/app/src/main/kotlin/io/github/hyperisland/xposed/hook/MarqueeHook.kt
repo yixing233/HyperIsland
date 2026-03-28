@@ -9,6 +9,7 @@ import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import de.robv.android.xposed.callbacks.XC_LoadPackage
+import io.github.hyperisland.xposed.ConfigManager
 import java.util.WeakHashMap
 
 /**
@@ -51,43 +52,29 @@ class MarqueeHook : IXposedHookLoadPackage {
         @Volatile private var observerRegistered = false
 
         /**
-         * 在 SystemUI 进程内注册 ContentObserver，监听 SettingsProvider 的任意变化。
-         * 变化时清除缓存，并停止所有正在运行的跑马灯（下次通知到来时会重新评估）。
-         * 与 GenericProgressHook.ensureObserver 保持相同模式。
+         * 在 SystemUI 进程内初始化 ConfigManager 文件监控（只执行一次）。
+         * 文件变化时清除速度缓存并停止所有跑马灯，下次通知到来时重新评估。
          */
         fun ensureObserver(context: android.content.Context) {
             if (observerRegistered) return
-            val settingsUri = android.net.Uri.parse("content://io.github.hyperisland.settings/")
-            context.contentResolver.registerContentObserver(
-                settingsUri, true,
-                object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
-                    override fun onChange(selfChange: Boolean) {
-                        // 失效速度缓存，下次读取时重新查询
-                        cachedSpeed = null
-                        // 设置变更后停止所有跑马灯，待下次通知时重新评估渠道级设置
-                        stopAllMarquees()
-                        XposedBridge.log("HyperIsland[MarqueeHook]: settings changed, cache cleared")
-                    }
-                }
-            )
+            ConfigManager.init()
+            ConfigManager.addChangeListener {
+                cachedSpeed = null
+                stopAllMarquees()
+                XposedBridge.log("HyperIsland[MarqueeHook]: settings changed via FileObserver, cache cleared")
+            }
             observerRegistered = true
-            XposedBridge.log("HyperIsland[MarqueeHook]: ContentObserver registered in SystemUI")
+            XposedBridge.log("HyperIsland[MarqueeHook]: ConfigManager FileObserver registered in SystemUI")
         }
 
         /**
-         * 从缓存或 SettingsProvider 读取跑马灯速度（px/s），限位 20~500。
-         * 缓存有效期内（cachedSpeed != null）不再跨进程查询。
+         * 从缓存或 ConfigManager 读取跑马灯速度（px/s），限位 20~500。
+         * 缓存有效期内（cachedSpeed != null）不再读取文件。
          */
-        private fun getMarqueeSpeed(context: android.content.Context): Int {
+        private fun getMarqueeSpeed(): Int {
             cachedSpeed?.let { return it }
-            val speed = try {
-                val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/pref_marquee_speed")
-                context.contentResolver.query(uri, null, null, null, null)
-                    ?.use { if (it.moveToFirst()) it.getInt(0) else 100 } ?: 100
-            } catch (_: Exception) { 100 }
-            val clamped = speed.coerceIn(20, 500)
-            cachedSpeed = clamped
-            return clamped
+            return ConfigManager.getInt("pref_marquee_speed", 100).coerceIn(20, 500)
+                .also { cachedSpeed = it }
         }
 
         /** 停止所有当前存活的跑马灯并清空映射表。 */
@@ -115,7 +102,7 @@ class MarqueeHook : IXposedHookLoadPackage {
             val needMarquee = measuredW > availableW
 
             if (needMarquee && visibleW > 0) {
-                val speed = getMarqueeSpeed(textView.context)
+                val speed = getMarqueeSpeed()
                 val controller = scrollerMap.getOrPut(textView) { MarqueeController(textView, speed) }
                 controller.speedPxPerSec = speed  // 实时同步最新速度设置
                 controller.start()

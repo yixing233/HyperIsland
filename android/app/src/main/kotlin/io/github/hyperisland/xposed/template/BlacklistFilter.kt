@@ -13,12 +13,7 @@ import de.robv.android.xposed.XposedBridge
 object BlacklistFilter {
 
     fun applyTo(context: Context, data: NotifData): NotifData? {
-        val cr = context.contentResolver
-
-        val blacklistStr = try {
-            val uri = android.net.Uri.parse("content://io.github.hyperisland.settings/pref_app_blacklist")
-            cr.query(uri, null, null, null, null)?.use { if (it.moveToFirst()) it.getString(0) else "" } ?: ""
-        } catch (_: Exception) { "" }
+        val blacklistStr = ConfigManager.getString("pref_app_blacklist")
 
         if (blacklistStr.isEmpty()) return data
 

@@ -7,44 +7,90 @@ import android.content.SharedPreferences
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import org.json.JSONObject
+import java.io.File
 
 /**
- * 向其他进程（Xposed Hook）暴露模块设置。
- * Hook 进程通过 ContentResolver.query() 读取，无需跨进程文件访问。
+ * 双职责：
+ *  1. 向其他进程暴露模块设置（ContentProvider，供旧版调用路径兼容）。
+ *  2. 在每次设置变化时，将全量配置序列化为 JSON 写入
+ *     [CONFIG_FILE_NAME]，并设为世界可读，使 ConfigManager（Hook 端）
+ *     无需 App 后台运行即可实时读取配置。
  */
 class SettingsProvider : ContentProvider() {
 
     companion object {
         const val AUTHORITY = "io.github.hyperisland.settings"
+        private const val CONFIG_FILE_NAME = "hyperisland_config.json"
     }
 
     private val prefs by lazy {
         context!!.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
     }
 
-    // 必须持有强引用，否则 SharedPreferences 内部会弱引用导致 GC 回收
+    // 必须持有强引用，否则 SharedPreferences 内部弱引用会被 GC 回收
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+        // 1. 通知旧版 ContentObserver（兼容性保留）
         val resolver = context?.contentResolver ?: return@OnSharedPreferenceChangeListener
         resolver.notifyChange(Uri.parse("content://$AUTHORITY/"), null, false)
-        val segment = changedKey?.removePrefix("flutter.")?.takeIf { it.isNotBlank() } ?: return@OnSharedPreferenceChangeListener
-        resolver.notifyChange(Uri.parse("content://$AUTHORITY/$segment"), null, false)
+        val segment = changedKey?.removePrefix("flutter.")?.takeIf { it.isNotBlank() }
+        if (segment != null) {
+            resolver.notifyChange(Uri.parse("content://$AUTHORITY/$segment"), null, false)
+        }
+        // 2. 写 JSON 文件供 ConfigManager（FileObserver）热重载
+        writeConfigFile()
     }
 
     override fun onCreate(): Boolean {
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
+        // App 启动时立即写一次，保证 Hook 端即使在 App 关闭期间也能读到最新配置
+        writeConfigFile()
         return true
     }
+
+    // ── JSON 配置文件写入 ──────────────────────────────────────────────────────
+
+    /**
+     * 将 FlutterSharedPreferences 的全部键值序列化为 JSON，
+     * 写入 filesDir/[CONFIG_FILE_NAME] 并设为世界可读。
+     *
+     * Hook 端（ConfigManager）通过 FileObserver 监控同一文件，
+     * 文件 CLOSE_WRITE 时自动重载配置，无需模块后台运行。
+     */
+    private fun writeConfigFile() {
+        try {
+            val ctx = context ?: return
+            val json = JSONObject()
+            for ((key, value) in prefs.all) {
+                when (value) {
+                    is Boolean -> json.put(key, value)
+                    is Int     -> json.put(key, value)
+                    is Long    -> json.put(key, value)
+                    is Float   -> json.put(key, value.toDouble())
+                    is String  -> json.put(key, value)
+                    is Set<*>  -> json.put(key, value.joinToString(","))
+                    else       -> if (value != null) json.put(key, value.toString())
+                }
+            }
+            val file = File(ctx.filesDir, CONFIG_FILE_NAME)
+            file.writeText(json.toString())
+            // 使 Hook 进程（SystemUI 等系统进程）可以直接读取，无需 App 后台
+            file.setReadable(true, false)
+        } catch (_: Exception) {
+            // 写文件失败不应影响 App 正常运行
+        }
+    }
+
+    // ── ContentProvider 查询（兼容性保留） ────────────────────────────────────
 
     override fun query(
         uri: Uri, projection: Array<String>?, selection: String?,
         selectionArgs: Array<String>?, sortOrder: String?
     ): Cursor {
-        // URI 格式: content://io.github.hyperisland.settings/<key>
         val segment = uri.lastPathSegment ?: return MatrixCursor(arrayOf("value"))
         val flutterKey = "flutter.$segment"
         val cursor = MatrixCursor(arrayOf("value"))
 
-        // 字符串类型的 key（白名单、黑名单、渠道列表、渠道模板等），直接返回字符串值
         if (segment == "pref_generic_whitelist" ||
             segment == "pref_app_blacklist" ||
             segment == "pref_ai_url" ||
@@ -65,7 +111,6 @@ class SettingsProvider : ContentProvider() {
             return cursor
         }
 
-        // 整数类型的 key，直接返回原始整数值（供 Hook 进程 getInt(0) 读取）
         if (segment == "pref_marquee_speed") {
             val speed = try {
                 prefs.getInt(flutterKey, 100)
@@ -76,12 +121,10 @@ class SettingsProvider : ContentProvider() {
             return cursor
         }
 
-        // 布尔类型的 key，返回 1/0
         val value = if (prefs.contains(flutterKey)) {
             try { if (prefs.getBoolean(flutterKey, true)) 1 else 0 }
             catch (_: ClassCastException) { 1 }
         } else {
-            // 以下 key 默认关闭（0）；其余 key 默认开启（1）
             if (segment == "pref_marquee_feature" ||
                 segment == "pref_unlock_all_focus" ||
                 segment == "pref_unlock_focus_auth" ||

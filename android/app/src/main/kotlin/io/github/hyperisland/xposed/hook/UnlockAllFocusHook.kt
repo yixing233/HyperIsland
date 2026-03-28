@@ -1,8 +1,8 @@
 package io.github.hyperisland.xposed.hook
 
 import android.content.Context
-import android.net.Uri
 import de.robv.android.xposed.IXposedHookLoadPackage
+import io.github.hyperisland.xposed.ConfigManager
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
@@ -53,28 +53,12 @@ class UnlockAllFocusHook : IXposedHookLoadPackage {
     // ─── 开关读取 ─────────────────────────────────────────────────────────────
 
     /**
-     * 通过 SettingsProvider 查询「移除焦点通知白名单」是否已启用。
-     *
-     * 必须在 hook 回调内调用——此时 [ctx] 是真实的 SystemUI 进程 Context，
-     * 可以安全地通过 ContentResolver 跨进程读取模块设置。
-     *
+     * 通过 ConfigManager 查询「移除焦点通知白名单」是否已启用。
+     * 直接读取 SharedPreferences XML 文件，无需 HyperIsland 模块后台运行。
      * 查询失败时默认返回 false（保守策略，不影响系统正常行为）。
      */
-    private fun isEnabled(ctx: Context): Boolean {
-        return try {
-            val uri = Uri.parse(
-                "content://io.github.hyperisland.settings/$SETTINGS_KEY"
-            )
-            ctx.contentResolver
-                .query(uri, null, null, null, null)
-                ?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getInt(0) == 1 else false
-                } ?: false
-        } catch (e: Throwable) {
-            XposedBridge.log("$TAG: failed to read setting — ${e.message}")
-            false
-        }
-    }
+    private fun isEnabled(): Boolean =
+        ConfigManager.getBoolean(SETTINGS_KEY, false)
 
     // ─── Hook 方法 ────────────────────────────────────────────────────────────
 
@@ -96,9 +80,7 @@ class UnlockAllFocusHook : IXposedHookLoadPackage {
                 String::class.java,    // 参数2：packageName
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        // 参数0 即 Context，直接用于读取模块设置
-                        val ctx = param.args[0] as? Context ?: return
-                        if (isEnabled(ctx)) {
+                        if (isEnabled()) {
                             param.result = true
                         }
                     }
@@ -128,11 +110,7 @@ class UnlockAllFocusHook : IXposedHookLoadPackage {
                 String::class.java,   // 参数：packageName
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        // canCustomFocus 无 Context 参数，从对象字段取
-                        val ctx = XposedHelpers.getObjectField(
-                            param.thisObject, "mContext"
-                        ) as? Context ?: return
-                        if (isEnabled(ctx)) {
+                        if (isEnabled()) {
                             param.result = true
                         }
                     }
