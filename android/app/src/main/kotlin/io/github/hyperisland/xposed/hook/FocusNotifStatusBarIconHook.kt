@@ -4,8 +4,8 @@ import android.app.Notification
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
-import io.github.libxposed.api.XposedHelpers
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.hyperisland.xposed.log
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 import kotlin.jvm.JvmStatic
 
@@ -47,7 +47,7 @@ object FocusNotifStatusBarIconHook {
     fun init(module: XposedModule, param: PackageLoadedParam) {
         if (hooked) return
         hooked = true
-        val classLoader = param.classLoader
+        val classLoader = param.defaultClassLoader
         hookActiveNotificationModel(module, classLoader)
         hookUpdateStatusBarVisibilities(module, classLoader)
     }
@@ -66,7 +66,7 @@ object FocusNotifStatusBarIconHook {
                 if (!isHyperIslandFocusProxy(notification.extras)) return@intercept result
 
                 try {
-                    XposedHelpers.setBooleanField(model, "isFocusNotification", false)
+                    setFieldValue(model, "isFocusNotification", false)
                 } catch (e: Throwable) {
                     module.log("$TAG: failed to override isFocusNotification — ${e.message}")
                 }
@@ -104,16 +104,16 @@ object FocusNotifStatusBarIconHook {
         try {
             val oldModel = getObjectFieldOrNull(fragment, "mLastModifiedVisibility") ?: return
             val modelClass = fragment.javaClass.classLoader!!.loadClass(VISIBILITY_MODEL_CLASS)
-            val newModel = XposedHelpers.newInstance(
+            val newModel = newInstance(
                 modelClass,
-                XposedHelpers.getBooleanField(oldModel, "showClock"),
+                getBooleanFieldValue(oldModel, "showClock"),
                 true,
-                XposedHelpers.getBooleanField(oldModel, "showPrimaryOngoingActivityChip"),
-                XposedHelpers.getBooleanField(oldModel, "showSecondaryOngoingActivityChip"),
-                XposedHelpers.getBooleanField(oldModel, "showSystemInfo"),
-                XposedHelpers.getBooleanField(oldModel, "showNotifPromptView")
+                getBooleanFieldValue(oldModel, "showPrimaryOngoingActivityChip"),
+                getBooleanFieldValue(oldModel, "showSecondaryOngoingActivityChip"),
+                getBooleanFieldValue(oldModel, "showSystemInfo"),
+                getBooleanFieldValue(oldModel, "showNotifPromptView")
             )
-            XposedHelpers.setObjectField(fragment, "mLastModifiedVisibility", newModel)
+            setFieldValue(fragment, "mLastModifiedVisibility", newModel)
         } catch (e: Throwable) {
             module.log("$TAG: forceShowNotificationIconsModel failed — ${e.message}")
         }
@@ -122,7 +122,7 @@ object FocusNotifStatusBarIconHook {
     private fun refreshNotificationIconArea(module: XposedModule, fragment: Any?) {
         if (fragment == null) return
         try {
-            XposedHelpers.callMethod(fragment, "updateNotificationIconAreaAndOngoingActivityChip", false)
+            callMethod(fragment, "updateNotificationIconAreaAndOngoingActivityChip", false)
         } catch (e: Throwable) {
             module.log("$TAG: refreshNotificationIconArea failed — ${e.message}")
         }
@@ -157,14 +157,65 @@ object FocusNotifStatusBarIconHook {
     }
 
     private fun getObjectFieldOrNull(instance: Any, fieldName: String): Any? {
-        return try {
-            XposedHelpers.getObjectField(instance, fieldName)
-        } catch (_: Throwable) { null }
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val f = c.getDeclaredField(fieldName)
+                f.isAccessible = true
+                return f.get(instance)
+            } catch (_: NoSuchFieldException) { c = c.superclass }
+        }
+        return null
     }
 
+    private fun setFieldValue(instance: Any, fieldName: String, value: Any?) {
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val f = c.getDeclaredField(fieldName)
+                f.isAccessible = true
+                f.set(instance, value)
+                return
+            } catch (_: NoSuchFieldException) { c = c.superclass }
+        }
+    }
+
+    private fun getBooleanFieldValue(instance: Any, fieldName: String): Boolean =
+        getObjectFieldOrNull(instance, fieldName) as? Boolean ?: false
+
     private fun callMethodOrNull(instance: Any, methodName: String): Any? {
-        return try {
-            XposedHelpers.callMethod(instance, methodName)
-        } catch (_: Throwable) { null }
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val m = c.getDeclaredMethod(methodName)
+                m.isAccessible = true
+                return m.invoke(instance)
+            } catch (_: NoSuchMethodException) { c = c.superclass }
+        }
+        return null
+    }
+
+    private fun callMethod(instance: Any, methodName: String, vararg args: Any?): Any? {
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            for (m in c.declaredMethods) {
+                if (m.name == methodName && m.parameterCount == args.size) {
+                    m.isAccessible = true
+                    try { return m.invoke(instance, *args) } catch (_: Throwable) {}
+                }
+            }
+            c = c.superclass
+        }
+        return null
+    }
+
+    private fun newInstance(clazz: Class<*>, vararg args: Any?): Any? {
+        for (ctor in clazz.declaredConstructors) {
+            if (ctor.parameterCount == args.size) {
+                ctor.isAccessible = true
+                try { return ctor.newInstance(*args) } catch (_: Throwable) {}
+            }
+        }
+        return null
     }
 }

@@ -1,6 +1,6 @@
 package io.github.hyperisland.xposed
 
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -13,7 +13,7 @@ object IslandDispatcherHook {
 
     fun init(module: XposedModule, param: PackageLoadedParam) {
         try {
-            val method = param.classLoader
+            val method = param.defaultClassLoader
                 .loadClass("android.app.Application")
                 .getDeclaredMethod("onCreate")
             module.hook(method).intercept { chain ->
@@ -21,7 +21,7 @@ object IslandDispatcherHook {
                 val app = chain.thisObject as? android.app.Application
                 if (app != null) {
                     IslandDispatcher.register(app)
-                    ConfigManager.init()
+                    ConfigManager.init(module)
                 }
                 result
             }

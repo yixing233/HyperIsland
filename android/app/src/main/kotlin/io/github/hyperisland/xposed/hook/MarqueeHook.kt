@@ -5,7 +5,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import io.github.hyperisland.xposed.ConfigManager
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.hyperisland.xposed.log
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 import java.util.WeakHashMap
 
@@ -24,7 +25,7 @@ object MarqueeHook {
 
     fun ensureObserver(context: android.content.Context, module: XposedModule) {
         if (observerRegistered) return
-        ConfigManager.init()
+        ConfigManager.init(module)
         ConfigManager.addChangeListener {
             cachedSpeed = null
             stopAllMarquees()
@@ -115,7 +116,7 @@ object MarqueeHook {
     fun init(module: XposedModule, param: PackageLoadedParam) {
         module.log("HyperIsland[MarqueeHook]: initializing for ${param.packageName}")
         try {
-            val factoryClass = param.classLoader
+            val factoryClass = param.defaultClassLoader
                 .loadClass("miui.systemui.dynamicisland.template.IslandTemplateFactory")
             doHookFactory(module, factoryClass)
         } catch (_: ClassNotFoundException) {

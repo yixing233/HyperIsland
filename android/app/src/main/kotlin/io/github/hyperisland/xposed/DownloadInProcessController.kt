@@ -15,7 +15,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import io.github.hyperisland.getAppIcon
-import io.github.hyperisland.xposed.template.DownloadIslandNotification
+import io.github.hyperisland.xposed.templates.DownloadIslandNotification
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -71,11 +71,11 @@ object InProcessController {
         log("HyperIsland: settings loaded — resumeNotification=$resumeNotificationEnabled useHookAppIcon=$useHookAppIconEnabled")
     }
 
-    fun ensureRegistered(context: Context) {
+    fun ensureRegistered(context: Context, module: XposedModule) {
         if (registered) return
         val appCtx = context.applicationContext ?: context
 
-        ConfigManager.init()
+        ConfigManager.init(module)
         loadSettings()
         ConfigManager.addChangeListener {
             loadSettings()

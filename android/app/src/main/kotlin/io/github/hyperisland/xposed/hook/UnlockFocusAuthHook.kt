@@ -1,8 +1,8 @@
 package io.github.hyperisland.xposed.hook
 
 import io.github.hyperisland.xposed.ConfigManager
-import io.github.libxposed.api.XposedHelpers
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.hyperisland.xposed.log
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -26,17 +26,53 @@ object UnlockFocusAuthHook {
     fun init(module: XposedModule, param: PackageLoadedParam) {
         // 在 XMSF Application.onCreate 初始化 ConfigManager
         try {
-            val appOnCreate = param.classLoader
+            val appOnCreate = param.defaultClassLoader
                 .loadClass("android.app.Application")
                 .getDeclaredMethod("onCreate")
             module.hook(appOnCreate).intercept { chain ->
                 val result = chain.proceed()
-                ConfigManager.init()
+                ConfigManager.init(module)
                 result
             }
         } catch (_: Throwable) {}
 
-        hookAuthSession(module, param.classLoader)
+        hookAuthSession(module, param.defaultClassLoader)
+    }
+
+    private fun getIntField(instance: Any, fieldName: String): Int {
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val f = c.getDeclaredField(fieldName)
+                f.isAccessible = true
+                return (f.get(instance) as? Int) ?: 0
+            } catch (_: NoSuchFieldException) { c = c.superclass }
+        }
+        return 0
+    }
+
+    private fun setField(instance: Any, fieldName: String, value: Any?) {
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val f = c.getDeclaredField(fieldName)
+                f.isAccessible = true
+                f.set(instance, value)
+                return
+            } catch (_: NoSuchFieldException) { c = c.superclass }
+        }
+    }
+
+    private fun callMethod(instance: Any, methodName: String): Any? {
+        var c: Class<*>? = instance.javaClass
+        while (c != null) {
+            try {
+                val m = c.getDeclaredMethod(methodName)
+                m.isAccessible = true
+                return m.invoke(instance)
+            } catch (_: NoSuchMethodException) { c = c.superclass }
+        }
+        return null
     }
 
     private fun hookAuthSession(module: XposedModule, classLoader: ClassLoader) {
@@ -57,10 +93,10 @@ object UnlockFocusAuthHook {
                 if (error == null || !isEnabled()) return@intercept chain.proceed()
 
                 try {
-                    val originalCode = XposedHelpers.getIntField(error, "a")
+                    val originalCode = getIntField(error, "a")
                     module.log("$TAG: auth error intercepted, original errorCode=$originalCode, forcing to 0")
-                    XposedHelpers.setIntField(error, "a", 0)
-                    val successResult = XposedHelpers.callMethod(chain.thisObject, "h")
+                    setField(error, "a", 0)
+                    val successResult = callMethod(chain.thisObject!!, "h")
                     module.log("$TAG: auth bypassed successfully")
                     successResult  // skip original
                 } catch (e: Throwable) {

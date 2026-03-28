@@ -1,6 +1,6 @@
 package io.github.hyperisland.xposed
 
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -11,7 +11,7 @@ object SelfHook {
 
     fun init(module: XposedModule, param: PackageLoadedParam) {
         try {
-            val method = param.classLoader
+            val method = param.defaultClassLoader
                 .loadClass("io.github.hyperisland.MainActivity")
                 .getDeclaredMethod("isModuleActive")
             module.hook(method).intercept { _ ->

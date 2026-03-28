@@ -5,7 +5,7 @@ import android.graphics.drawable.Icon
 import android.os.Bundle
 import io.github.hyperisland.getAppIcon
 import io.github.hyperisland.xposed.templates.DownloadIslandNotification
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 import java.lang.reflect.Field
 import java.util.regex.Pattern
@@ -39,10 +39,12 @@ object DownloadHook {
     }
 
     fun init(module: XposedModule, param: PackageLoadedParam) {
-        val classLoader = param.classLoader
+        val classLoader = param.defaultClassLoader
         val pkg = param.packageName
 
         module.log("HyperIsland: handleLoadPackage pkg=$pkg")
+
+        DownloadIslandNotification.init(module)
 
         try {
             hookNotificationBuilder(module, classLoader, pkg)
@@ -107,7 +109,7 @@ object DownloadHook {
 
                                     val context = getContext(classLoader)
                                     if (context != null) {
-                                        InProcessController.ensureRegistered(context)
+                                        InProcessController.ensureRegistered(context, module)
                                         val appIcon = if (InProcessController.useHookAppIconEnabled)
                                             context.packageManager.getAppIcon(pkg) else null
                                         DownloadIslandNotification.inject(context, extras, title, text, progress, appName, fileName, downloadId, pkg, appIcon = appIcon, channelId = channelId)
@@ -181,7 +183,7 @@ object DownloadHook {
             module.log("HyperIsland: [Notify] $appName | $fileName | $progress% | notifId=$id | tag=$tag | downloadId=$downloadId")
 
             val context = getContext(classLoader) ?: return
-            InProcessController.ensureRegistered(context)
+            InProcessController.ensureRegistered(context, module)
             val appIcon = if (InProcessController.useHookAppIconEnabled)
                 context.packageManager.getAppIcon(pkg) else null
 

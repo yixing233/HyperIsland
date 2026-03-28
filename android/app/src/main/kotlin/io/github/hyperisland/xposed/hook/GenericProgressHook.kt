@@ -5,7 +5,7 @@ import android.service.notification.StatusBarNotification
 import io.github.hyperisland.getAppIcon
 import io.github.hyperisland.xposed.hook.MarqueeHook
 import io.github.hyperisland.xposed.templates.NotificationIslandNotification
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -35,7 +35,7 @@ object GenericProgressHook {
 
     fun ensureObserver(context: android.content.Context, module: XposedModule) {
         if (observerRegistered) return
-        ConfigManager.init()
+        ConfigManager.init(module)
         ConfigManager.addChangeListener {
             clearAllCaches("file_observer", module)
         }
@@ -107,7 +107,7 @@ object GenericProgressHook {
     }
 
     fun init(module: XposedModule, param: PackageLoadedParam) {
-        val classLoader = param.classLoader
+        val classLoader = param.defaultClassLoader
 
         // Hook generateInnerNotifBean (before)
         try {

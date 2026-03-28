@@ -15,6 +15,7 @@ import io.github.hyperisland.xposed.ConfigManager
 import io.github.hyperisland.xposed.InProcessController
 import io.github.hyperisland.xposed.moduleContext
 import android.util.Log
+import io.github.libxposed.api.XposedModule
 import io.github.d4viddf.hyperisland_kit.HyperAction
 import io.github.d4viddf.hyperisland_kit.HyperIslandNotification
 import io.github.d4viddf.hyperisland_kit.HyperPicture
@@ -40,6 +41,14 @@ import io.github.hyperisland.xposed.renderer.wrapLongTextJson
 object DownloadIslandNotification {
 
     private enum class IconType { DOWNLOADING }
+
+    /**
+     * 在下载进程 (com.android.providers.downloads / com.xiaomi.android.app.downloadmanager)
+     * 的包加载阶段调用，确保 [ConfigManager] 在任何通知到来前同步初始化完毕。
+     */
+    fun init(module: XposedModule) {
+        ConfigManager.init(module)
+    }
 
     fun inject(
         context: Context,

@@ -39,7 +39,7 @@ object NotificationIslandLiteNotification : IslandTemplate {
         try {
             val vm = process(context, data, cleanedTitle, cleanedSubtitle)
             resolveRenderer(data.renderer).render(context, extras, vm)
-            XposedBridge.log(
+            Log.d("HyperIsland",
                 "HyperIsland[NotifIslandLite]: injected — raw=${data.title} | clean=$cleanedTitle | right=${cleanedSubtitle.ifEmpty { cleanedTitle }} | notifId=${data.notifId}"
             )
         } catch (e: Exception) {

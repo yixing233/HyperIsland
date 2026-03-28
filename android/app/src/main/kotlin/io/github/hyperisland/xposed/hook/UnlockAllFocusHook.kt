@@ -2,7 +2,8 @@ package io.github.hyperisland.xposed.hook
 
 import android.content.Context
 import io.github.hyperisland.xposed.ConfigManager
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.hyperisland.xposed.log
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
@@ -24,8 +25,8 @@ object UnlockAllFocusHook {
     private fun isEnabled(): Boolean = ConfigManager.getBoolean(SETTINGS_KEY, false)
 
     fun init(module: XposedModule, param: PackageLoadedParam) {
-        hookCanShowFocus(module, param.classLoader)
-        hookCanCustomFocus(module, param.classLoader)
+        hookCanShowFocus(module, param.defaultClassLoader)
+        hookCanCustomFocus(module, param.defaultClassLoader)
     }
 
     private fun hookCanShowFocus(module: XposedModule, classLoader: ClassLoader) {

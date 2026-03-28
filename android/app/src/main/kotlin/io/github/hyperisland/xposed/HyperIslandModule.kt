@@ -1,19 +1,17 @@
 package io.github.hyperisland.xposed
 
-import android.content.Context
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
 import io.github.hyperisland.xposed.hook.MarqueeHook
 import io.github.hyperisland.xposed.hook.UnlockAllFocusHook
 import io.github.hyperisland.xposed.hook.UnlockFocusAuthHook
-import io.github.libxposed.api.XposedInterface.ModuleLoadedParam
-import io.github.libxposed.api.XposedInterface.PackageLoadedParam
+import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import io.github.libxposed.api.XposedModule
 
 /**
  * 模块主入口，继承 XposedModule。
  * 框架在各目标进程加载时回调 [onPackageLoaded]，由此分发到各子 Hook。
  */
-class HyperIslandModule(base: Context, param: ModuleLoadedParam) : XposedModule(base, param) {
+class HyperIslandModule : XposedModule() {
 
     override fun onPackageLoaded(param: PackageLoadedParam) {
         when (param.packageName) {

@@ -213,7 +213,7 @@ object IslandDispatcher {
                 notif.extras.putBoolean("hyperisland_preserve_status_bar_small_icon", true)
                 FocusNotifStatusBarIconHook.markDirectProxyPosted(request.timeoutSecs)
             }
-            XposedBridge.log(
+            Log.d("HyperIsland",
                 "$TAG preserve marker written=$shouldPreserveStatusBarSmallIcon: title=${request.title} | notifId=${request.notifId} | showNotification=${request.showNotification}"
             )
 
@@ -228,7 +228,7 @@ object IslandDispatcher {
                 nm.notify(request.notifId, notif)
             }
 
-            XposedBridge.log(
+            Log.d("HyperIsland",
                 "$TAG posted(first=$isFirstPost): ${request.title} | ${request.content}" +
                 " | highlight=${request.highlightColor} | dismiss=${request.dismissIsland}"
             )
