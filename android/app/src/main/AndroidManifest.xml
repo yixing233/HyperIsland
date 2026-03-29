@@ -50,13 +50,7 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- 设置 Provider，供 Xposed Hook 进程跨进程读取 -->
-        <provider
-            android:name=".SettingsProvider"
-            android:authorities="io.github.hyperisland.settings"
-            android:exported="true" />
-
-        <!-- 下载控制接收器 -->
+<!-- 下载控制接收器 -->
         <receiver
             android:name=".xposed.DownloadControlReceiver"
             android:enabled="true"

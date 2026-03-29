@@ -123,7 +123,10 @@ class MainActivity : FlutterActivity() {
                 }
 
                 "isModuleActive" -> {
-                    result.success(isModuleActive())
+                    Thread {
+                        val active = HyperIslandApp.awaitReady()
+                        runOnUiThread { result.success(active) }
+                    }.start()
                 }
 
                 "getFocusProtocolVersion" -> {

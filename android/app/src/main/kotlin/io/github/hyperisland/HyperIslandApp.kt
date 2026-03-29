@@ -42,6 +42,7 @@ class HyperIslandApp : Application(), XposedServiceHelper.OnServiceListener {
         xposedService = service
         Log.d(TAG, "XposedService bound, syncing all prefs")
         syncAllToRemote(service)
+        synchronized(serviceReadyLock) { serviceReadyLock.notifyAll() }
     }
 
     override fun onServiceDied(service: XposedService) {
@@ -104,6 +105,19 @@ class HyperIslandApp : Application(), XposedServiceHelper.OnServiceListener {
         const val REMOTE_PREFS_NAME = "FlutterSharedPreferences"
 
         @Volatile private var serviceReady = false
+        private val serviceReadyLock = Object()
+
         fun isReady(): Boolean = serviceReady
+
+        fun awaitReady(timeoutMs: Long = 1500): Boolean {
+            if (isReady()) return true
+            synchronized(serviceReadyLock) {
+                if (!isReady()) {
+                    try { serviceReadyLock.wait(timeoutMs) }
+                    catch (_: InterruptedException) { }
+                }
+            }
+            return isReady()
+        }
     }
 }
