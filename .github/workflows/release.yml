@@ -85,11 +85,11 @@ jobs:
           echo "previous_version=$PREVIOUS_NAME" >> $GITHUB_OUTPUT
 
       # 第三步：安装 Java 环境
-      # Flutter 编译 Android 需要 Java 17
+      # Flutter 编译 Android 需要 Java 21
       - name: Set up Java
         uses: actions/setup-java@v4.3.0
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       # 第四步：安装 Flutter SDK
