@@ -54,7 +54,7 @@ object MarqueeHook {
             stopMarquee(textView)
             return
         }
-        val measuredW = textView.paint.measureText(fullText)
+        val measuredW = textView.paint.measureText(fullText.replace(Regex("[\\n\\r\\t]+"), "").trim())
         val visibleW = resolveVisibleWidth(textView)
         val availableW = visibleW - textView.paddingLeft - textView.paddingRight
         val needMarquee = measuredW > availableW
@@ -230,7 +230,7 @@ object MarqueeHook {
         }
 
         private fun getRealMaxScroll(): Float {
-            val textWidth = view.paint.measureText(currentText)
+            val textWidth = view.paint.measureText(currentText.replace(Regex("[\\n\\r\\t]+"), "").trim())
             var visibleW = if (view.width > 0) view.width else Int.MAX_VALUE
             var p = view.parent
             while (p is ViewGroup) {
