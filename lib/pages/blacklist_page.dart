@@ -140,8 +140,10 @@ class _BlacklistPageState extends State<BlacklistPage> {
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate((context, index) {
+                sliver: SliverList.separated(
+                  itemCount: apps.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 2),
+                  itemBuilder: (context, index) {
                     final app = apps[index];
                     final pkg = app.packageName;
                     return _AppTile(
@@ -157,7 +159,7 @@ class _BlacklistPageState extends State<BlacklistPage> {
                       isFirst: index == 0,
                       isLast: index == apps.length - 1,
                     );
-                  }, childCount: apps.length),
+                  },
                 ),
               ),
           ],
@@ -189,9 +191,9 @@ class _AppTile extends StatelessWidget {
     return AppListItemFrame(
       app: app,
       onTap: onTap,
-      trailing: Checkbox(value: enabled, onChanged: onChanged),
       isFirst: isFirst,
       isLast: isLast,
+      trailing: Checkbox(value: enabled, onChanged: onChanged),
     );
   }
 }

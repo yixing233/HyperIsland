@@ -323,8 +323,10 @@ class _WhitelistPageState extends State<WhitelistPage> {
               else
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
+                  sliver: SliverList.separated(
+                    itemCount: apps.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 2),
+                    itemBuilder: (context, index) {
                       final app = apps[index];
                       final pkg = app.packageName;
                       return _AppTile(
@@ -355,7 +357,7 @@ class _WhitelistPageState extends State<WhitelistPage> {
                         isFirst: index == 0,
                         isLast: index == apps.length - 1,
                       );
-                    }, childCount: apps.length),
+                    },
                   ),
                 ),
             ],
@@ -398,6 +400,8 @@ class _AppTile extends StatelessWidget {
       onTap: onTap,
       onLongPress: onLongPress,
       selected: isSelected,
+      isFirst: isFirst,
+      isLast: isLast,
       trailing: selectionMode
           ? Checkbox(value: isSelected, onChanged: (_) => onTap())
           : Row(
@@ -408,8 +412,6 @@ class _AppTile extends StatelessWidget {
                 Icon(Icons.chevron_right, color: cs.onSurfaceVariant, size: 20),
               ],
             ),
-      isFirst: isFirst,
-      isLast: isLast,
     );
   }
 }
