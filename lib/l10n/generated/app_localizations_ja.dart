@@ -708,7 +708,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aiLastLogTimeLabel => '時間';
 
   @override
-  String get aiLastLogStatusLabel => '状態';
+  String get aiLastLogStatusLabel => 'ステータス';
 
   @override
   String get aiLastLogDurationLabel => '実行時間';
@@ -750,13 +750,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aiLastLogHttpCode => 'HTTP ステータス';
 
   @override
-  String get aiLastLogLeftText => '左側テキスト';
+  String get aiLastLogLeftText => '左側のテキスト';
 
   @override
-  String get aiLastLogRightText => '右側テキスト';
+  String get aiLastLogRightText => '右側のテキスト';
 
   @override
-  String get aiLastLogAssistantContent => 'モデルの回答内容';
+  String get aiLastLogAssistantContent => 'モデルのレスポンスコンテンツ';
 
   @override
   String get aiConfigSaveButton => '保存';
