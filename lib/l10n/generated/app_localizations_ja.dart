@@ -660,4 +660,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get hideDesktopIconSubtitle => '隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开';
+
+  @override
+  String get restoreLockscreenTitle => 'ロック画面通知復元';
+
+  @override
+  String get restoreLockscreenSubtitle =>
+      'ロック画面時にフォーカス通知処理をスキップし、元の通知プライバシー動作を維持';
+
+  @override
+  String get restoreLockscreenLabelSubtitle =>
+      'ロック画面時に元の通知プライバシー動作を維持し、解除前は隠しコンテンツを表示しない';
 }

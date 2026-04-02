@@ -245,6 +245,12 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
       settingKey: 'marquee',
       persist: widget.controller.setChannelMarquee,
     );
+    await _applyExtraSettingIfPresent(
+      channelId,
+      settings,
+      settingKey: 'restore_lockscreen',
+      persist: widget.controller.setChannelRestoreLockscreen,
+    );
   }
 
   // ── 批量操作 ────────────────────────────────────────────────────────────────
@@ -498,6 +504,8 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                     enableFloat: extras['enable_float'] ?? kTriOptDefault,
                     islandTimeout: extras['timeout'] ?? '5',
                     marquee: extras['marquee'] ?? kTriOptDefault,
+                    restoreLockscreen:
+                        extras['restore_lockscreen'] ?? kTriOptDefault,
                     onToggle: (v) => _toggle(ch.id, v),
                     onSettingsApplied: (s) => _applyChannelSettings(ch.id, s),
                   );
@@ -534,6 +542,7 @@ class _ChannelTile extends StatelessWidget {
     required this.enableFloat,
     required this.islandTimeout,
     required this.marquee,
+    required this.restoreLockscreen,
     required this.onToggle,
     required this.onSettingsApplied,
   });
@@ -557,6 +566,7 @@ class _ChannelTile extends StatelessWidget {
   final String enableFloat;
   final String islandTimeout;
   final String marquee;
+  final String restoreLockscreen;
   final ValueChanged<bool> onToggle;
   final ValueChanged<Map<String, String?>> onSettingsApplied;
 
@@ -576,6 +586,7 @@ class _ChannelTile extends StatelessWidget {
         enableFloat: enableFloat,
         islandTimeout: islandTimeout,
         marquee: marquee,
+        restoreLockscreen: restoreLockscreen,
       ),
       templateLabels: templateLabels,
       rendererLabels: rendererLabels,

@@ -339,5 +339,8 @@
   "aiPromptInUserSubtitle": "Bazı modeller sistem talimatlarını desteklemez; etkinleştirilirse prompt kullanıcı mesajına eklenir",
   "aiTimeoutLabel": "AI Yanıt Zaman Aşımı",
   "hideDesktopIconTitle": "Ana Ekran Simgesini Gizle",
-  "hideDesktopIconSubtitle": "Uygulama simgesini başlatıcıdan gizler. Gizledikten sonra LSPosed Manager üzerinden açın"
+  "hideDesktopIconSubtitle": "Uygulama simgesini başlatıcıdan gizler. Gizledikten sonra LSPosed Manager üzerinden açın",
+
+  "restoreLockscreenTitle": "Kilit Ekranı Bildirimini Geri Yükle",
+  "restoreLockscreenSubtitle": "Kilit ekranında odak bildirimi işlemini atlayın, özgün gizlilik davranışını koruyun",
 }

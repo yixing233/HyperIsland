@@ -650,4 +650,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get hideDesktopIconSubtitle => '隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开';
+
+  @override
+  String get restoreLockscreenTitle => '锁屏通知复原';
+
+  @override
+  String get restoreLockscreenSubtitle => '锁屏时跳过焦点通知处理，保持原始通知隐私行为';
+
+  @override
+  String get restoreLockscreenLabelSubtitle => '锁屏时保持原始通知隐私行为，不解锁仍显示隐藏内容';
 }

@@ -680,4 +680,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hideDesktopIconSubtitle =>
       'Hide the app icon from launcher. Open via LSPosed Manager after hiding';
+
+  @override
+  String get restoreLockscreenTitle => 'Restore Lockscreen Notification';
+
+  @override
+  String get restoreLockscreenSubtitle =>
+      'Skip focus notification processing on lockscreen, keep original privacy behavior';
+
+  @override
+  String get restoreLockscreenLabelSubtitle =>
+      'Keep original notification privacy on lockscreen, hidden content stays hidden until unlock';
 }

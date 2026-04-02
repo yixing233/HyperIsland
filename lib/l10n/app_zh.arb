@@ -341,5 +341,8 @@
   "aiTimeoutLabel": "AI 响应超时",
 
   "hideDesktopIconTitle": "隐藏桌面图标",
-  "hideDesktopIconSubtitle": "隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开"
+  "hideDesktopIconSubtitle": "隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开",
+
+  "restoreLockscreenTitle": "锁屏通知复原",
+  "restoreLockscreenSubtitle": "锁屏时跳过焦点通知处理，保持原始通知隐私行为",
 }

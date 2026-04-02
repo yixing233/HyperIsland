@@ -1283,6 +1283,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开'**
   String get hideDesktopIconSubtitle;
+
+  /// No description provided for @restoreLockscreenTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'锁屏通知复原'**
+  String get restoreLockscreenTitle;
+
+  /// No description provided for @restoreLockscreenSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'锁屏时跳过焦点通知处理，保持原始通知隐私行为'**
+  String get restoreLockscreenSubtitle;
+
+  /// No description provided for @restoreLockscreenLabelSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'锁屏时保持原始通知隐私行为，不解锁仍显示隐藏内容'**
+  String get restoreLockscreenLabelSubtitle;
 }
 
 class _AppLocalizationsDelegate

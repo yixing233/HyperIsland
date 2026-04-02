@@ -227,5 +227,8 @@
   "aiTimeoutLabel": "AI Response Timeout",
 
   "hideDesktopIconTitle": "Hide Desktop Icon",
-  "hideDesktopIconSubtitle": "Hide the app icon from launcher. Open via LSPosed Manager after hiding"
+  "hideDesktopIconSubtitle": "Hide the app icon from launcher. Open via LSPosed Manager after hiding",
+
+  "restoreLockscreenTitle": "Restore Lockscreen Notification",
+  "restoreLockscreenSubtitle": "Skip focus notification processing on lockscreen, keep original privacy behavior",
 }

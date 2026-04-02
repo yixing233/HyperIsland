@@ -685,4 +685,15 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get hideDesktopIconSubtitle =>
       'Uygulama simgesini başlatıcıdan gizler. Gizledikten sonra LSPosed Manager üzerinden açın';
+
+  @override
+  String get restoreLockscreenTitle => 'Kilit Ekranı Bildirimini Geri Yükle';
+
+  @override
+  String get restoreLockscreenSubtitle =>
+      'Kilit ekranında odak bildirimi işlemini atlayın, özgün gizlilik davranışını koruyun';
+
+  @override
+  String get restoreLockscreenLabelSubtitle =>
+      'Kilit ekranında özgün bildirim gizlilik davranışını koruyun, gizli içerik kilit açılana kadar görünmez';
 }
