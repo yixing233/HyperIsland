@@ -525,11 +525,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preserveStatusBarSmallIconLabel => 'Status bar icon'; [cite: 8]
 
   @override
-  String get restoreLockscreenTitle => 'Restore Lockscreen Notification'; [cite: 10]
+  String get restoreLockscreenTitle => 'Restore Lockscreen Notification';
 
   @override
   String get restoreLockscreenSubtitle =>
-      'Skip focus notification processing on lockscreen, keep original privacy behavior'; [cite: 10]
+      'Skip focus notification processing on lockscreen, keep original privacy behavior';
 
   @override
   String get firstFloatLabel => 'First float'; [cite: 8]
@@ -659,46 +659,46 @@ class AppLocalizationsEn extends AppLocalizations {
       'AI generates Island left/right text, falls back on timeout or error'; [cite: 9]
 
   @override
-  String get aiApiSection => 'API Parameters'; [cite: 10]
+  String get aiApiSection => 'API Parameters';
 
   @override
-  String get aiUrlLabel => 'API URL'; [cite: 10]
+  String get aiUrlLabel => 'API URL';
 
   @override
-  String get aiUrlHint => 'https://api.openai.com/v1/chat/completions'; [cite: 10]
+  String get aiUrlHint => 'https://api.openai.com/v1/chat/completions';
 
   @override
-  String get aiApiKeyLabel => 'API Key'; [cite: 10]
+  String get aiApiKeyLabel => 'API Key';
 
   @override
-  String get aiApiKeyHint => 'sk-...'; [cite: 10]
+  String get aiApiKeyHint => 'sk-...';
 
   @override
-  String get aiModelLabel => 'Model'; [cite: 10]
+  String get aiModelLabel => 'Model';
 
   @override
-  String get aiModelHint => 'gpt-4o-mini'; [cite: 10]
+  String get aiModelHint => 'gpt-4o-mini';
 
   @override
-  String get aiPromptLabel => 'Custom Prompt'; [cite: 10]
+  String get aiPromptLabel => 'Custom Prompt';
 
   @override
   String get aiPromptHint =>
-      'Leave empty to use default: Extract key info, left and right each no more than 6 words or 12 characters'; [cite: 10]
+      'Leave empty to use default: Extract key info, left and right each no more than 6 words or 12 characters';
 
   @override
-  String get aiPromptInUserTitle => 'Put prompt in user message'; [cite: 10]
+  String get aiPromptInUserTitle => 'Put prompt in user message';
 
   @override
   String get aiPromptInUserSubtitle =>
-      'Some models do not support system instructions; enable to put prompt in user message'; [cite: 10]
+      'Some models do not support system instructions; enable to put prompt in user message';
 
   @override
   String get aiTimeoutTitle => 'AI Response Timeout';
 
   @override
   String aiTimeoutLabel(int seconds) {
-    return 'AI Response Timeout'; [cite: 10]
+    return 'AI Response Timeout';
   }
 
   @override
@@ -718,10 +718,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Leave empty to use default prompt: Extract key info from notification, no more than 6 words or 12 characters for left and right sides';
 
   @override
-  String get aiTestButton => 'Test Connection'; [cite: 10]
+  String get aiTestButton => 'Test Connection';
 
   @override
-  String get aiTestUrlEmpty => 'Please enter an API URL first'; [cite: 10]
+  String get aiTestUrlEmpty => 'Please enter an API URL first';
 
   @override
   String get aiLastLogTitle => 'Recent AI Request Log';
@@ -790,22 +790,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiLastLogAssistantContent => 'Model Response Content';
 
   @override
-  String get aiConfigSaveButton => 'Save'; [cite: 10]
+  String get aiConfigSaveButton => 'Save';
 
   @override
-  String get aiConfigSaved => 'AI configuration saved'; [cite: 10]
+  String get aiConfigSaved => 'AI configuration saved';
 
   @override
   String get aiConfigTips =>
-      'AI receives the app package, title, and content of each notification, and returns short left (source) and right (content) text. Compatible with OpenAI-format APIs (e.g. DeepSeek, Claude). Falls back to default logic if no response.'; [cite: 10]
+      'AI receives the app package, title, and content of each notification, and returns short left (source) and right (content) text. Compatible with OpenAI-format APIs (e.g. DeepSeek, Claude). Falls back to default logic if no response.';
 
   @override
-  String get templateAiNotificationIslandName => 'AI Notification Island'; [cite: 10]
+  String get templateAiNotificationIslandName => 'AI Notification Island';
 
   @override
-  String get hideDesktopIconTitle => 'Hide Desktop Icon'; [cite: 10]
+  String get hideDesktopIconTitle => 'Hide Desktop Icon';
 
   @override
   String get hideDesktopIconSubtitle =>
-      'Hide the app icon from launcher. Open via LSPosed Manager after hiding'; [cite: 10]
+      'Hide the app icon from launcher. Open via LSPosed Manager after hiding';
 }
