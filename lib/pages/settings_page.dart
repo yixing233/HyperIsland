@@ -302,6 +302,7 @@ class _SettingsPageState extends State<SettingsPage> {
             expandedHeight: 130,
             backgroundColor: cs.surface,
             centerTitle: false,
+            title: Text(l10n.navSettings),
           ),
           if (_ctrl.loading)
             const SliverFillRemaining(
