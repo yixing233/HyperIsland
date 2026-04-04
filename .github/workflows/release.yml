@@ -170,8 +170,8 @@ jobs:
 
           # 优先从 CHANGELOG.md 提取版本更新内容
           try {
-            if (Test-Path 'CHANGELOG.md') {
-              $changelogFile = Get-Content 'CHANGELOG.md' -Raw
+            if (Test-Path 'docs/CHANGELOG.md') {
+              $changelogFile = Get-Content 'docs/CHANGELOG.md' -Raw
               # 匹配以 "# V<version>" 开头直到下一个版本标题或文件结尾
               # 支持格式：# V1.6.8 或 # V1.6.8 (2024-12-19)
               $escapedVersion = [regex]::Escape($version)

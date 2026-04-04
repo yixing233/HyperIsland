@@ -4,6 +4,12 @@ export default defineConfig({
   title: 'HyperIsland',
   description: '为澎湃 OS3 打造的超级岛通知增强模块',
 
+  transformPageData(pageData) {
+    if (pageData.relativePath === 'CHANGELOG.md') {
+      pageData.frontmatter.outline = { level: 1 }
+    }
+  },
+
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: 'https://github.com/user-attachments/assets/dc034ec0-90cf-4371-9ab0-132ca2527b32' }]
   ],
@@ -61,6 +67,7 @@ function nav(lang: string) {
     return [
       { text: '快速上手', link: '/getting-started', activeMatch: '/getting-started' },
       { text: '功能介绍', link: '/features', activeMatch: '/features' },
+      { text: '更新日志', link: '/CHANGELOG' },
       {
         text: '更多',
         items: [
