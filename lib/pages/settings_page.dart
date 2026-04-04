@@ -299,12 +299,8 @@ class _SettingsPageState extends State<SettingsPage> {
       body: CustomScrollView(
         physics: const ClampingScrollPhysics(),
         slivers: [
-          SliverAppBar(
-            pinned: true,
-            floating: false,
-            expandedHeight: 130,
+          SliverAppBar.large(
             backgroundColor: cs.surface,
-            centerTitle: false,
             title: Text(l10n.navSettings),
           ),
           if (_ctrl.loading)
