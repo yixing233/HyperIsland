@@ -486,6 +486,42 @@ abstract class AppLocalizations {
   /// **'{speed} 像素/秒'**
   String marqueeSpeedLabel(int speed);
 
+  /// No description provided for @bigIslandMinWidthTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛最小宽度'**
+  String get bigIslandMinWidthTitle;
+
+  /// No description provided for @bigIslandMinWidthLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'{width} dp'**
+  String bigIslandMinWidthLabel(int width);
+
+  /// No description provided for @bigIslandMinWidthSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛显示的最小宽度'**
+  String get bigIslandMinWidthSubtitle;
+
+  /// No description provided for @bigIslandMaxWidthTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛最大宽度'**
+  String get bigIslandMaxWidthTitle;
+
+  /// No description provided for @bigIslandMaxWidthLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'{width} dp'**
+  String bigIslandMaxWidthLabel(int width);
+
+  /// No description provided for @bigIslandMaxWidthSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛显示的最大宽度'**
+  String get bigIslandMaxWidthSubtitle;
+
   /// No description provided for @themeModeTitle.
   ///
   /// In zh, this message translates to:

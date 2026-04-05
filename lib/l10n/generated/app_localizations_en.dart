@@ -226,6 +226,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get bigIslandMinWidthTitle => 'Super Island Min Width';
+
+  @override
+  String bigIslandMinWidthLabel(int width) {
+    return '$width dp';
+  }
+
+  @override
+  String get bigIslandMinWidthSubtitle =>
+      'Minimum width for super island display';
+
+  @override
+  String get bigIslandMaxWidthTitle => 'Super Island Max Width';
+
+  @override
+  String bigIslandMaxWidthLabel(int width) {
+    return '$width dp';
+  }
+
+  @override
+  String get bigIslandMaxWidthSubtitle =>
+      'Maximum width for super island display';
+
+  @override
   String get themeModeTitle => 'Color mode';
 
   @override

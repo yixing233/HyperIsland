@@ -1,5 +1,6 @@
 package io.github.hyperisland.xposed
 
+import io.github.hyperisland.xposed.hook.BigIslandMinWidthHook
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
 import io.github.hyperisland.xposed.hook.MarqueeHook
 import io.github.hyperisland.xposed.hook.UnlockAllFocusHook
@@ -16,10 +17,12 @@ class HyperIslandModule : XposedModule() {
     override fun onPackageLoaded(param: PackageLoadedParam) {
         when (param.packageName) {
 
-            "com.android.systemui" -> {
+            "com.android.systemui",
+            "miui.systemui.plugin" -> {
                 IslandDispatcherHook.init(this, param)
                 GenericProgressHook.init(this, param)
                 MarqueeHook.init(this, param)
+                BigIslandMinWidthHook.init(this, param)
                 UnlockAllFocusHook.init(this, param)
                 FocusNotifStatusBarIconHook.init(this, param)
             }

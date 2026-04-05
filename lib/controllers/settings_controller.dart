@@ -11,6 +11,8 @@ const kPrefInteractionHaptics = 'pref_interaction_haptics';
 const kPrefRoundIcon = 'pref_round_icon';
 const kPrefMarqueeFeature = 'pref_marquee_feature';
 const kPrefMarqueeSpeed = 'pref_marquee_speed';
+const kPrefBigIslandMinWidth = 'pref_big_island_min_width';
+const kPrefBigIslandMaxWidth = 'pref_big_island_max_width';
 const kPrefUnlockAllFocus = 'pref_unlock_all_focus';
 const kPrefUnlockFocusAuth = 'pref_unlock_focus_auth';
 const kPrefThemeMode = 'pref_theme_mode';
@@ -102,6 +104,8 @@ class SettingsController extends ChangeNotifier {
   bool roundIcon = true;
   bool marqueeFeature = false;
   int marqueeSpeed = 100;
+  int bigIslandMinWidth = 120;
+  int bigIslandMaxWidth = 400;
   bool unlockAllFocus = false;
   bool unlockFocusAuth = false;
   bool checkUpdateOnLaunch = true;
@@ -144,6 +148,14 @@ class SettingsController extends ChangeNotifier {
     roundIcon = prefs.getBool(kPrefRoundIcon) ?? true;
     marqueeFeature = prefs.getBool(kPrefMarqueeFeature) ?? false;
     marqueeSpeed = (prefs.getInt(kPrefMarqueeSpeed) ?? 100).clamp(20, 500);
+    bigIslandMinWidth = (prefs.getInt(kPrefBigIslandMinWidth) ?? 120).clamp(
+      60,
+      300,
+    );
+    bigIslandMaxWidth = (prefs.getInt(kPrefBigIslandMaxWidth) ?? 400).clamp(
+      20,
+      600,
+    );
     unlockAllFocus = prefs.getBool(kPrefUnlockAllFocus) ?? false;
     unlockFocusAuth = prefs.getBool(kPrefUnlockFocusAuth) ?? false;
     checkUpdateOnLaunch = prefs.getBool(kPrefCheckUpdateOnLaunch) ?? true;
@@ -231,6 +243,24 @@ class SettingsController extends ChangeNotifier {
     final prefs = await _getPrefs();
     await prefs.setInt(kPrefMarqueeSpeed, clamped);
     marqueeSpeed = clamped;
+    notifyListeners();
+  }
+
+  Future<void> setBigIslandMinWidth(int value) async {
+    final clamped = value.clamp(60, 300);
+    if (bigIslandMinWidth == clamped) return;
+    final prefs = await _getPrefs();
+    await prefs.setInt(kPrefBigIslandMinWidth, clamped);
+    bigIslandMinWidth = clamped;
+    notifyListeners();
+  }
+
+  Future<void> setBigIslandMaxWidth(int value) async {
+    final clamped = value.clamp(60, 600);
+    if (bigIslandMaxWidth == clamped) return;
+    final prefs = await _getPrefs();
+    await prefs.setInt(kPrefBigIslandMaxWidth, clamped);
+    bigIslandMaxWidth = clamped;
     notifyListeners();
   }
 
