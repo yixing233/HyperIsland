@@ -122,8 +122,24 @@ object MarqueeHook : BaseHook() {
         traverseInternal(bigIslandView, enabled)
     }
 
+    private fun isInExpandedView(view: View): Boolean {
+        var p: View? = view
+        while (p != null) {
+            val className = p.javaClass.simpleName
+            if (className.contains("DynamicIslandExpandedView") || 
+                className.contains("ExpandedView")) {
+                return true
+            }
+            p = if (p.parent is View) p.parent as View else null
+        }
+        return false
+    }
+
     private fun traverseInternal(view: View, enabled: Boolean) {
         if (view is TextView) {
+            if (isInExpandedView(view)) {
+                return
+            }
             if (observedViews.containsKey(view)) {
                 if (enabled) startMarquee(view)
                 else stopMarquee(view)
@@ -133,6 +149,7 @@ object MarqueeHook : BaseHook() {
             val listeners = ArrayList<View.OnLayoutChangeListener>()
             val layoutListener = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
                 val tv = v as TextView
+                if (isInExpandedView(tv)) return@OnLayoutChangeListener
                 if (isMarqueeEnabledFor(tv)) startMarquee(tv)
                 else stopMarquee(tv)
             }
@@ -143,6 +160,7 @@ object MarqueeHook : BaseHook() {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: android.text.Editable?) {
+                    if (isInExpandedView(view)) return
                     if (isMarqueeEnabledFor(view)) startMarquee(view)
                     else stopMarquee(view)
                 }
@@ -156,6 +174,7 @@ object MarqueeHook : BaseHook() {
             view.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
                 override fun onChildViewAdded(parent: View?, child: View?) {
                     if (child is TextView) {
+                        if (isInExpandedView(child)) return
                         traverseInternal(child, isMarqueeEnabledFor(child))
                     } else if (child is ViewGroup) {
                         traverseInternal(child, false)
