@@ -200,6 +200,7 @@
   "seconds": "s",
   "highlightColorLabel": "Highlight color",
   "dynamicHighlightColorLabel": "Dynamic highlight color",
+  "dynamicHighlightColorLabelSubtitle": "Use icon-based dynamic color by default",
   "dynamicHighlightModeDark": "Dark",
   "dynamicHighlightModeDarker": "Darker",
   "outerGlowLabel": "Outer glow",

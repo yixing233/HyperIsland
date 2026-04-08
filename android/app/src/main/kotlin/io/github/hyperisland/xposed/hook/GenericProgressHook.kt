@@ -256,6 +256,8 @@ object GenericProgressHook : BaseHook() {
             val defaultEnableFloat       = loadBooleanSetting("global:default_enable_float",       "pref_default_enable_float",       false)
             val defaultMarquee           = loadBooleanSetting("global:default_marquee",            "pref_default_marquee",            false)
             val defaultFocusNotif        = loadBooleanSetting("global:default_focus_notif",        "pref_default_focus_notif",        true)
+            val defaultDynamicHighlightColor = loadBooleanSetting("global:default_dynamic_highlight_color", "pref_default_dynamic_highlight_color", false)
+            val defaultOuterGlow = loadBooleanSetting("global:default_outer_glow", "pref_default_outer_glow", false)
             val defaultPreserveSmallIcon = loadBooleanSetting("global:default_preserve_small_icon","pref_default_preserve_small_icon", false)
             val defaultShowIslandIcon    = loadBooleanSetting("global:default_show_island_icon",   "pref_default_show_island_icon",   true)
 
@@ -293,11 +295,15 @@ object GenericProgressHook : BaseHook() {
             val highlightColor = loadChannelStringSetting(
                 "highlight_color:$pkg/$channelId", "pref_channel_highlight_color_${pkg}_$channelId", ""
             ).takeIf { it.isNotBlank() }
-            val dynamicHighlightColorMode = loadChannelStringSetting(
+            val dynamicHighlightColorRaw = loadChannelStringSetting(
                 "dynamic_highlight_color:$pkg/$channelId",
                 "pref_channel_dynamic_highlight_color_${pkg}_$channelId",
-                "off"
+                "default"
             )
+            val dynamicHighlightColorMode = when (dynamicHighlightColorRaw) {
+                "on", "off", "dark", "darker" -> dynamicHighlightColorRaw
+                else -> if (defaultDynamicHighlightColor) "on" else "off"
+            }
             val resolvedHighlightColor = resolveHighlightColor(
                 context = context,
                 iconMode = iconMode,
@@ -319,9 +325,10 @@ object GenericProgressHook : BaseHook() {
             val showRightNarrowFont = loadChannelStringSetting(
                 "show_right_narrow_font:$pkg/$channelId", "pref_channel_show_right_narrow_font_${pkg}_$channelId", "off"
             ) == "on"
-            val outerGlow = loadChannelStringSetting(
-                "outer_glow:$pkg/$channelId", "pref_channel_outer_glow_${pkg}_$channelId", "off"
-            ) == "on"
+            val outerGlowRaw = loadChannelStringSetting(
+                "outer_glow:$pkg/$channelId", "pref_channel_outer_glow_${pkg}_$channelId", "default"
+            )
+            val outerGlow = resolveTriOpt(outerGlowRaw, defaultOuterGlow) == "on"
 
             log(module, "$pkg/$channelId | $title |  template=$template")
 //            log(module, "$pkg/$channelId | $title | $progressPercent% | template=$template | buttons=${actions.size} | largeIcon=${largeIcon != null} | preserveSmallIcon=$preserveStatusBarSmallIcon")

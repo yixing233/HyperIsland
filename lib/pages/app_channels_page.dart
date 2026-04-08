@@ -502,7 +502,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                           extras['restore_lockscreen'] ?? kTriOptDefault,
                       highlightColor: extras['highlight_color'] ?? '',
                       dynamicHighlightColor:
-                          extras['dynamic_highlight_color'] ?? kTriOptOff,
+                          extras['dynamic_highlight_color'] ?? kTriOptDefault,
                       showLeftHighlight:
                           extras['show_left_highlight'] ?? kTriOptOff,
                       showRightHighlight:
@@ -511,7 +511,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                           extras['show_left_narrow_font'] ?? kTriOptOff,
                       showRightNarrowFont:
                           extras['show_right_narrow_font'] ?? kTriOptOff,
-                      outerGlow: extras['outer_glow'] ?? kTriOptOff,
+                      outerGlow: extras['outer_glow'] ?? kTriOptDefault,
                       onToggle: (v) => _toggle(ch.id, v),
                       onSettingsApplied: (s) => _applyChannelSettings(ch.id, s),
                     );

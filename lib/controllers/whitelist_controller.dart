@@ -333,7 +333,7 @@ class WhitelistController extends ChangeNotifier {
               prefs.getString(
                 'pref_channel_dynamic_highlight_color_${packageName}_$id',
               ) ??
-              kTriOptOff,
+              kTriOptDefault,
           'show_left_highlight':
               prefs.getString(
                 'pref_channel_show_left_highlight_${packageName}_$id',
@@ -356,7 +356,7 @@ class WhitelistController extends ChangeNotifier {
               kTriOptOff,
           'outer_glow':
               prefs.getString('pref_channel_outer_glow_${packageName}_$id') ??
-              kTriOptOff,
+              kTriOptDefault,
         }),
       ),
     );

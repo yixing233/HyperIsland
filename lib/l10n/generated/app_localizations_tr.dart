@@ -574,6 +574,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get dynamicHighlightColorLabel => 'Dinamik vurgu rengi';
 
   @override
+  String get dynamicHighlightColorLabelSubtitle =>
+      'Varsayılan olarak simgeden dinamik renk kullan (kanal bazında yine de geçersiz kılınabilir)';
+
+  @override
   String get dynamicHighlightModeDark => 'Koyu';
 
   @override

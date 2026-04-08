@@ -568,6 +568,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dynamicHighlightColorLabel => 'Dynamic highlight color';
 
   @override
+  String get dynamicHighlightColorLabelSubtitle =>
+      'Use icon-based dynamic color by default (can still be overridden per channel)';
+
+  @override
   String get dynamicHighlightModeDark => 'Dark';
 
   @override

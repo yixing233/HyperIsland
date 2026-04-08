@@ -278,6 +278,7 @@
   "seconds": "sn",
   "highlightColorLabel": "Vurgu Rengi",
   "dynamicHighlightColorLabel": "Dinamik vurgu rengi",
+  "dynamicHighlightColorLabelSubtitle": "Varsayılan olarak simgeden dinamik renk kullan",
   "dynamicHighlightModeDark": "Koyu",
   "dynamicHighlightModeDarker": "Daha koyu",
   "outerGlowLabel": "Dış parlama",

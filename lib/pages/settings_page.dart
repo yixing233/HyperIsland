@@ -37,6 +37,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _ctrl.defaultFirstFloat,
     _ctrl.defaultEnableFloat,
     _ctrl.defaultMarquee,
+    _ctrl.defaultDynamicHighlightColor,
+    _ctrl.defaultOuterGlow,
     _ctrl.defaultFocusNotif,
     _ctrl.defaultPreserveSmallIcon,
     _ctrl.defaultRestoreLockscreen,
@@ -595,6 +597,37 @@ class _SettingsPageState extends State<SettingsPage> {
                             value: _ctrl.defaultMarquee,
                             onChanged: InteractionHaptics.interceptToggle(
                               (value) => _ctrl.setDefaultMarquee(value),
+                            ),
+                          ),
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                          SwitchListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            title: Text(
+                              l10n.dynamicHighlightColorLabel,
+                              style: titleStyle,
+                            ),
+                            subtitle: Text(
+                              l10n.dynamicHighlightColorLabelSubtitle,
+                            ),
+                            value: _ctrl.defaultDynamicHighlightColor,
+                            onChanged: InteractionHaptics.interceptToggle(
+                              (value) =>
+                                  _ctrl.setDefaultDynamicHighlightColor(value),
+                            ),
+                          ),
+                          const Divider(height: 1, indent: 16, endIndent: 16),
+                          SwitchListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            title: Text(l10n.outerGlowLabel, style: titleStyle),
+                            value: _ctrl.defaultOuterGlow,
+                            onChanged: InteractionHaptics.interceptToggle(
+                              (value) => _ctrl.setDefaultOuterGlow(value),
                             ),
                           ),
                           const Divider(height: 1, indent: 16, endIndent: 16),

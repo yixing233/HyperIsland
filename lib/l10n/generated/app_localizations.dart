@@ -1080,6 +1080,12 @@ abstract class AppLocalizations {
   /// **'高亮动态取色'**
   String get dynamicHighlightColorLabel;
 
+  /// No description provided for @dynamicHighlightColorLabelSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'开启后默认使用图标自动取色（渠道仍可单独覆盖）'**
+  String get dynamicHighlightColorLabelSubtitle;
+
   /// No description provided for @dynamicHighlightModeDark.
   ///
   /// In zh, this message translates to:

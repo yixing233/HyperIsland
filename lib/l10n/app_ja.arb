@@ -187,6 +187,7 @@
   "seconds": "秒",
   "highlightColorLabel": "ハイライト色",
   "dynamicHighlightColorLabel": "ハイライトの動的色取得",
+  "dynamicHighlightColorLabelSubtitle": "有効時はデフォルトでアイコンから動的に色を取得します",
   "dynamicHighlightModeDark": "暗め",
   "dynamicHighlightModeDarker": "さらに暗め",
   "outerGlowLabel": "外側グロー",

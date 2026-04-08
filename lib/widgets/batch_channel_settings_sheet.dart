@@ -170,7 +170,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   bool? _showRightHighlight;
   bool? _showLeftNarrowFont;
   bool? _showRightNarrowFont;
-  bool _outerGlowEnabled = false;
+  String? _outerGlow;
 
   // 仅 BatchChannelMode + SingleAppScope 下使用
   bool _onlyEnabled = false;
@@ -180,6 +180,8 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
 
   bool get _isSingle => widget.mode is SingleChannelMode;
   bool get _dynamicHighlightEnabled =>
+      (_dynamicHighlightColor == kTriOptDefault &&
+          _ctrl.defaultDynamicHighlightColor) ||
       _dynamicHighlightColor == 'on' ||
       _dynamicHighlightColor == 'dark' ||
       _dynamicHighlightColor == 'darker';
@@ -206,7 +208,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _showRightHighlight = m.showRightHighlight == kTriOptOn;
       _showLeftNarrowFont = m.showLeftNarrowFont == kTriOptOn;
       _showRightNarrowFont = m.showRightNarrowFont == kTriOptOn;
-      _outerGlowEnabled = m.outerGlow == kTriOptOn;
+      _outerGlow = m.outerGlow;
       _timeoutController = TextEditingController(text: m.islandTimeout);
       _highlightColorController = TextEditingController(text: m.highlightColor);
     } else {
@@ -342,7 +344,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _showRightHighlight != null ||
       _showLeftNarrowFont != null ||
       _showRightNarrowFont != null ||
-      _outerGlowEnabled;
+      _outerGlow != null;
 
   String _title(AppLocalizations l10n) => switch (widget.mode) {
     SingleChannelMode m => m.channelName,
@@ -383,7 +385,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
               ? (_highlightColor ?? '')
               : _highlightColor,
           'dynamic_highlight_color': _isSingle
-              ? (_dynamicHighlightColor ?? kTriOptOff)
+              ? (_dynamicHighlightColor ?? kTriOptDefault)
               : _dynamicHighlightColor,
           'show_left_highlight': _showLeftHighlight == null
               ? null
@@ -397,7 +399,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           'show_right_narrow_font': _showRightNarrowFont == null
               ? null
               : (_showRightNarrowFont! ? kTriOptOn : kTriOptOff),
-          'outer_glow': _outerGlowEnabled ? kTriOptOn : kTriOptOff,
+          'outer_glow': _isSingle ? (_outerGlow ?? kTriOptDefault) : _outerGlow,
         },
         onlyEnabled: switch (widget.mode) {
           BatchChannelMode(scope: SingleAppScope()) => _onlyEnabled,
@@ -769,6 +771,15 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                     showNotChange: !_isSingle,
                     items: [
                       DropdownMenuItem(
+                        value: kTriOptDefault,
+                        child: Text(
+                          _defaultLabel(
+                            context,
+                            _ctrl.defaultDynamicHighlightColor,
+                          ),
+                        ),
+                      ),
+                      DropdownMenuItem(
                         value: kTriOptOff,
                         child: Text(l10n.optOff),
                       ),
@@ -958,38 +969,27 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                     onChanged: (v) => setState(() => _restoreLockscreen = v),
                   ),
                   SizedBox(height: rowGap),
-                  _SettingField(
+                  _BatchSettingRow(
                     label: l10n.outerGlowLabel,
-                    child: Material(
-                      color: cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => setState(() {
-                          _outerGlowEnabled = !_outerGlowEnabled;
-                        }),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _outerGlowEnabled ? l10n.optOn : l10n.optOff,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Switch(
-                                value: _outerGlowEnabled,
-                                onChanged: (v) =>
-                                    setState(() => _outerGlowEnabled = v),
-                              ),
-                            ],
-                          ),
+                    value: _outerGlow,
+                    showNotChange: !_isSingle,
+                    items: [
+                      DropdownMenuItem(
+                        value: kTriOptDefault,
+                        child: Text(
+                          _defaultLabel(context, _ctrl.defaultOuterGlow),
                         ),
                       ),
-                    ),
+                      DropdownMenuItem(
+                        value: kTriOptOn,
+                        child: Text(l10n.optOn),
+                      ),
+                      DropdownMenuItem(
+                        value: kTriOptOff,
+                        child: Text(l10n.optOff),
+                      ),
+                    ],
+                    onChanged: (v) => setState(() => _outerGlow = v),
                   ),
                   SizedBox(height: endGap),
                 ],
