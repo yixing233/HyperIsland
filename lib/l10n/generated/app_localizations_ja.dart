@@ -552,8 +552,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dynamicHighlightColorLabel => 'ハイライトの動的色取得';
 
   @override
-  String get dynamicHighlightColorLabelSubtitle =>
-      '有効時はデフォルトでアイコンから動的に色を取得します（チャンネル単位で上書き可能）';
+  String get dynamicHighlightColorLabelSubtitle => '有効時はデフォルトでアイコンから動的に色を取得します';
 
   @override
   String get dynamicHighlightModeDark => '暗め';
