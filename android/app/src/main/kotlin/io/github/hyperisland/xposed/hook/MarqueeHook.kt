@@ -194,7 +194,6 @@ object MarqueeHook : BaseHook() {
 
     private var hookedContentView = false
     private val targetPkg = java.util.Collections.synchronizedMap(WeakHashMap<View, String>())
-    private val targetNotifId = java.util.Collections.synchronizedMap(WeakHashMap<View, Int>())
     @Volatile private var cachedWhitelist: Map<String, Set<String>>? = null
 
     private fun loadWhitelist(): Map<String, Set<String>> {
@@ -235,7 +234,8 @@ object MarqueeHook : BaseHook() {
                             if (islandView == null) return@intercept result
                             val islandData = chain.args.getOrNull(0)
                             var pkgName = ""
-                            var notifId = 0
+                            var channelId = ""
+                            var isOngoing = false
                             try {
                                 if (islandData != null) {
                                     val getExtrasMethod = islandData.javaClass.getMethod("getExtras")
@@ -246,17 +246,14 @@ object MarqueeHook : BaseHook() {
                                         @Suppress("DEPRECATION")
                                         extras?.getParcelable("miui.sbn") as? StatusBarNotification
                                     }
-                                    pkgName = sbn?.packageName ?: extras?.getString("miui.pkg.name") ?: ""
-                                    notifId = sbn?.id ?: 0
+                                    pkgName = sbn?.packageName ?: ""
+                                    channelId = sbn?.notification?.channelId ?: ""
+                                    isOngoing = (sbn?.notification?.flags ?: 0) and android.app.Notification.FLAG_ONGOING_EVENT != 0
                                     targetPkg[islandView] = pkgName
-                                    if (notifId != 0) targetNotifId[islandView] = notifId
                                 }
                             } catch (_: Exception) {}
                             if (pkgName.isEmpty()) {
                                 pkgName = targetPkg[islandView] ?: ""
-                            }
-                            if (notifId == 0) {
-                                notifId = targetNotifId[islandView] ?: 0
                             }
                             if (pkgName.isEmpty()) return@intercept result
                             
@@ -265,10 +262,6 @@ object MarqueeHook : BaseHook() {
                             if (allowedChannels == null) {
                                 return@intercept result
                             }
-                            
-                            val islandInfo = GenericProgressHook.IslandInfoCache.get(pkgName, notifId)
-                            val channelId = islandInfo?.channelId ?: ""
-                            val isOngoing = islandInfo?.isOngoing ?: false
                             
                             if (allowedChannels.isNotEmpty() && channelId.isNotEmpty() && channelId !in allowedChannels) {
                                 return@intercept result
