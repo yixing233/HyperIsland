@@ -852,7 +852,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(color: cs.onSurfaceVariant),
                                   ),
-                                  if (_bigIslandMaxWidthDraft != 600)
+                                  if (_bigIslandMaxWidthDraft != 200)
                                     SizedBox(
                                       width: 18,
                                       height: 18,
@@ -869,9 +869,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                                 setState(
                                                   () =>
                                                       _bigIslandMaxWidthDraft =
-                                                          600,
+                                                          200,
                                                 );
-                                                _ctrl.setBigIslandMaxWidth(600);
+                                                _ctrl.setBigIslandMaxWidth(200);
                                               },
                                             ),
                                       ),
@@ -882,7 +882,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       child: Slider(
                                         value: _bigIslandMaxWidthDraft
                                             .toDouble(),
-                                        min: 100,
+                                        min: 50,
                                         max: 500,
                                         divisions: 54,
                                         onChanged:
