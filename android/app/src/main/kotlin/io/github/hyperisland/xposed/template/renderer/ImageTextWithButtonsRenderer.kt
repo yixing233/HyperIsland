@@ -14,6 +14,8 @@ import io.github.d4viddf.hyperisland_kit.models.ProgressTextInfo
 import io.github.d4viddf.hyperisland_kit.models.TextInfo
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldRegistry
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldSpec
 
 /**
  * 新图文组件+按钮组件4 渲染器。
@@ -31,11 +33,10 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
     const val RENDERER_ID = "image_text_with_buttons_4"
 
     override val id = RENDERER_ID
-    override val focusCustomizationSlots: Set<String> = setOf(
-        "focus_title",
-        "focus_content",
-        "focus_icon",
-        "progress",
+    override val focusCustomizationFields: List<FocusCustomizationFieldSpec> = listOf(
+        FocusCustomizationFieldRegistry.focusTitleExpr,
+        FocusCustomizationFieldRegistry.focusContentExpr,
+        FocusCustomizationFieldRegistry.focusIconMode,
     )
 
     override fun render(context: Context, extras: Bundle, vm: IslandViewModel) {
@@ -89,14 +90,13 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
                     left = leftSide,
                     progressText = progressTextInfoFor(vm),
                 )
-                vm.showRightSide -> builder.setBigIslandInfo(
+                else -> builder.setBigIslandInfo(
                     left  = leftSide,
                     right = ImageTextInfoRight(
                         type     = 2,
                         textInfo = TextInfo(title = vm.rightTitle, narrowFont = vm.showRightNarrowFont, showHighlightColor = vm.showRightHighlightColor),
                     ),
                 )
-                else -> builder.setBigIslandInfo(left = leftSide)
             }
 
             // 按钮（showNotification=false 时不添加）

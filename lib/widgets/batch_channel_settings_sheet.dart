@@ -394,9 +394,8 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       final tips = placeholders
           .map((p) {
             final key = (p['key'] ?? '').toString();
-            final label = (p['label'] ?? key).toString();
             if (key.isEmpty) return null;
-            return _formatPlaceholderTip(key, label, l10n);
+            return _formatPlaceholderTip(key);
           })
           .whereType<String>()
           .join('  |  ');
@@ -491,6 +490,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
               ),
             )
             .toList();
+        final presetItems = items.isEmpty ? null : items;
         final ctl = _focusControllers.putIfAbsent(
           key,
           () => TextEditingController(
@@ -513,11 +513,13 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                   setState(_syncFocusCustomFromControllers);
                 }
               },
-              presetItems: items,
-              onPresetSelected: (v) {
-                ctl.text = v;
-                setState(_syncFocusCustomFromControllers);
-              },
+              presetItems: presetItems,
+              onPresetSelected: presetItems == null
+                  ? null
+                  : (v) {
+                      ctl.text = v;
+                      setState(_syncFocusCustomFromControllers);
+                    },
             ),
           ),
         );
@@ -574,9 +576,8 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       final tips = placeholders
           .map((p) {
             final key = (p['key'] ?? '').toString();
-            final label = (p['label'] ?? key).toString();
             if (key.isEmpty) return null;
-            return _formatPlaceholderTip(key, label, l10n);
+            return _formatPlaceholderTip(key);
           })
           .whereType<String>()
           .join('  |  ');
@@ -646,14 +647,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   String _toHexColor(Color color) =>
       '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
-  String _formatPlaceholderTip(
-    String key,
-    String label,
-    AppLocalizations l10n,
-  ) {
-    if (Localizations.localeOf(context).languageCode == 'zh') {
-      return '\${$key} ($label)';
-    }
+  String _formatPlaceholderTip(String key) {
     return '\${$key}';
   }
 
@@ -662,38 +656,23 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
     String fallback,
     AppLocalizations l10n,
   ) {
-    switch (key) {
-      case 'focus_title_expr':
-        return l10n.focusTitleExprLabel;
-      case 'focus_content_expr':
-        return l10n.focusContentExprLabel;
-      case 'focus_icon_mode':
-        return l10n.focusIconSourceLabel;
-      case 'progress_value':
-        return l10n.progressOverrideLabel;
-      case 'focus_pic_profile_mode':
-        return l10n.focusPicProfileSourceLabel;
-      case 'focus_app_icon_pkg':
-        return l10n.focusAppIconPkgLabel;
-      case 'focus_app_icon_pkg_mode':
-        return l10n.focusSecondaryIconSourceLabel;
-      case 'progress_color':
-        return l10n.progressColorLabel;
-      case 'chat_title_color':
-        return l10n.chatTitleColorLabel;
-      case 'chat_title_color_dark':
-        return l10n.chatTitleColorDarkLabel;
-      case 'chat_content_color':
-        return l10n.chatContentColorLabel;
-      case 'chat_content_color_dark':
-        return l10n.chatContentColorDarkLabel;
-      case 'island_left_expr':
-        return l10n.islandLeftExprLabel;
-      case 'island_right_expr':
-        return l10n.islandRightExprLabel;
-      default:
-        return fallback;
-    }
+    final localized = switch (key) {
+      'focus_title_expr' => l10n.focusTitleExprLabel,
+      'focus_content_expr' => l10n.focusContentExprLabel,
+      'focus_icon_mode' => l10n.focusIconSourceLabel,
+      'focus_pic_profile_mode' => l10n.focusPicProfileSourceLabel,
+      'focus_app_icon_pkg' => l10n.focusAppIconPkgLabel,
+      'focus_app_icon_pkg_mode' => l10n.focusSecondaryIconSourceLabel,
+      'progress_color' => l10n.progressColorLabel,
+      'chat_title_color' => l10n.chatTitleColorLabel,
+      'chat_title_color_dark' => l10n.chatTitleColorDarkLabel,
+      'chat_content_color' => l10n.chatContentColorLabel,
+      'chat_content_color_dark' => l10n.chatContentColorDarkLabel,
+      'island_left_expr' => l10n.islandLeftExprLabel,
+      'island_right_expr' => l10n.islandRightExprLabel,
+      _ => fallback,
+    };
+    return localized;
   }
 
   String _localizedOptionLabel(
@@ -714,51 +693,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           return l10n.iconModeNotifLarge;
         case kIconModeAppIcon:
           return l10n.iconModeAppIcon;
-      }
-    }
-    if (fieldKey == 'progress_color') {
-      switch (value.toUpperCase()) {
-        case '':
-          return l10n.colorPresetDefault;
-        case '#000000':
-          return l10n.colorPresetBlack;
-        case '#666666':
-          return l10n.colorPresetDarkGray;
-        case '#FFFFFF':
-          return l10n.colorPresetWhite;
-        case '#4FC3F7':
-          return l10n.colorPresetBlue;
-        case '#66BB6A':
-          return l10n.colorPresetGreen;
-        case '#FFA726':
-          return l10n.colorPresetOrange;
-        case '#EF5350':
-          return l10n.colorPresetRed;
-      }
-    }
-    if (fieldKey == 'chat_title_color' ||
-        fieldKey == 'chat_content_color' ||
-        fieldKey == 'chat_title_color_dark' ||
-        fieldKey == 'chat_content_color_dark') {
-      switch (value.toUpperCase()) {
-        case '':
-          return l10n.colorPresetDefault;
-        case '#000000':
-          return l10n.colorPresetBlack;
-        case '#666666':
-          return l10n.colorPresetDarkGray;
-        case '#B3B3B3':
-          return l10n.colorPresetLightGray;
-        case '#FFFFFF':
-          return l10n.colorPresetWhite;
-        case '#4FC3F7':
-          return l10n.colorPresetBlue;
-        case '#66BB6A':
-          return l10n.colorPresetGreen;
-        case '#FFA726':
-          return l10n.colorPresetOrange;
-        case '#EF5350':
-          return l10n.colorPresetRed;
       }
     }
     return fallback;

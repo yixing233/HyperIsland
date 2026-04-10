@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import io.github.d4viddf.hyperisland_kit.HyperPicture
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldRegistry
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldSpec
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 
 /**
@@ -21,21 +23,27 @@ object ImageTextWithProgressRenderer : IslandRenderer {
     const val RENDERER_ID = "image_text_with_progress"
 
     override val id = RENDERER_ID
-    override val focusCustomizationSlots: Set<String> = setOf(
-        "focus_title",
-        "focus_content",
-        "focus_pic_profile",
-        "focus_app_icon_pkg",
-        "chat_title_color",
-        "chat_title_color_dark",
-        "chat_content_color",
-        "chat_content_color_dark",
+    override val focusCustomizationFields: List<FocusCustomizationFieldSpec> = listOf(
+        FocusCustomizationFieldRegistry.focusTitleExpr,
+        FocusCustomizationFieldRegistry.focusContentExpr,
+        FocusCustomizationFieldRegistry.focusPicProfileMode,
+        FocusCustomizationFieldRegistry.focusAppIconPkg,
+        FocusCustomizationFieldRegistry.chatTitleColor,
+        FocusCustomizationFieldRegistry.chatTitleColorDark,
+        FocusCustomizationFieldRegistry.chatContentColor,
+        FocusCustomizationFieldRegistry.chatContentColorDark,
     )
 
     override fun render(context: Context, extras: Bundle, vm: IslandViewModel) {
         try {
             val islandIconKey = "key_${vm.templateId}_island"
             val profileKey = "key_${vm.templateId}_profile"
+            val profileIcon = vm.rendererIconSlots[FocusCustomizationFieldRegistry.SLOT_FOCUS_PIC_PROFILE] ?: vm.focusIcon
+            val appPkg = vm.rendererStringSlots[FocusCustomizationFieldRegistry.SLOT_FOCUS_APP_ICON_PKG]
+            val titleColor = vm.rendererStringSlots[FocusCustomizationFieldRegistry.SLOT_CHAT_TITLE_COLOR] ?: "#000000"
+            val titleColorDark = vm.rendererStringSlots[FocusCustomizationFieldRegistry.SLOT_CHAT_TITLE_COLOR_DARK] ?: "#FFFFFF"
+            val contentColor = vm.rendererStringSlots[FocusCustomizationFieldRegistry.SLOT_CHAT_CONTENT_COLOR] ?: "#666666"
+            val contentColorDark = vm.rendererStringSlots[FocusCustomizationFieldRegistry.SLOT_CHAT_CONTENT_COLOR_DARK] ?: "#B3B3B3"
 
             val builder = io.github.d4viddf.hyperisland_kit.HyperIslandNotification.Builder(
                 context,
@@ -44,16 +52,16 @@ object ImageTextWithProgressRenderer : IslandRenderer {
             )
 
             builder.addPicture(HyperPicture(islandIconKey, vm.islandIcon))
-            builder.addPicture(HyperPicture(profileKey, vm.focusPicProfileIcon ?: vm.focusIcon))
+            builder.addPicture(HyperPicture(profileKey, profileIcon))
             builder.setChatInfo(
                 title = vm.focusTitle,
                 content = vm.focusContent,
                 pictureKey = profileKey,
-                appPkg = vm.focusAppIconPkg,
-                titleColor = vm.chatTitleColor ?: "#000000",
-                titleColorDark = vm.chatTitleColorDark ?: "#FFFFFF",
-                contentColor = vm.chatContentColor ?: "#666666",
-                contentColorDark = vm.chatContentColorDark ?: "#B3B3B3",
+                appPkg = appPkg,
+                titleColor = titleColor,
+                titleColorDark = titleColorDark,
+                contentColor = contentColor,
+                contentColorDark = contentColorDark,
             )
 
             builder.setIslandFirstFloat(vm.firstFloat)
@@ -83,21 +91,17 @@ object ImageTextWithProgressRenderer : IslandRenderer {
                     ),
                 )
             }
-            if (vm.showRightSide) {
-                builder.setBigIslandInfo(
-                    left = leftSide,
-                    right = io.github.d4viddf.hyperisland_kit.models.ImageTextInfoRight(
-                        type = 2,
-                        textInfo = io.github.d4viddf.hyperisland_kit.models.TextInfo(
-                            title = vm.rightTitle,
-                            narrowFont = vm.showRightNarrowFont,
-                            showHighlightColor = vm.showRightHighlightColor,
-                        ),
+            builder.setBigIslandInfo(
+                left = leftSide,
+                right = io.github.d4viddf.hyperisland_kit.models.ImageTextInfoRight(
+                    type = 2,
+                    textInfo = io.github.d4viddf.hyperisland_kit.models.TextInfo(
+                        title = vm.rightTitle,
+                        narrowFont = vm.showRightNarrowFont,
+                        showHighlightColor = vm.showRightHighlightColor,
                     ),
-                )
-            } else {
-                builder.setBigIslandInfo(left = leftSide)
-            }
+                ),
+            )
 
             val resourceBundle = builder.buildResourceBundle()
             extras.putAll(resourceBundle)

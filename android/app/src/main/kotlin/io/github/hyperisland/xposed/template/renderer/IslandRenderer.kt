@@ -4,6 +4,8 @@ import android.app.Notification
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldRegistry
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldSpec
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 
 /**
@@ -14,8 +16,12 @@ import io.github.hyperisland.xposed.template.core.models.IslandViewModel
  */
 interface IslandRenderer {
     val id: String
-    val focusCustomizationSlots: Set<String>
-        get() = setOf("focus_title", "focus_content", "focus_icon")
+    val focusCustomizationFields: List<FocusCustomizationFieldSpec>
+        get() = listOf(
+            FocusCustomizationFieldRegistry.focusTitleExpr,
+            FocusCustomizationFieldRegistry.focusContentExpr,
+            FocusCustomizationFieldRegistry.focusIconMode,
+        )
     fun render(context: Context, extras: Bundle, vm: IslandViewModel)
 }
 

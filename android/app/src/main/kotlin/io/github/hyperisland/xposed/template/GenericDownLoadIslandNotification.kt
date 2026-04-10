@@ -3,7 +3,6 @@ package io.github.hyperisland.xposed.templates
 import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Bundle
-import android.util.Log
 import io.github.hyperisland.R
 import io.github.hyperisland.xposed.template.core.contracts.IslandTemplate
 import io.github.hyperisland.xposed.template.core.contracts.TemplatePlaceholder
@@ -13,7 +12,6 @@ import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 import io.github.hyperisland.xposed.utils.toRounded
 import io.github.hyperisland.xposed.utils.moduleContext
 import io.github.hyperisland.xposed.logError
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
 import io.github.hyperisland.xposed.renderer.resolveRenderer
 
 /**
@@ -28,39 +26,20 @@ object GenericDownloadIslandNotification : IslandTemplate {
     const val TEMPLATE_ID = "generic_progress"
 
     override val id = TEMPLATE_ID
-    override val expressionPlaceholders = listOf(
-        TemplatePlaceholder("title", "通知标题"),
-        TemplatePlaceholder("subtitle", "通知正文"),
-        TemplatePlaceholder("subtitle_or_title", "正文(空则标题)"),
-        TemplatePlaceholder("pkg", "包名"),
-        TemplatePlaceholder("channel_id", "渠道ID"),
-        TemplatePlaceholder("progress", "通知进度"),
-        TemplatePlaceholder("state_label", "下载状态文本"),
+    override val focusExpressionPlaceholders: List<TemplatePlaceholder> = listOf(
+        TemplatePlaceholder("progress_text"),
+    )
+    override val islandExpressionPlaceholders: List<TemplatePlaceholder> = listOf(
+        TemplatePlaceholder("progress_text"),
     )
     override val defaultFocusTitleExpr: String = "${'$'}{title}"
     override val defaultFocusContentExpr: String = "${'$'}{subtitle_or_title}"
     override val defaultIslandLeftExpr: String = "${'$'}{state_label}"
     override val defaultIslandRightExpr: String = "${'$'}{subtitle_or_title}"
-    override val focusCustomizationSlots: Set<String> = setOf(
-        "focus_title",
-        "focus_content",
-        "focus_icon",
-        "focus_pic_profile",
-        "focus_app_icon_pkg",
-        "progress",
-        "progress_color",
-    )
-
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
         try {
             val vm = process(context, data)
             resolveRenderer(data.renderer).render(context, extras, vm)
-            val stateTag = when {
-                vm.circularProgress != null -> "${vm.circularProgress}%"
-                vm.updatable                -> "in-progress"
-                else                        -> "done/paused"
-            }
-            //module.log("$TAG: injected — ${data.title} ($stateTag) buttons=${data.actions.size}")
         } catch (e: Exception) {
             logError("$TAG: injection error: ${e.message}")
         }
@@ -169,7 +148,6 @@ object GenericDownloadIslandNotification : IslandTemplate {
             islandIcon        = islandIcon,
             focusIcon         = focusIcon,
             circularProgress  = if (shouldShowProgress) safeProgress else null,
-            showRightSide     = true,
             actions           = data.actions,
             updatable         = !isComplete && !isPaused,
             showNotification  = data.focusNotif != "off",
@@ -189,4 +167,10 @@ object GenericDownloadIslandNotification : IslandTemplate {
         )
         return FocusCustomizationEngine.applyIsland(data, FocusCustomizationEngine.apply(context, data, baseVm))
     }
+
+    override fun focusExpressionVars(data: NotifData, vm: IslandViewModel): Map<String, String> {
+        val progressText = data.progress.coerceIn(0, 100).toString()
+        return mapOf("progress_text" to progressText)
+    }
+
 }

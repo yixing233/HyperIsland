@@ -45,25 +45,15 @@ object AINotificationIslandNotification : IslandTemplate {
     const val TEMPLATE_ID = "ai_notification_island"
 
     override val id = TEMPLATE_ID
-    override val expressionPlaceholders = listOf(
-        TemplatePlaceholder("title", "通知标题"),
-        TemplatePlaceholder("subtitle", "通知正文"),
-        TemplatePlaceholder("subtitle_or_title", "正文(空则标题)"),
-        TemplatePlaceholder("pkg", "包名"),
-        TemplatePlaceholder("channel_id", "渠道ID"),
+    override val focusExpressionPlaceholders: List<TemplatePlaceholder> = listOf(
+        TemplatePlaceholder("ai_left"),
+        TemplatePlaceholder("ai_right"),
     )
+    override val islandExpressionPlaceholders: List<TemplatePlaceholder> = focusExpressionPlaceholders
     override val defaultFocusTitleExpr: String = "${'$'}{title}"
     override val defaultFocusContentExpr: String = "${'$'}{subtitle_or_title}"
     override val defaultIslandLeftExpr: String = "${'$'}{title}"
     override val defaultIslandRightExpr: String = "${'$'}{subtitle_or_title}"
-    override val focusCustomizationSlots: Set<String> = setOf(
-        "focus_title",
-        "focus_content",
-        "focus_icon",
-        "focus_pic_profile",
-        "focus_app_icon_pkg",
-    )
-
     private val executor = Executors.newCachedThreadPool()
 
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
@@ -238,6 +228,10 @@ $userPrompt
                 templateId = TEMPLATE_ID,
                 defaultLeft = leftText,
                 defaultRight = rightText,
+                extraVars = mapOf(
+                    "ai_left" to leftText,
+                    "ai_right" to rightText,
+                ),
             )
             IslandDispatcher.post(
                 context,
@@ -282,7 +276,6 @@ $userPrompt
             islandIcon        = islandIcon,
             focusIcon         = focusIcon,
             circularProgress  = null,
-            showRightSide     = true,
             actions           = data.actions,
             updatable         = data.isOngoing,
             showNotification  = showNotification,
@@ -301,6 +294,20 @@ $userPrompt
             outerGlow = data.outerGlow,
         )
         return FocusCustomizationEngine.applyIsland(data, FocusCustomizationEngine.apply(context, data, baseVm))
+    }
+
+    override fun focusExpressionVars(data: NotifData, vm: IslandViewModel): Map<String, String> {
+        return mapOf(
+            "ai_left" to vm.leftTitle,
+            "ai_right" to vm.rightTitle,
+        )
+    }
+
+    override fun islandExpressionVars(data: NotifData, vm: IslandViewModel): Map<String, String> {
+        return mapOf(
+            "ai_left" to vm.leftTitle,
+            "ai_right" to vm.rightTitle,
+        )
     }
 
     // ── 图标解析 ──────────────────────────────────────────────────────────────

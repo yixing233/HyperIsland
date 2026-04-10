@@ -2,6 +2,7 @@ package io.github.hyperisland.xposed.renderer
 
 import android.content.Context
 import android.os.Bundle
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldSpec
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 
 /**
@@ -19,12 +20,8 @@ object ImageTextWithButtonsWrapRenderer : IslandRenderer {
     const val RENDERER_ID = "image_text_with_buttons_4_wrap"
 
     override val id = RENDERER_ID
-    override val focusCustomizationSlots: Set<String> = setOf(
-        "focus_title",
-        "focus_content",
-        "focus_icon",
-        "progress",
-    )
+    override val focusCustomizationFields: List<FocusCustomizationFieldSpec> =
+        ImageTextWithButtonsRenderer.focusCustomizationFields
 
     override fun render(context: Context, extras: Bundle, vm: IslandViewModel) {
         ImageTextWithButtonsRenderer.renderWith(context, extras, vm, applyWrap = true)

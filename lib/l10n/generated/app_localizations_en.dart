@@ -541,11 +541,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get focusExpressionCustomizationSection =>
-      'Focus expression customization';
+      'Focus advanced customization';
 
   @override
   String get islandExpressionCustomizationSection =>
-      'Island expression customization';
+      'Island advanced customization';
 
   @override
   String get expandCustomization => 'Expand';
@@ -590,37 +590,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatContentColorDarkLabel => 'Chat content color (dark)';
 
   @override
-  String get progressOverrideLabel => 'Progress override';
-
-  @override
   String get progressColorLabel => 'Progress color';
 
   @override
-  String get colorPresetDefault => 'Default';
+  String get placeholderTitle => 'Notification title';
 
   @override
-  String get colorPresetBlack => 'Black';
+  String get placeholderSubtitle => 'Notification content';
 
   @override
-  String get colorPresetDarkGray => 'Dark gray';
+  String get placeholderSubtitleOrTitle => 'Content (fallback title)';
 
   @override
-  String get colorPresetLightGray => 'Light gray';
+  String get placeholderPkg => 'Package name';
 
   @override
-  String get colorPresetWhite => 'White';
+  String get placeholderChannelId => 'Channel ID';
 
   @override
-  String get colorPresetBlue => 'Blue';
+  String get placeholderProgress => 'Notification progress';
 
   @override
-  String get colorPresetGreen => 'Green';
+  String get placeholderStateLabel => 'State label';
 
   @override
-  String get colorPresetOrange => 'Orange';
+  String get placeholderProgressText => 'Progress text';
 
   @override
-  String get colorPresetRed => 'Red';
+  String get placeholderAiLeft => 'AI left text';
+
+  @override
+  String get placeholderAiRight => 'AI right text';
+
+  @override
+  String get placeholderRawTitle => 'Raw title';
+
+  @override
+  String get placeholderRawSubtitle => 'Raw subtitle';
+
+  @override
+  String get placeholderRawSubtitleOrTitle => 'Raw subtitle (fallback title)';
 
   @override
   String get islandLeftExprLabel => 'Island left expression';

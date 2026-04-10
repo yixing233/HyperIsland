@@ -1029,13 +1029,13 @@ abstract class AppLocalizations {
   /// No description provided for @focusExpressionCustomizationSection.
   ///
   /// In zh, this message translates to:
-  /// **'焦点表达式自定义'**
+  /// **'焦点高级自定义'**
   String get focusExpressionCustomizationSection;
 
   /// No description provided for @islandExpressionCustomizationSection.
   ///
   /// In zh, this message translates to:
-  /// **'超级岛表达式自定义'**
+  /// **'超级岛高级自定义'**
   String get islandExpressionCustomizationSection;
 
   /// No description provided for @expandCustomization.
@@ -1122,71 +1122,89 @@ abstract class AppLocalizations {
   /// **'聊天正文暗色'**
   String get chatContentColorDarkLabel;
 
-  /// No description provided for @progressOverrideLabel.
-  ///
-  /// In zh, this message translates to:
-  /// **'进度覆盖'**
-  String get progressOverrideLabel;
-
   /// No description provided for @progressColorLabel.
   ///
   /// In zh, this message translates to:
   /// **'进度条颜色'**
   String get progressColorLabel;
 
-  /// No description provided for @colorPresetDefault.
+  /// No description provided for @placeholderTitle.
   ///
   /// In zh, this message translates to:
-  /// **'默认'**
-  String get colorPresetDefault;
+  /// **'通知标题'**
+  String get placeholderTitle;
 
-  /// No description provided for @colorPresetBlack.
+  /// No description provided for @placeholderSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'黑'**
-  String get colorPresetBlack;
+  /// **'通知正文'**
+  String get placeholderSubtitle;
 
-  /// No description provided for @colorPresetDarkGray.
+  /// No description provided for @placeholderSubtitleOrTitle.
   ///
   /// In zh, this message translates to:
-  /// **'深灰'**
-  String get colorPresetDarkGray;
+  /// **'正文（空则标题）'**
+  String get placeholderSubtitleOrTitle;
 
-  /// No description provided for @colorPresetLightGray.
+  /// No description provided for @placeholderPkg.
   ///
   /// In zh, this message translates to:
-  /// **'浅灰'**
-  String get colorPresetLightGray;
+  /// **'包名'**
+  String get placeholderPkg;
 
-  /// No description provided for @colorPresetWhite.
+  /// No description provided for @placeholderChannelId.
   ///
   /// In zh, this message translates to:
-  /// **'白'**
-  String get colorPresetWhite;
+  /// **'渠道 ID'**
+  String get placeholderChannelId;
 
-  /// No description provided for @colorPresetBlue.
+  /// No description provided for @placeholderProgress.
   ///
   /// In zh, this message translates to:
-  /// **'蓝'**
-  String get colorPresetBlue;
+  /// **'通知进度'**
+  String get placeholderProgress;
 
-  /// No description provided for @colorPresetGreen.
+  /// No description provided for @placeholderStateLabel.
   ///
   /// In zh, this message translates to:
-  /// **'绿'**
-  String get colorPresetGreen;
+  /// **'状态文本'**
+  String get placeholderStateLabel;
 
-  /// No description provided for @colorPresetOrange.
+  /// No description provided for @placeholderProgressText.
   ///
   /// In zh, this message translates to:
-  /// **'橙'**
-  String get colorPresetOrange;
+  /// **'进度文本'**
+  String get placeholderProgressText;
 
-  /// No description provided for @colorPresetRed.
+  /// No description provided for @placeholderAiLeft.
   ///
   /// In zh, this message translates to:
-  /// **'红'**
-  String get colorPresetRed;
+  /// **'AI 左侧文本'**
+  String get placeholderAiLeft;
+
+  /// No description provided for @placeholderAiRight.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 右侧文本'**
+  String get placeholderAiRight;
+
+  /// No description provided for @placeholderRawTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始标题'**
+  String get placeholderRawTitle;
+
+  /// No description provided for @placeholderRawSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始正文'**
+  String get placeholderRawSubtitle;
+
+  /// No description provided for @placeholderRawSubtitleOrTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始正文（空则标题）'**
+  String get placeholderRawSubtitleOrTitle;
 
   /// No description provided for @islandLeftExprLabel.
   ///

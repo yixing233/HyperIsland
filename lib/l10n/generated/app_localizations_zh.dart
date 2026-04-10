@@ -518,10 +518,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get focusIconLabel => '焦点图标';
 
   @override
-  String get focusExpressionCustomizationSection => '焦点表达式自定义';
+  String get focusExpressionCustomizationSection => '焦点高级自定义';
 
   @override
-  String get islandExpressionCustomizationSection => '超级岛表达式自定义';
+  String get islandExpressionCustomizationSection => '超级岛高级自定义';
 
   @override
   String get expandCustomization => '展开';
@@ -566,37 +566,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatContentColorDarkLabel => '聊天正文暗色';
 
   @override
-  String get progressOverrideLabel => '进度覆盖';
-
-  @override
   String get progressColorLabel => '进度条颜色';
 
   @override
-  String get colorPresetDefault => '默认';
+  String get placeholderTitle => '通知标题';
 
   @override
-  String get colorPresetBlack => '黑';
+  String get placeholderSubtitle => '通知正文';
 
   @override
-  String get colorPresetDarkGray => '深灰';
+  String get placeholderSubtitleOrTitle => '正文（空则标题）';
 
   @override
-  String get colorPresetLightGray => '浅灰';
+  String get placeholderPkg => '包名';
 
   @override
-  String get colorPresetWhite => '白';
+  String get placeholderChannelId => '渠道 ID';
 
   @override
-  String get colorPresetBlue => '蓝';
+  String get placeholderProgress => '通知进度';
 
   @override
-  String get colorPresetGreen => '绿';
+  String get placeholderStateLabel => '状态文本';
 
   @override
-  String get colorPresetOrange => '橙';
+  String get placeholderProgressText => '进度文本';
 
   @override
-  String get colorPresetRed => '红';
+  String get placeholderAiLeft => 'AI 左侧文本';
+
+  @override
+  String get placeholderAiRight => 'AI 右侧文本';
+
+  @override
+  String get placeholderRawTitle => '原始标题';
+
+  @override
+  String get placeholderRawSubtitle => '原始正文';
+
+  @override
+  String get placeholderRawSubtitleOrTitle => '原始正文（空则标题）';
 
   @override
   String get islandLeftExprLabel => '超级岛左侧表达式';
