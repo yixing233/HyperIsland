@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../controllers/settings_controller.dart';
 import '../controllers/whitelist_controller.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'color_value_field.dart';
 
 // ── 操作模式（sealed class）──────────────────────────────────────────────────
 
@@ -327,6 +328,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           type == 'text' ||
           type == 'regex' ||
           type == 'number' ||
+          type == 'color' ||
           type == 'select') {
         final def = (field['defaultValue'] ?? '').toString();
         final value = (json[key] ?? def).toString();
@@ -370,6 +372,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   }
 
   Widget _buildFocusCustomizationFields() {
+    final l10n = AppLocalizations.of(context)!;
     final schema = _focusSchema;
     if (schema == null) {
       return const SizedBox.shrink();
@@ -393,11 +396,16 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
             final key = (p['key'] ?? '').toString();
             final label = (p['label'] ?? key).toString();
             if (key.isEmpty) return null;
-            return '\${$key} ($label)';
+            return _formatPlaceholderTip(key, label, l10n);
           })
           .whereType<String>()
           .join('  |  ');
-      children.add(_SettingField(label: '可用占位符', child: SelectableText(tips)));
+      children.add(
+        _SettingField(
+          label: l10n.availablePlaceholdersLabel,
+          child: SelectableText(tips),
+        ),
+      );
       children.add(const SizedBox(height: 10));
     }
 
@@ -408,7 +416,10 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           .join('  |  ');
       if (tips.isNotEmpty) {
         children.add(
-          _SettingField(label: '表达式函数', child: SelectableText(tips)),
+          _SettingField(
+            label: l10n.expressionFunctionsLabel,
+            child: SelectableText(tips),
+          ),
         );
         children.add(const SizedBox(height: 10));
       }
@@ -416,7 +427,11 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
 
     for (final field in fields) {
       final key = (field['key'] ?? '').toString();
-      final label = (field['label'] ?? key).toString();
+      final label = _localizedFieldLabel(
+        key,
+        (field['label'] ?? key).toString(),
+        l10n,
+      );
       final type = (field['type'] ?? '').toString();
       if (key.isEmpty) continue;
 
@@ -427,7 +442,14 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
             .map(
               (o) => DropdownMenuItem<String?>(
                 value: (o['value'] ?? '').toString(),
-                child: Text((o['label'] ?? o['value'] ?? '').toString()),
+                child: Text(
+                  _localizedOptionLabel(
+                    key,
+                    (o['value'] ?? '').toString(),
+                    (o['label'] ?? o['value'] ?? '').toString(),
+                    l10n,
+                  ),
+                ),
               ),
             )
             .toList();
@@ -449,6 +471,54 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                 _syncFocusCustomFromControllers();
               });
             },
+          ),
+        );
+      } else if (type == 'color') {
+        final options =
+            (field['options'] as List?)?.cast<Map>() ?? const <Map>[];
+        final items = options
+            .map(
+              (o) => DropdownMenuItem<String>(
+                value: (o['value'] ?? '').toString(),
+                child: Text(
+                  _localizedOptionLabel(
+                    key,
+                    (o['value'] ?? '').toString(),
+                    (o['label'] ?? o['value'] ?? '').toString(),
+                    l10n,
+                  ),
+                ),
+              ),
+            )
+            .toList();
+        final ctl = _focusControllers.putIfAbsent(
+          key,
+          () => TextEditingController(
+            text: (field['defaultValue'] ?? '').toString(),
+          ),
+        );
+        children.add(
+          _SettingField(
+            label: label,
+            child: ColorValueField(
+              controller: ctl,
+              decoration: _fieldDecoration(context),
+              previewColor: _parseColor(ctl.text),
+              previewFallbackColor: Theme.of(context).colorScheme.primary,
+              onChanged: (_) => setState(_syncFocusCustomFromControllers),
+              onPickColor: () async {
+                final color = await _showColorPicker(context);
+                if (color != null) {
+                  ctl.text = _toHexColor(color);
+                  setState(_syncFocusCustomFromControllers);
+                }
+              },
+              presetItems: items,
+              onPresetSelected: (v) {
+                ctl.text = v;
+                setState(_syncFocusCustomFromControllers);
+              },
+            ),
           ),
         );
       } else {
@@ -489,6 +559,7 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   }
 
   Widget _buildIslandCustomizationFields() {
+    final l10n = AppLocalizations.of(context)!;
     final schema = _islandSchema;
     if (schema == null) return const SizedBox.shrink();
     final placeholders =
@@ -505,11 +576,16 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
             final key = (p['key'] ?? '').toString();
             final label = (p['label'] ?? key).toString();
             if (key.isEmpty) return null;
-            return '\${$key} ($label)';
+            return _formatPlaceholderTip(key, label, l10n);
           })
           .whereType<String>()
           .join('  |  ');
-      children.add(_SettingField(label: '可用占位符', child: SelectableText(tips)));
+      children.add(
+        _SettingField(
+          label: l10n.availablePlaceholdersLabel,
+          child: SelectableText(tips),
+        ),
+      );
       children.add(const SizedBox(height: 10));
     }
     if (functions.isNotEmpty) {
@@ -519,7 +595,10 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           .join('  |  ');
       if (tips.isNotEmpty) {
         children.add(
-          _SettingField(label: '表达式函数', child: SelectableText(tips)),
+          _SettingField(
+            label: l10n.expressionFunctionsLabel,
+            child: SelectableText(tips),
+          ),
         );
         children.add(const SizedBox(height: 10));
       }
@@ -527,7 +606,11 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
 
     for (final field in fields) {
       final key = (field['key'] ?? '').toString();
-      final label = (field['label'] ?? key).toString();
+      final label = _localizedFieldLabel(
+        key,
+        (field['label'] ?? key).toString(),
+        l10n,
+      );
       if (key.isEmpty) continue;
       final ctl = _islandControllers.putIfAbsent(
         key,
@@ -558,6 +641,127 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
     final value = int.tryParse(cleaned, radix: 16);
     if (value == null) return null;
     return Color(value).withAlpha(255);
+  }
+
+  String _toHexColor(Color color) =>
+      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
+  String _formatPlaceholderTip(
+    String key,
+    String label,
+    AppLocalizations l10n,
+  ) {
+    if (Localizations.localeOf(context).languageCode == 'zh') {
+      return '\${$key} ($label)';
+    }
+    return '\${$key}';
+  }
+
+  String _localizedFieldLabel(
+    String key,
+    String fallback,
+    AppLocalizations l10n,
+  ) {
+    switch (key) {
+      case 'focus_title_expr':
+        return l10n.focusTitleExprLabel;
+      case 'focus_content_expr':
+        return l10n.focusContentExprLabel;
+      case 'focus_icon_mode':
+        return l10n.focusIconSourceLabel;
+      case 'progress_value':
+        return l10n.progressOverrideLabel;
+      case 'focus_pic_profile_mode':
+        return l10n.focusPicProfileSourceLabel;
+      case 'focus_app_icon_pkg':
+        return l10n.focusAppIconPkgLabel;
+      case 'focus_app_icon_pkg_mode':
+        return l10n.focusSecondaryIconSourceLabel;
+      case 'progress_color':
+        return l10n.progressColorLabel;
+      case 'chat_title_color':
+        return l10n.chatTitleColorLabel;
+      case 'chat_title_color_dark':
+        return l10n.chatTitleColorDarkLabel;
+      case 'chat_content_color':
+        return l10n.chatContentColorLabel;
+      case 'chat_content_color_dark':
+        return l10n.chatContentColorDarkLabel;
+      case 'island_left_expr':
+        return l10n.islandLeftExprLabel;
+      case 'island_right_expr':
+        return l10n.islandRightExprLabel;
+      default:
+        return fallback;
+    }
+  }
+
+  String _localizedOptionLabel(
+    String fieldKey,
+    String value,
+    String fallback,
+    AppLocalizations l10n,
+  ) {
+    if (fieldKey == 'focus_icon_mode' ||
+        fieldKey == 'focus_pic_profile_mode' ||
+        fieldKey == 'focus_app_icon_pkg_mode') {
+      switch (value) {
+        case kIconModeAuto:
+          return l10n.iconModeAuto;
+        case kIconModeNotifSmall:
+          return l10n.iconModeNotifSmall;
+        case kIconModeNotifLarge:
+          return l10n.iconModeNotifLarge;
+        case kIconModeAppIcon:
+          return l10n.iconModeAppIcon;
+      }
+    }
+    if (fieldKey == 'progress_color') {
+      switch (value.toUpperCase()) {
+        case '':
+          return l10n.colorPresetDefault;
+        case '#000000':
+          return l10n.colorPresetBlack;
+        case '#666666':
+          return l10n.colorPresetDarkGray;
+        case '#FFFFFF':
+          return l10n.colorPresetWhite;
+        case '#4FC3F7':
+          return l10n.colorPresetBlue;
+        case '#66BB6A':
+          return l10n.colorPresetGreen;
+        case '#FFA726':
+          return l10n.colorPresetOrange;
+        case '#EF5350':
+          return l10n.colorPresetRed;
+      }
+    }
+    if (fieldKey == 'chat_title_color' ||
+        fieldKey == 'chat_content_color' ||
+        fieldKey == 'chat_title_color_dark' ||
+        fieldKey == 'chat_content_color_dark') {
+      switch (value.toUpperCase()) {
+        case '':
+          return l10n.colorPresetDefault;
+        case '#000000':
+          return l10n.colorPresetBlack;
+        case '#666666':
+          return l10n.colorPresetDarkGray;
+        case '#B3B3B3':
+          return l10n.colorPresetLightGray;
+        case '#FFFFFF':
+          return l10n.colorPresetWhite;
+        case '#4FC3F7':
+          return l10n.colorPresetBlue;
+        case '#66BB6A':
+          return l10n.colorPresetGreen;
+        case '#FFA726':
+          return l10n.colorPresetOrange;
+        case '#EF5350':
+          return l10n.colorPresetRed;
+      }
+    }
+    return fallback;
   }
 
   Future<Color?> _showColorPicker(BuildContext context) async {
@@ -864,56 +1068,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                       _loadFocusSchema();
                     },
                   ),
-                  if (_isSingle) ...[
-                    SizedBox(height: rowGap),
-                    _SectionLabel('焦点自定义'),
-                    SizedBox(height: sectionTitleGap),
-                    OutlinedButton.icon(
-                      onPressed: () => setState(
-                        () => _focusCustomExpanded = !_focusCustomExpanded,
-                      ),
-                      icon: Icon(
-                        _focusCustomExpanded
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
-                      ),
-                      label: Text(_focusCustomExpanded ? '收起' : '展开'),
-                    ),
-                    if (_focusCustomExpanded) ...[
-                      SizedBox(height: rowGap),
-                      if (_loadingFocusSchema)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: LinearProgressIndicator(minHeight: 2),
-                        )
-                      else
-                        _buildFocusCustomizationFields(),
-                    ],
-                    SizedBox(height: rowGap),
-                    _SectionLabel('超级岛文本自定义'),
-                    SizedBox(height: sectionTitleGap),
-                    OutlinedButton.icon(
-                      onPressed: () => setState(
-                        () => _islandCustomExpanded = !_islandCustomExpanded,
-                      ),
-                      icon: Icon(
-                        _islandCustomExpanded
-                            ? Icons.expand_less_rounded
-                            : Icons.expand_more_rounded,
-                      ),
-                      label: Text(_islandCustomExpanded ? '收起' : '展开'),
-                    ),
-                    if (_islandCustomExpanded) ...[
-                      SizedBox(height: rowGap),
-                      if (_loadingIslandSchema)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: LinearProgressIndicator(minHeight: 2),
-                        )
-                      else
-                        _buildIslandCustomizationFields(),
-                    ],
-                  ],
                   SizedBox(height: blockGap),
 
                   // ── 超级岛 ─────────────────────────────────────────────
@@ -1073,80 +1227,40 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                   // 高亮颜色
                   _SettingField(
                     label: l10n.highlightColorLabel,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _highlightColorController,
-                            enabled: !_dynamicHighlightEnabled,
-                            readOnly: _dynamicHighlightEnabled,
-                            textInputAction: TextInputAction.done,
-                            scrollPadding: EdgeInsets.zero,
-                            onTapOutside: (_) {
-                              FocusManager.instance.primaryFocus?.unfocus();
+                    child: ColorValueField(
+                      controller: _highlightColorController,
+                      enabled: !_dynamicHighlightEnabled,
+                      readOnly: _dynamicHighlightEnabled,
+                      decoration: _fieldDecoration(
+                        context,
+                        hintText: _isSingle
+                            ? l10n.highlightColorHint
+                            : l10n.noChange,
+                      ),
+                      previewColor: _parseColor(_highlightColor),
+                      previewFallbackColor: cs.primary,
+                      onChanged: _dynamicHighlightEnabled
+                          ? null
+                          : (v) {
+                              final trimmed = v.trim();
+                              setState(() {
+                                _highlightColor = trimmed.isNotEmpty
+                                    ? trimmed
+                                    : null;
+                              });
                             },
-                            decoration:
-                                _fieldDecoration(
-                                  context,
-                                  hintText: _isSingle
-                                      ? l10n.highlightColorHint
-                                      : l10n.noChange,
-                                ).copyWith(
-                                  suffixIcon:
-                                      !_dynamicHighlightEnabled &&
-                                          _highlightColorController
-                                              .text
-                                              .isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(
-                                            Icons.clear,
-                                            size: 18,
-                                          ),
-                                          onPressed: () {
-                                            _highlightColorController.clear();
-                                            setState(
-                                              () => _highlightColor = null,
-                                            );
-                                          },
-                                        )
-                                      : null,
-                                ),
-                            onChanged: _dynamicHighlightEnabled
-                                ? null
-                                : (v) {
-                                    final trimmed = v.trim();
-                                    setState(() {
-                                      _highlightColor = trimmed.isNotEmpty
-                                          ? trimmed
-                                          : null;
-                                    });
-                                  },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: _dynamicHighlightEnabled
-                              ? null
-                              : () async {
-                                  final color = await _showColorPicker(context);
-                                  if (color != null) {
-                                    final hex =
-                                        '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
-                                    _highlightColorController.text = hex;
-                                    setState(() => _highlightColor = hex);
-                                  }
-                                },
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: _parseColor(_highlightColor) ?? cs.primary,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: cs.outline),
-                            ),
-                          ),
-                        ),
-                      ],
+                      onClear: () {
+                        _highlightColorController.clear();
+                        setState(() => _highlightColor = null);
+                      },
+                      onPickColor: () async {
+                        final color = await _showColorPicker(context);
+                        if (color != null) {
+                          final hex = _toHexColor(color);
+                          _highlightColorController.text = hex;
+                          setState(() => _highlightColor = hex);
+                        }
+                      },
                     ),
                   ),
                   SizedBox(height: rowGap),
@@ -1242,6 +1356,36 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                       ],
                     ),
                   ),
+                  if (_isSingle) ...[
+                    SizedBox(height: rowGap),
+                    _SectionLabel(l10n.islandExpressionCustomizationSection),
+                    SizedBox(height: sectionTitleGap),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(
+                        () => _islandCustomExpanded = !_islandCustomExpanded,
+                      ),
+                      icon: Icon(
+                        _islandCustomExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                      ),
+                      label: Text(
+                        _islandCustomExpanded
+                            ? l10n.collapseCustomization
+                            : l10n.expandCustomization,
+                      ),
+                    ),
+                    if (_islandCustomExpanded) ...[
+                      SizedBox(height: rowGap),
+                      if (_loadingIslandSchema)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        )
+                      else
+                        _buildIslandCustomizationFields(),
+                    ],
+                  ],
                   SizedBox(height: blockGap),
 
                   // ── 焦点通知 ───────────────────────────────────────────
@@ -1351,6 +1495,36 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                     ],
                     onChanged: (v) => setState(() => _outerGlow = v),
                   ),
+                  if (_isSingle) ...[
+                    SizedBox(height: rowGap),
+                    _SectionLabel(l10n.focusExpressionCustomizationSection),
+                    SizedBox(height: sectionTitleGap),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(
+                        () => _focusCustomExpanded = !_focusCustomExpanded,
+                      ),
+                      icon: Icon(
+                        _focusCustomExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                      ),
+                      label: Text(
+                        _focusCustomExpanded
+                            ? l10n.collapseCustomization
+                            : l10n.expandCustomization,
+                      ),
+                    ),
+                    if (_focusCustomExpanded) ...[
+                      SizedBox(height: rowGap),
+                      if (_loadingFocusSchema)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        )
+                      else
+                        _buildFocusCustomizationFields(),
+                    ],
+                  ],
                   SizedBox(height: endGap),
                 ],
               ),

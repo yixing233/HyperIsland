@@ -524,6 +524,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Image+Text+Right Text Button';
 
   @override
+  String get rendererImageTextWithProgressName => 'IM Image+Text+Progress';
+
+  @override
   String get islandIcon => 'Island icon';
 
   @override
@@ -535,6 +538,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get focusIconLabel => 'Focus icon';
+
+  @override
+  String get focusExpressionCustomizationSection =>
+      'Focus expression customization';
+
+  @override
+  String get islandExpressionCustomizationSection =>
+      'Island expression customization';
+
+  @override
+  String get expandCustomization => 'Expand';
+
+  @override
+  String get collapseCustomization => 'Collapse';
+
+  @override
+  String get availablePlaceholdersLabel => 'Available placeholders';
+
+  @override
+  String get expressionFunctionsLabel => 'Expression functions';
+
+  @override
+  String get focusTitleExprLabel => 'Focus title expression';
+
+  @override
+  String get focusContentExprLabel => 'Focus content expression';
+
+  @override
+  String get focusIconSourceLabel => 'Focus icon source';
+
+  @override
+  String get focusPicProfileSourceLabel => 'Profile icon source';
+
+  @override
+  String get focusAppIconPkgLabel => 'App icon package';
+
+  @override
+  String get focusSecondaryIconSourceLabel => 'Secondary icon source';
+
+  @override
+  String get chatTitleColorLabel => 'Chat title color';
+
+  @override
+  String get chatTitleColorDarkLabel => 'Chat title color (dark)';
+
+  @override
+  String get chatContentColorLabel => 'Chat content color';
+
+  @override
+  String get chatContentColorDarkLabel => 'Chat content color (dark)';
+
+  @override
+  String get progressOverrideLabel => 'Progress override';
+
+  @override
+  String get progressColorLabel => 'Progress color';
+
+  @override
+  String get colorPresetDefault => 'Default';
+
+  @override
+  String get colorPresetBlack => 'Black';
+
+  @override
+  String get colorPresetDarkGray => 'Dark gray';
+
+  @override
+  String get colorPresetLightGray => 'Light gray';
+
+  @override
+  String get colorPresetWhite => 'White';
+
+  @override
+  String get colorPresetBlue => 'Blue';
+
+  @override
+  String get colorPresetGreen => 'Green';
+
+  @override
+  String get colorPresetOrange => 'Orange';
+
+  @override
+  String get colorPresetRed => 'Red';
+
+  @override
+  String get islandLeftExprLabel => 'Island left expression';
+
+  @override
+  String get islandRightExprLabel => 'Island right expression';
 
   @override
   String get focusNotificationLabel => 'Focus notification';

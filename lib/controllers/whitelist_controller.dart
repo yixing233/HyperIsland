@@ -11,8 +11,6 @@ const kPrefGenericWhitelist = 'pref_generic_whitelist';
 const kTemplateGenericProgress = 'generic_progress';
 const kTemplateNotificationIsland = 'notification_island';
 const kTemplateDownload = 'download';
-const kTemplateDownloadLite = 'download_lite';
-const kTemplateNotificationIslandLite = 'notification_island_lite';
 const kTemplateAiNotificationIsland = 'ai_notification_island';
 
 /// 可用的灵动岛渲染器（样式）标识符。
@@ -20,6 +18,7 @@ const kRendererImageTextWithButtons4 = 'image_text_with_buttons_4';
 const kRendererImageTextWithButtons4Wrap = 'image_text_with_buttons_4_wrap';
 const kRendererImageTextWithRightTextButton =
     'image_text_with_right_text_button';
+const kRendererImageTextWithProgress = 'image_text_with_progress';
 
 // 图标模式选项（图标样式 & 焦点图标共用）
 const kIconModeAuto = 'auto';
@@ -47,6 +46,17 @@ class ChannelInfo {
 }
 
 class WhitelistController extends ChangeNotifier {
+  static String _normalizeTemplateId(String template) {
+    switch (template) {
+      case 'notification_island_lite':
+        return kTemplateNotificationIsland;
+      case 'download_lite':
+        return kTemplateGenericProgress;
+      default:
+        return template;
+    }
+  }
+
   List<AppInfo> _allApps = [];
   // 稳定列表：切换开关时不重排，仅 _resort() 时更新
   List<AppInfo> _sortedApps = [];
@@ -238,8 +248,6 @@ class WhitelistController extends ChangeNotifier {
   Map<String, String> getTemplates(AppLocalizations l10n) => {
     kTemplateGenericProgress: l10n.templateDownloadName,
     kTemplateNotificationIsland: l10n.templateNotificationIslandName,
-    kTemplateNotificationIslandLite: l10n.templateNotificationIslandLiteName,
-    kTemplateDownloadLite: l10n.templateDownloadLiteName,
     kTemplateAiNotificationIsland: l10n.templateAiNotificationIslandName,
   };
 
@@ -249,6 +257,7 @@ class WhitelistController extends ChangeNotifier {
     kRendererImageTextWithButtons4Wrap: l10n.rendererCoverInfoName,
     kRendererImageTextWithRightTextButton:
         l10n.rendererImageTextWithRightTextButtonName,
+    kRendererImageTextWithProgress: l10n.rendererImageTextWithProgressName,
   };
 
   /// 批量读取指定包内各渠道的模板设置，返回 channelId → template 映射。
@@ -262,7 +271,7 @@ class WhitelistController extends ChangeNotifier {
         final template =
             prefs.getString('pref_channel_template_${packageName}_$id') ??
             kTemplateNotificationIsland;
-        return MapEntry(id, template);
+        return MapEntry(id, _normalizeTemplateId(template));
       }),
     );
   }

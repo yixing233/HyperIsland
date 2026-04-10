@@ -28,10 +28,24 @@ data class IslandViewModel(
     val islandIcon: Icon,
     /** 焦点通知图标（iconTextInfo 区域）。 */
     val focusIcon: Icon,
+    /** IM 图文组件头像图标（chatInfo.picProfile）。 */
+    val focusPicProfileIcon: Icon? = null,
+    /** IM 图文组件 appPkg（头像角标应用包名）。 */
+    val focusAppIconPkg: String? = null,
+    /** IM 图文组件标题颜色。 */
+    val chatTitleColor: String? = null,
+    /** IM 图文组件标题暗色颜色。 */
+    val chatTitleColorDark: String? = null,
+    /** IM 图文组件正文颜色。 */
+    val chatContentColor: String? = null,
+    /** IM 图文组件正文暗色颜色。 */
+    val chatContentColorDark: String? = null,
 
     // ── 可选环形进度 ────────────────────────────────────────────────────────
     /** 进度值 0–100；非 null 时大岛右侧显示环形进度，同时小岛显示进度环。 */
     val circularProgress: Int? = null,
+    /** 进度条颜色（#RRGGBB / #AARRGGBB），用于 progressInfo。 */
+    val progressColor: String? = null,
     /** false 时大岛不渲染右侧区域（仅左侧图标，无文字无进度）。 */
     val showRightSide: Boolean = true,
 

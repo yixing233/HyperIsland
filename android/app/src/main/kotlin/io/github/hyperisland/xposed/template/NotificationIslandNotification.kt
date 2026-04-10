@@ -8,6 +8,7 @@ import io.github.hyperisland.xposed.log
 import io.github.hyperisland.xposed.logError
 import io.github.hyperisland.xposed.islanddispatch.IslandRequest
 import io.github.hyperisland.xposed.template.core.contracts.IslandTemplate
+import io.github.hyperisland.xposed.template.core.contracts.TemplatePlaceholder
 import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationEngine
 import io.github.hyperisland.xposed.template.core.models.NotifData
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
@@ -30,6 +31,24 @@ object NotificationIslandNotification : IslandTemplate {
     const val TEMPLATE_ID = "notification_island"
 
     override val id = TEMPLATE_ID
+    override val expressionPlaceholders = listOf(
+        TemplatePlaceholder("title", "通知标题"),
+        TemplatePlaceholder("subtitle", "通知正文"),
+        TemplatePlaceholder("subtitle_or_title", "正文(空则标题)"),
+        TemplatePlaceholder("pkg", "包名"),
+        TemplatePlaceholder("channel_id", "渠道ID"),
+    )
+    override val focusCustomizationSlots: Set<String> = setOf(
+        "focus_title",
+        "focus_content",
+        "focus_icon",
+        "focus_pic_profile",
+        "focus_app_icon_pkg",
+    )
+    override val defaultFocusTitleExpr: String = "${'$'}{title}"
+    override val defaultFocusContentExpr: String = "${'$'}{subtitle_or_title}"
+    override val defaultIslandLeftExpr: String = "${'$'}{title}"
+    override val defaultIslandRightExpr: String = "${'$'}{subtitle_or_title}"
 
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
         if (data.focusNotif == "off") {
@@ -58,6 +77,7 @@ object NotificationIslandNotification : IslandTemplate {
             }.toRounded(context)
             val islandText = FocusCustomizationEngine.resolveIslandText(
                 data = data,
+                templateId = TEMPLATE_ID,
                 defaultLeft = data.title,
                 defaultRight = data.subtitle.ifEmpty { data.title },
             )

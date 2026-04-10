@@ -529,6 +529,9 @@ class AppLocalizationsTr extends AppLocalizations {
       'Görsel + Metin + Sağ Metin Düğmesi';
 
   @override
+  String get rendererImageTextWithProgressName => 'IM图文组件 + 进度条组件';
+
+  @override
   String get islandIcon => 'Ada Simgesi';
 
   @override
@@ -540,6 +543,93 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get focusIconLabel => 'Odak Simgesi';
+
+  @override
+  String get focusExpressionCustomizationSection => '焦点表达式自定义';
+
+  @override
+  String get islandExpressionCustomizationSection => '超级岛表达式自定义';
+
+  @override
+  String get expandCustomization => '展开';
+
+  @override
+  String get collapseCustomization => '收起';
+
+  @override
+  String get availablePlaceholdersLabel => '可用占位符';
+
+  @override
+  String get expressionFunctionsLabel => '表达式函数';
+
+  @override
+  String get focusTitleExprLabel => '焦点标题表达式';
+
+  @override
+  String get focusContentExprLabel => '焦点正文表达式';
+
+  @override
+  String get focusIconSourceLabel => '焦点图标来源';
+
+  @override
+  String get focusPicProfileSourceLabel => '头像图标来源';
+
+  @override
+  String get focusAppIconPkgLabel => '应用图标包名';
+
+  @override
+  String get focusSecondaryIconSourceLabel => '副图标来源';
+
+  @override
+  String get chatTitleColorLabel => '聊天标题颜色';
+
+  @override
+  String get chatTitleColorDarkLabel => '聊天标题暗色';
+
+  @override
+  String get chatContentColorLabel => '聊天正文颜色';
+
+  @override
+  String get chatContentColorDarkLabel => '聊天正文暗色';
+
+  @override
+  String get progressOverrideLabel => '进度覆盖';
+
+  @override
+  String get progressColorLabel => '进度条颜色';
+
+  @override
+  String get colorPresetDefault => '默认';
+
+  @override
+  String get colorPresetBlack => '黑';
+
+  @override
+  String get colorPresetDarkGray => '深灰';
+
+  @override
+  String get colorPresetLightGray => '浅灰';
+
+  @override
+  String get colorPresetWhite => '白';
+
+  @override
+  String get colorPresetBlue => '蓝';
+
+  @override
+  String get colorPresetGreen => '绿';
+
+  @override
+  String get colorPresetOrange => '橙';
+
+  @override
+  String get colorPresetRed => '红';
+
+  @override
+  String get islandLeftExprLabel => '超级岛左侧表达式';
+
+  @override
+  String get islandRightExprLabel => '超级岛右侧表达式';
 
   @override
   String get focusNotificationLabel => 'Odak Bildirimini Kullan';

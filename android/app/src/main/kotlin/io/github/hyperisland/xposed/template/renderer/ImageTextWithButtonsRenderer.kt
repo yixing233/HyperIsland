@@ -31,6 +31,12 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
     const val RENDERER_ID = "image_text_with_buttons_4"
 
     override val id = RENDERER_ID
+    override val focusCustomizationSlots: Set<String> = setOf(
+        "focus_title",
+        "focus_content",
+        "focus_icon",
+        "progress",
+    )
 
     override fun render(context: Context, extras: Bundle, vm: IslandViewModel) {
         renderWith(context, extras, vm, applyWrap = false)
@@ -81,10 +87,7 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
             when {
                 vm.circularProgress != null -> builder.setBigIslandInfo(
                     left = leftSide,
-                    progressText = ProgressTextInfo(
-                        progressInfo = CircularProgressInfo(progress = vm.circularProgress),
-                        textInfo     = TextInfo(title = vm.rightTitle, narrowFont = vm.showRightNarrowFont, showHighlightColor = vm.showRightHighlightColor),
-                    ),
+                    progressText = progressTextInfoFor(vm),
                 )
                 vm.showRightSide -> builder.setBigIslandInfo(
                     left  = leftSide,
@@ -129,6 +132,7 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
 
             var jsonParam = fixTextButtonJson(builder.buildJsonParam())
             if (applyWrap) jsonParam = wrapLongTextJson(jsonParam)
+            jsonParam = injectProgressColor(jsonParam, vm.progressColor)
             jsonParam = injectUpdatable(jsonParam, vm.updatable)
             jsonParam = injectHighlightColor(jsonParam, vm.highlightColor)
             jsonParam = injectOuterGlow(jsonParam, vm.outerGlow)
@@ -152,4 +156,67 @@ object ImageTextWithButtonsRenderer : IslandRenderer {
             Log.d("HyperIsland", "HyperIsland[$RENDERER_ID]: render error: ${e.message}")
         }
     }
+}
+
+fun injectProgressColor(jsonParam: String, progressColor: String?): String {
+    if (progressColor.isNullOrBlank()) return jsonParam
+    return try {
+        val json = org.json.JSONObject(jsonParam)
+        val pv2 = json.optJSONObject("param_v2") ?: return jsonParam
+        val progressText = pv2.optJSONObject("progressTextInfo") ?: return jsonParam
+        val progressInfo = progressText.optJSONObject("progressInfo") ?: return jsonParam
+        progressInfo.put("colorProgress", progressColor)
+        progressInfo.put("colorProgressEnd", progressColor)
+        json.toString()
+    } catch (_: Exception) {
+        jsonParam
+    }
+}
+
+fun injectImChatInfo(
+    jsonParam: String,
+    picProfileKey: String,
+    picProfileDarkKey: String?,
+    title: String,
+    content: String,
+    progress: Int?,
+    progressColor: String?,
+): String = try {
+    val json = org.json.JSONObject(jsonParam)
+    val pv2 = json.optJSONObject("param_v2") ?: return jsonParam
+    val chatInfo = org.json.JSONObject().apply {
+        put("picProfile", picProfileKey)
+        if (!picProfileDarkKey.isNullOrBlank()) {
+            put("picProfileDark", picProfileDarkKey)
+        }
+        put("title", title)
+        put("content", content)
+        if (progress != null) {
+            val p = org.json.JSONObject().apply {
+                put("progress", progress)
+                progressColor?.let {
+                    put("colorProgress", it)
+                    put("colorProgressEnd", it)
+                }
+            }
+            put("progressInfo", p)
+        }
+    }
+    pv2.remove("iconTextInfo")
+    pv2.put("chatInfo", chatInfo)
+    json.toString()
+} catch (_: Exception) {
+    jsonParam
+}
+
+fun progressTextInfoFor(vm: IslandViewModel): ProgressTextInfo {
+    val p = vm.circularProgress ?: 0
+    return ProgressTextInfo(
+        progressInfo = CircularProgressInfo(progress = p),
+        textInfo = TextInfo(
+            title = vm.rightTitle,
+            narrowFont = vm.showRightNarrowFont,
+            showHighlightColor = vm.showRightHighlightColor,
+        ),
+    )
 }

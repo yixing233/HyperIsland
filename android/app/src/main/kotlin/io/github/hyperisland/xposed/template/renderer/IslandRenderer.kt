@@ -14,6 +14,8 @@ import io.github.hyperisland.xposed.template.core.models.IslandViewModel
  */
 interface IslandRenderer {
     val id: String
+    val focusCustomizationSlots: Set<String>
+        get() = setOf("focus_title", "focus_content", "focus_icon")
     fun render(context: Context, extras: Bundle, vm: IslandViewModel)
 }
 
@@ -125,6 +127,7 @@ fun injectOuterGlow(jsonParam: String, outerGlow: Boolean): String {
 fun resolveRenderer(id: String): IslandRenderer = when (id) {
     ImageTextWithButtonsWrapRenderer.RENDERER_ID -> ImageTextWithButtonsWrapRenderer
     ImageTextWithRightTextButtonRenderer.RENDERER_ID -> ImageTextWithRightTextButtonRenderer
+    ImageTextWithProgressRenderer.RENDERER_ID -> ImageTextWithProgressRenderer
     else -> ImageTextWithButtonsRenderer
 }
 

@@ -19,6 +19,12 @@ object ImageTextWithButtonsWrapRenderer : IslandRenderer {
     const val RENDERER_ID = "image_text_with_buttons_4_wrap"
 
     override val id = RENDERER_ID
+    override val focusCustomizationSlots: Set<String> = setOf(
+        "focus_title",
+        "focus_content",
+        "focus_icon",
+        "progress",
+    )
 
     override fun render(context: Context, extras: Bundle, vm: IslandViewModel) {
         ImageTextWithButtonsRenderer.renderWith(context, extras, vm, applyWrap = true)
