@@ -32,6 +32,7 @@ object MarqueeHook : BaseHook() {
     private val scrollerMap = WeakHashMap<TextView, MarqueeController>()
     private val observedViews = WeakHashMap<TextView, TextViewListeners>()
     private val islandMarqueeState = WeakHashMap<ViewGroup, Boolean>()
+    private val forcedSingleLineMaxLines = WeakHashMap<TextView, Int>()
 
     @Volatile private var cachedSpeed: Int? = null
 
@@ -68,8 +69,12 @@ object MarqueeHook : BaseHook() {
     }
 
     private fun stopAllMarquees() {
+        val textViews = observedViews.keys.toList()
+        textViews.forEach { unobserveTextView(it) }
         scrollerMap.values.forEach { it.stop() }
         scrollerMap.clear()
+        forcedSingleLineMaxLines.clear()
+        islandMarqueeState.clear()
     }
 
     fun startMarquee(textView: TextView) {
@@ -80,6 +85,9 @@ object MarqueeHook : BaseHook() {
             return
         }
         if (textView.maxLines != 1) {
+            if (!forcedSingleLineMaxLines.containsKey(textView)) {
+                forcedSingleLineMaxLines[textView] = textView.maxLines
+            }
             textView.setSingleLine(true)
         }
         if (fullText != cleanText) {
@@ -103,6 +111,11 @@ object MarqueeHook : BaseHook() {
     fun stopMarquee(textView: TextView) {
         val controller = scrollerMap.remove(textView)
         controller?.stop()
+        val originalMaxLines = forcedSingleLineMaxLines.remove(textView)
+        if (originalMaxLines != null) {
+            textView.setSingleLine(false)
+            textView.maxLines = originalMaxLines
+        }
         val fullText = textView.text?.toString() ?: ""
         val cleanText = normalizeText(fullText)
         if (fullText != cleanText) {
@@ -142,54 +155,50 @@ object MarqueeHook : BaseHook() {
     private fun traverseInternal(view: View, enabled: Boolean) {
         if (view is TextView) {
             if (isInExpandedView(view)) return
-            if (observedViews.containsKey(view)) {
-                if (enabled) startMarquee(view)
-                else stopMarquee(view)
-                return
+            if (enabled) {
+                observeTextView(view)
+                startMarquee(view)
+            } else {
+                unobserveTextView(view)
+                stopMarquee(view)
             }
-            
-            val listeners = ArrayList<View.OnLayoutChangeListener>()
-            val layoutListener = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
-                val tv = v as TextView
-                if (isInExpandedView(tv)) return@OnLayoutChangeListener
-                if (isMarqueeEnabledFor(tv)) startMarquee(tv)
-                else stopMarquee(tv)
-            }
-            listeners.add(layoutListener)
-            view.addOnLayoutChangeListener(layoutListener)
-            
-            val textWatcher = object : android.text.TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-                override fun afterTextChanged(s: android.text.Editable?) {
-                    if (isInExpandedView(view)) return
-                    if (isMarqueeEnabledFor(view)) startMarquee(view)
-                    else stopMarquee(view)
-                }
-            }
-            view.addTextChangedListener(textWatcher)
-            observedViews[view] = TextViewListeners(listeners, textWatcher)
-            
-            if (enabled) startMarquee(view)
-            else stopMarquee(view)
         } else if (view is ViewGroup) {
-            view.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
-                override fun onChildViewAdded(parent: View?, child: View?) {
-                    if (child is TextView) {
-                        if (isInExpandedView(child)) return
-                        traverseInternal(child, isMarqueeEnabledFor(child))
-                    } else if (child is ViewGroup) {
-                        traverseInternal(child, false)
-                    }
-                }
-                override fun onChildViewRemoved(parent: View?, child: View?) {
-                    if (child is TextView) stopMarquee(child)
-                }
-            })
             for (i in 0 until view.childCount) {
                 traverseInternal(view.getChildAt(i), enabled)
             }
         }
+    }
+
+    private fun observeTextView(view: TextView) {
+        if (observedViews.containsKey(view)) return
+
+        val listeners = ArrayList<View.OnLayoutChangeListener>()
+        val layoutListener = View.OnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+            val tv = v as TextView
+            if (isInExpandedView(tv)) return@OnLayoutChangeListener
+            if (isMarqueeEnabledFor(tv)) startMarquee(tv)
+            else stopMarquee(tv)
+        }
+        listeners.add(layoutListener)
+        view.addOnLayoutChangeListener(layoutListener)
+
+        val textWatcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                if (isInExpandedView(view)) return
+                if (isMarqueeEnabledFor(view)) startMarquee(view)
+                else stopMarquee(view)
+            }
+        }
+        view.addTextChangedListener(textWatcher)
+        observedViews[view] = TextViewListeners(listeners, textWatcher)
+    }
+
+    private fun unobserveTextView(view: TextView) {
+        val listeners = observedViews.remove(view) ?: return
+        listeners.layoutListeners.forEach { view.removeOnLayoutChangeListener(it) }
+        view.removeTextChangedListener(listeners.textWatcher)
     }
 
     private var hookedContentView = false
@@ -220,8 +229,7 @@ object MarqueeHook : BaseHook() {
     private fun hookContentViewClasses(module: XposedModule, classLoader: ClassLoader) {
         if (hookedContentView) return
         val classNames = arrayOf(
-            "miui.systemui.dynamicisland.window.content.DynamicIslandContentView",
-            "miui.systemui.dynamicisland.window.content.DynamicIslandContentFakeView"
+            "miui.systemui.dynamicisland.window.content.DynamicIslandContentView"
         )
         for (className in classNames) {
             try {
@@ -265,14 +273,17 @@ object MarqueeHook : BaseHook() {
                             val whitelist = loadWhitelist()
                             val allowedChannels = whitelist[pkgName]
                             if (allowedChannels == null) {
+                                traverseAndApplyMarquee(islandView, false)
                                 return@intercept result
                             }
 
                             if (allowedChannels.isNotEmpty() && channelId.isEmpty()) {
+                                traverseAndApplyMarquee(islandView, false)
                                 return@intercept result
                             }
                             
                             if (allowedChannels.isNotEmpty() && channelId.isNotEmpty() && channelId !in allowedChannels) {
+                                traverseAndApplyMarquee(islandView, false)
                                 return@intercept result
                             }
                             
@@ -286,6 +297,7 @@ object MarqueeHook : BaseHook() {
                             }
                             
                             if (!enabled || isOngoing) {
+                                traverseAndApplyMarquee(islandView, false)
                                 return@intercept result
                             }
                             
