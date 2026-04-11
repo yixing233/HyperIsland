@@ -1,5 +1,6 @@
 package io.github.hyperisland.ui.app
 
+import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -55,7 +56,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import io.github.hyperisland.data.prefs.PrefKeys
 import io.github.hyperisland.ui.FaGlyph
 import io.github.hyperisland.ui.FaIcon
 import io.github.hyperisland.ui.isAppInDarkTheme
@@ -726,6 +729,17 @@ private fun ChannelSettingsContent(
     onSetHighlightColor: (String) -> Unit,
 ) {
     val uiLanguage = io.github.hyperisland.ui.LocalUiLanguage.current
+    val context = LocalContext.current
+    val defaultDynamicHighlightEnabled = remember(context) {
+        context.getSharedPreferences(PrefKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(PrefKeys.DEFAULT_DYNAMIC_HIGHLIGHT_COLOR, false)
+    }
+    val dynamicHighlightEnabled = remember(extras.dynamicHighlightColor, defaultDynamicHighlightEnabled) {
+        isDynamicHighlightEnabled(extras.dynamicHighlightColor, defaultDynamicHighlightEnabled)
+    }
+    val hasHighlightColor = dynamicHighlightEnabled || extras.highlightColor.trim().isNotEmpty()
+    val focusDisabled = extras.focus == "off"
+    val preserveSmallIconValue = if (focusDisabled) "off" else extras.preserveSmallIcon
 
     fun triStateOptions(defaultOn: Boolean): List<Pair<String, String>> = listOf(
         "default" to if (defaultOn) textOf(uiLanguage, "默认(开启)", "Default (On)") else textOf(uiLanguage, "默认(关闭)", "Default (Off)"),
@@ -821,12 +835,17 @@ private fun ChannelSettingsContent(
             )
             InputDialogRow(
                 title = textOf("高亮颜色", "Highlight Color"),
-                subtitle = textOf("点击后输入 #RRGGBB，留空可清空", "Tap to enter #RRGGBB, or leave blank to clear"),
+                subtitle = if (dynamicHighlightEnabled) {
+                    textOf("动态取色开启时不可编辑", "Disabled while dynamic highlight is enabled")
+                } else {
+                    textOf("点击后输入 #RRGGBB，留空可清空", "Tap to enter #RRGGBB, or leave blank to clear")
+                },
                 value = highlightDraft,
                 emptyValueText = textOf("未设置", "Not Set"),
                 dialogTitle = textOf("修改高亮颜色", "Edit Highlight Color"),
                 dialogDescription = textOf("请输入 #RRGGBB 格式，留空可清空当前颜色", "Enter a color in #RRGGBB format, or leave blank to clear"),
                 enableColorPalette = true,
+                enabled = !dynamicHighlightEnabled,
                 onConfirm = {
                     val next = it.trim()
                     highlightDraft = next
@@ -846,11 +865,13 @@ private fun ChannelSettingsContent(
             SwitchSettingRow(
                 title = textOf("左侧高亮", "Left Highlight"),
                 checked = extras.showLeftHighlight == "on",
+                enabled = hasHighlightColor,
                 onCheckedChange = { onSetSetting("show_left_highlight", if (it) "on" else "off") },
             )
             SwitchSettingRow(
                 title = textOf("右侧高亮", "Right Highlight"),
                 checked = extras.showRightHighlight == "on",
+                enabled = hasHighlightColor,
                 onCheckedChange = { onSetSetting("show_right_highlight", if (it) "on" else "off") },
             )
             SettingsDropdownRow(
@@ -882,12 +903,17 @@ private fun ChannelSettingsContent(
             SettingsDropdownRow(textOf("焦点图标", "Focus Icon"), iconModeOptions, extras.focusIcon, true, largeText = true) {
                 onSetSetting("focus_icon", it)
             }
-            SettingsDropdownRow(textOf("焦点通知", "Focus Notification"), focusOptions, extras.focus, true, largeText = true) { onSetSetting("focus", it) }
+            SettingsDropdownRow(textOf("焦点通知", "Focus Notification"), focusOptions, extras.focus, true, largeText = true) {
+                onSetSetting("focus", it)
+                if (it == "off" && extras.preserveSmallIcon != "off") {
+                    onSetSetting("preserve_small_icon", "off")
+                }
+            }
             SettingsDropdownRow(
                 textOf("状态栏图标", "Status Bar Icon"),
                 preserveStatusBarOptions,
-                extras.preserveSmallIcon,
-                extras.focus != "off",
+                preserveSmallIconValue,
+                !focusDisabled,
                 largeText = true,
             ) { onSetSetting("preserve_small_icon", it) }
             SettingsDropdownRow(textOf("锁屏通知恢复", "Restore on Lock Screen"), restoreLockscreenOptions, extras.restoreLockscreen, true, largeText = true) {
@@ -1010,6 +1036,7 @@ private fun InputDialogRow(
     dialogTitle: String,
     dialogDescription: String,
     enableColorPalette: Boolean = false,
+    enabled: Boolean = true,
     onConfirm: (String) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -1017,15 +1044,15 @@ private fun InputDialogRow(
     val inputFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val displayValue = value.ifBlank { emptyValueText }
-    val titleColor = MiuixTheme.colorScheme.onBackground
-    val summaryColor = MiuixTheme.colorScheme.onSurfaceVariantSummary
-    val valueColor = MiuixTheme.colorScheme.onSurfaceVariantActions
+    val titleColor = if (enabled) MiuixTheme.colorScheme.onBackground else MiuixTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+    val summaryColor = if (enabled) MiuixTheme.colorScheme.onSurfaceVariantSummary else MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.5f)
+    val valueColor = if (enabled) MiuixTheme.colorScheme.onSurfaceVariantActions else MiuixTheme.colorScheme.onSurfaceVariantActions.copy(alpha = 0.5f)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clickable {
+            .clickable(enabled = enabled) {
                 draft = value
                 showDialog = true
             }
@@ -1150,6 +1177,11 @@ private fun BatchApplyDialog(
     onApply: (Map<String, String>) -> Unit,
 ) {
     val noChange = "__NO_CHANGE__"
+    val context = LocalContext.current
+    val defaultDynamicHighlightEnabled = remember(context) {
+        context.getSharedPreferences(PrefKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(PrefKeys.DEFAULT_DYNAMIC_HIGHLIGHT_COLOR, false)
+    }
     val triStateOptions = listOf(
         noChange to "不更改",
         "default" to "默认",
@@ -1213,6 +1245,16 @@ private fun BatchApplyDialog(
     var outEffectColor by remember { mutableStateOf("") }
     var focusCustom by remember { mutableStateOf("") }
     var islandCustom by remember { mutableStateOf("") }
+    val dynamicHighlightEnabled = remember(dynamicHighlightColor, defaultDynamicHighlightEnabled) {
+        isDynamicHighlightEnabled(
+            value = dynamicHighlightColor,
+            defaultEnabled = defaultDynamicHighlightEnabled,
+            noChangeValue = noChange,
+        )
+    }
+    val hasHighlightColor = dynamicHighlightEnabled || highlightColor.trim().isNotEmpty()
+    val focusDisabled = focus == "off"
+    val preserveSmallIconValue = if (focusDisabled) "off" else preserveSmallIcon
     OverlayBottomSheet(
         show = true,
         title = title,
@@ -1241,7 +1283,7 @@ private fun BatchApplyDialog(
                     putIfChanged("icon", icon)
                     putIfChanged("focus_icon", focusIcon)
                     putIfChanged("focus", focus)
-                    putIfChanged("preserve_small_icon", preserveSmallIcon)
+                    putIfChanged("preserve_small_icon", preserveSmallIconValue)
                     putIfChanged("show_island_icon", showIslandIcon)
                     putIfChanged("first_float", firstFloat)
                     putIfChanged("enable_float", enableFloat)
@@ -1322,12 +1364,13 @@ private fun BatchApplyDialog(
                     )
                     InputDialogRow(
                         title = "高亮颜色",
-                        subtitle = "点击后输入 #RRGGBB，留空表示不更改",
+                        subtitle = if (dynamicHighlightEnabled) "动态取色开启时不可编辑" else "点击后输入 #RRGGBB，留空表示不更改",
                         value = highlightColor,
                         emptyValueText = "不更改",
                         dialogTitle = "修改高亮颜色",
                         dialogDescription = "请输入 #RRGGBB 格式，留空表示不更改",
                         enableColorPalette = true,
+                        enabled = !dynamicHighlightEnabled,
                         onConfirm = { highlightColor = it.trim() },
                     )
                     InputDialogRow(
@@ -1343,10 +1386,10 @@ private fun BatchApplyDialog(
                     SettingsDropdownRow("高亮动态取色", dynamicHighlightOptions, dynamicHighlightColor, true, largeText = true) {
                         dynamicHighlightColor = it
                     }
-                    SettingsDropdownRow("左侧高亮", toggleOptions, showLeftHighlight, true, largeText = true) {
+                    SettingsDropdownRow("左侧高亮", toggleOptions, showLeftHighlight, hasHighlightColor, largeText = true) {
                         showLeftHighlight = it
                     }
-                    SettingsDropdownRow("右侧高亮", toggleOptions, showRightHighlight, true, largeText = true) {
+                    SettingsDropdownRow("右侧高亮", toggleOptions, showRightHighlight, hasHighlightColor, largeText = true) {
                         showRightHighlight = it
                     }
                     SettingsDropdownRow("左侧窄字体", toggleOptions, showLeftNarrowFont, true, largeText = true) {
@@ -1360,8 +1403,13 @@ private fun BatchApplyDialog(
                 ChannelSectionTitle("焦点通知")
                 BatchSheetSectionCard {
                     SettingsDropdownRow("焦点图标", iconModeOptions, focusIcon, true, largeText = true) { focusIcon = it }
-                    SettingsDropdownRow("焦点通知", triStateOptions, focus, true, largeText = true) { focus = it }
-                    SettingsDropdownRow("状态栏图标", triStateOptions, preserveSmallIcon, true, largeText = true) {
+                    SettingsDropdownRow("焦点通知", triStateOptions, focus, true, largeText = true) {
+                        focus = it
+                        if (it == "off") {
+                            preserveSmallIcon = "off"
+                        }
+                    }
+                    SettingsDropdownRow("状态栏图标", triStateOptions, preserveSmallIconValue, !focusDisabled, largeText = true) {
                         preserveSmallIcon = it
                     }
                     SettingsDropdownRow("锁屏通知恢复", triStateOptions, restoreLockscreen, true, largeText = true) {
@@ -1392,6 +1440,19 @@ private fun BatchApplyDialog(
             }
         },
     )
+}
+
+private fun isDynamicHighlightEnabled(
+    value: String,
+    defaultEnabled: Boolean,
+    noChangeValue: String? = null,
+): Boolean {
+    if (value == noChangeValue) return false
+    return when (value) {
+        "default" -> defaultEnabled
+        "on", "dark", "darker" -> true
+        else -> false
+    }
 }
 
 private fun parseHexColorOrNull(raw: String): Color? {
@@ -1482,6 +1543,7 @@ private fun AppItemRow(
 private fun SwitchSettingRow(
     title: String,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
@@ -1496,9 +1558,9 @@ private fun SwitchSettingRow(
             text = title,
             fontSize = MiuixTheme.textStyles.headline1.fontSize,
             fontWeight = FontWeight.Medium,
-            color = MiuixTheme.colorScheme.onBackground,
+            color = if (enabled) MiuixTheme.colorScheme.onBackground else MiuixTheme.colorScheme.onBackground.copy(alpha = 0.5f),
         )
-        MiuixSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        MiuixSwitch(checked = checked, onCheckedChange = if (enabled) onCheckedChange else ({ _: Boolean -> }))
     }
 }
 

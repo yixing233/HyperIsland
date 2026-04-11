@@ -123,7 +123,14 @@ class AppChannelsViewModel(
         val next = when (setting) {
             "icon" -> current.copy(icon = value)
             "focus_icon" -> current.copy(focusIcon = value)
-            "focus" -> current.copy(focus = value)
+            "focus" -> {
+                if (value == "off") {
+                    repo.setChannelSetting(packageName, channelId, "preserve_small_icon", "off")
+                    current.copy(focus = value, preserveSmallIcon = "off")
+                } else {
+                    current.copy(focus = value)
+                }
+            }
             "preserve_small_icon" -> current.copy(preserveSmallIcon = value)
             "show_island_icon" -> current.copy(showIslandIcon = value)
             "first_float" -> current.copy(firstFloat = value)
