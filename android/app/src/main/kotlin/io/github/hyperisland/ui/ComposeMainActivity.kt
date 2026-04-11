@@ -8,16 +8,17 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.WindowManager
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.activity.SystemBarStyle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -50,10 +52,6 @@ import top.yukonga.miuix.kmp.basic.Checkbox as MiuixCheckbox
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -61,6 +59,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -72,16 +72,22 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme as MaterialDarkColorScheme
+import androidx.compose.material3.lightColorScheme as MaterialLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
@@ -117,18 +123,18 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
 import io.github.hyperisland.data.prefs.PrefKeys
 import io.github.hyperisland.data.prefs.SettingsState
 import io.github.hyperisland.ui.ai.AiConfigScreen
@@ -171,6 +177,7 @@ import top.yukonga.miuix.kmp.basic.SmallTitle as MiuixSmallTitle
 import top.yukonga.miuix.kmp.basic.Slider as MiuixSlider
 import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
 import top.yukonga.miuix.kmp.basic.TopAppBar as MiuixTopAppBar
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
@@ -178,20 +185,28 @@ import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference as MiuixOverlayDropdownPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.darkColorScheme as MiuixDarkColorScheme
+import top.yukonga.miuix.kmp.theme.lightColorScheme as MiuixLightColorScheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.pressable
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
+import java.lang.reflect.Method
 
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
+import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
 import androidx.compose.runtime.compositionLocalOf
 
 val LocalContentPadding = compositionLocalOf { PaddingValues(0.dp) }
+private var forcedAppDarkMode: Boolean? by mutableStateOf(null)
+
+@Composable
+fun isAppInDarkTheme(): Boolean = forcedAppDarkMode ?: isSystemInDarkTheme()
 
 class ComposeMainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -211,8 +226,16 @@ class ComposeMainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
         setContent {
-            MiuixTheme {
-                MaterialTheme {
+            val darkTheme = isAppInDarkTheme()
+            SideEffect {
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                insetsController.isAppearanceLightStatusBars = !darkTheme
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    insetsController.isAppearanceLightNavigationBars = !darkTheme
+                }
+            }
+            MiuixTheme(colors = if (darkTheme) MiuixDarkColorScheme() else MiuixLightColorScheme()) {
+                MaterialTheme(colorScheme = if (darkTheme) MaterialDarkColorScheme() else MaterialLightColorScheme()) {
                     HyperIslandComposeApp()
                 }
             }
@@ -225,6 +248,50 @@ private data class TopLevelDestination(
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
 )
+
+private sealed interface AppScreen : NavKey {
+    data object Home : AppScreen
+    data object Apps : AppScreen
+    data object Settings : AppScreen
+    data class AppChannels(val packageName: String) : AppScreen
+    data class ChannelSettings(
+        val packageName: String,
+        val channelId: String,
+        val channelName: String,
+    ) : AppScreen
+    data object Blacklist : AppScreen
+    data object AiConfig : AppScreen
+}
+
+private fun topLevelScreen(screen: AppScreen): AppScreen = when (screen) {
+    AppScreen.Home -> AppScreen.Home
+    AppScreen.Apps -> AppScreen.Apps
+    AppScreen.Settings -> AppScreen.Settings
+    is AppScreen.AppChannels -> AppScreen.Apps
+    is AppScreen.ChannelSettings -> AppScreen.Apps
+    AppScreen.Blacklist -> AppScreen.Settings
+    AppScreen.AiConfig -> AppScreen.Settings
+}
+
+private fun screenTitle(screen: AppScreen): String = when (screen) {
+    AppScreen.Home -> "主页"
+    AppScreen.Apps -> "应用"
+    AppScreen.Settings -> "设置"
+    is AppScreen.AppChannels -> "渠道设置"
+    is AppScreen.ChannelSettings -> "渠道详情"
+    AppScreen.Blacklist -> "通知黑名单"
+    AppScreen.AiConfig -> "AI 配置"
+}
+
+private fun screenDepth(screen: AppScreen): Int = when (screen) {
+    AppScreen.Home,
+    AppScreen.Apps,
+    AppScreen.Settings -> 1
+    is AppScreen.AppChannels,
+    AppScreen.Blacklist,
+    AppScreen.AiConfig -> 2
+    is AppScreen.ChannelSettings -> 3
+}
 
 private data class NavigationStyleState(
     val floating: Boolean,
@@ -338,88 +405,31 @@ private val SettingsFilledIcon: ImageVector by lazy {
     }.build()
 }
 
-private fun mainRouteIndex(route: String?): Int = when (route) {
-    "home" -> 0
-    "apps" -> 1
-    "settings" -> 2
-    else -> -1
-}
-
-private fun routeLevel(route: String?): Int = when {
-    route == "home" || route == "apps" || route == "settings" -> 1
-    route == "blacklist" || route == "ai_config" || route?.startsWith("app_channels/") == true -> 2
-    route?.startsWith("channel_settings/") == true -> 3
-    else -> 1
-}
-
-private fun resolveMainSwitchDirection(
-    fromRoute: String?,
-    toRoute: String?,
-): AnimatedContentTransitionScope.SlideDirection? {
-    val fromMain = mainRouteIndex(fromRoute)
-    val toMain = mainRouteIndex(toRoute)
-    if (fromMain < 0 || toMain < 0 || fromMain == toMain) return null
-    return if (toMain > fromMain) {
-        AnimatedContentTransitionScope.SlideDirection.Left
-    } else {
-        AnimatedContentTransitionScope.SlideDirection.Right
-    }
-}
-
-private fun resolveRouteForwardSlideDirection(
-    fromRoute: String?,
-    toRoute: String?,
-): AnimatedContentTransitionScope.SlideDirection? {
-    if (fromRoute == toRoute) return null
-
-    val fromLevel = routeLevel(fromRoute)
-    val toLevel = routeLevel(toRoute)
-
-    return if (toLevel > fromLevel) {
-        AnimatedContentTransitionScope.SlideDirection.Left
-    } else if (toLevel < fromLevel) {
-        AnimatedContentTransitionScope.SlideDirection.Right
-    } else {
-        AnimatedContentTransitionScope.SlideDirection.Left
-    }
-}
-
-private fun resolveRoutePopSlideDirection(
-    fromRoute: String?,
-    toRoute: String?,
-): AnimatedContentTransitionScope.SlideDirection? {
-    if (fromRoute == toRoute) return null
-
-    val fromMain = mainRouteIndex(fromRoute)
-    val toMain = mainRouteIndex(toRoute)
-    if (fromMain >= 0 && toMain >= 0 && fromMain != toMain) {
-        return null
-    }
-
-    val fromLevel = routeLevel(fromRoute)
-    val toLevel = routeLevel(toRoute)
-    return if (toLevel < fromLevel) {
-        AnimatedContentTransitionScope.SlideDirection.Right
-    } else if (toLevel > fromLevel) {
-        AnimatedContentTransitionScope.SlideDirection.Left
-    } else {
-        AnimatedContentTransitionScope.SlideDirection.Right
-    }
-}
-
 private const val DOCUMENTATION_URL = "https://hyperisland.1812z.top/"
 private const val GITHUB_REPO_URL = "https://github.com/1812z/HyperIsland"
 private const val GITHUB_RELEASE_URL = "https://github.com/1812z/HyperIsland/releases/latest"
 private const val QQ_GROUP_NUMBER = "1045114341"
 private const val DEFAULT_MARQUEE_SPEED = 100
 private const val DEFAULT_BIG_ISLAND_MAX_WIDTH = 600
-private const val ROUTE_TRANSITION_DURATION_MS = 280
-private const val OVERLAY_TRANSITION_DURATION_MS = 320
+private const val BAR_BLUR_RADIUS = 28f
+private const val BAR_BLUR_NOISE = 0.016f
 
-private fun resolveNightMode(themeMode: String): Int = when (themeMode) {
-    "light" -> AppCompatDelegate.MODE_NIGHT_NO
-    "dark" -> AppCompatDelegate.MODE_NIGHT_YES
-    else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+@Composable
+private fun barBlurColors(): BlurColors {
+    val dark = isAppInDarkTheme()
+    return if (dark) {
+        BlurColors(
+            brightness = -0.015f,
+            contrast = 0.86f,
+            saturation = 0.74f,
+        )
+    } else {
+        BlurColors(
+            brightness = 0.008f,
+            contrast = 0.88f,
+            saturation = 0.78f,
+        )
+    }
 }
 
 @Composable
@@ -479,8 +489,11 @@ private fun HyperCeilerNavigationSwitchBar(
     modifier: Modifier = Modifier,
     backdrop: LayerBackdrop? = null,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     val colorScheme = MaterialTheme.colorScheme
+    val blurColors = barBlurColors()
+    val blurBackdrop = backdrop
+    val useBackdropBlur = blurBackdrop != null && !isDarkTheme
     val navBottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     AnimatedContent(
         targetState = style.floating,
@@ -522,7 +535,7 @@ private fun HyperCeilerNavigationSwitchBar(
                     ),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .width(style.floatingContainerWidth)
                         .height(style.floatingContainerHeight)
@@ -534,24 +547,6 @@ private fun HyperCeilerNavigationSwitchBar(
                             clip = false,
                         )
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(style.floatingCornerRadius))
-                        .let { if (backdrop != null) it.textureBlur(backdrop, shape = androidx.compose.foundation.shape.RoundedCornerShape(style.floatingCornerRadius), blurRadiusX = 32f, blurRadiusY = 32f) else it }
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = if (isDarkTheme) {
-                                    listOf(
-                                        colorScheme.surface.copy(alpha = if (backdrop != null) 0.78f else 0.96f),
-                                        colorScheme.surfaceVariant.copy(alpha = if (backdrop != null) 0.70f else 0.90f),
-                                        colorScheme.surface.copy(alpha = if (backdrop != null) 0.66f else 0.86f),
-                                    )
-                                } else {
-                                    listOf(
-                                        Color(0xFFFFFFFF).copy(alpha = if (backdrop != null) 0.65f else 1f),
-                                        Color(0xFFFAFAFB).copy(alpha = if (backdrop != null) 0.65f else 1f),
-                                        Color(0xFFF3F4F6).copy(alpha = if (backdrop != null) 0.65f else 1f),
-                                    )
-                                },
-                            ),
-                        )
                         .drawWithCache {
                             val halfW = size.width / 2f
                             val halfH = size.height / 2f
@@ -565,10 +560,10 @@ private fun HyperCeilerNavigationSwitchBar(
                             val outerStrokeBrush = if (isDarkTheme) {
                                 Brush.linearGradient(
                                     colors = listOf(
-                                        colorScheme.outline.copy(alpha = 0.44f),
-                                        colorScheme.onSurface.copy(alpha = 0.22f),
-                                        colorScheme.surfaceVariant.copy(alpha = 0.26f),
-                                        colorScheme.outline.copy(alpha = 0.34f),
+                                        colorScheme.outline.copy(alpha = 0.28f),
+                                        colorScheme.onSurface.copy(alpha = 0.14f),
+                                        colorScheme.surfaceVariant.copy(alpha = 0.16f),
+                                        colorScheme.outline.copy(alpha = 0.22f),
                                     ),
                                     start = Offset(halfW - dx, halfH - dy),
                                     end = Offset(halfW + dx, halfH + dy),
@@ -588,8 +583,8 @@ private fun HyperCeilerNavigationSwitchBar(
                             val innerStrokeBrush = if (isDarkTheme) {
                                 Brush.verticalGradient(
                                     colors = listOf(
-                                        colorScheme.onSurface.copy(alpha = 0.20f),
-                                        colorScheme.outline.copy(alpha = 0.10f),
+                                        colorScheme.onSurface.copy(alpha = 0.12f),
+                                        colorScheme.outline.copy(alpha = 0.06f),
                                         Color.Transparent,
                                     ),
                                     startY = 0f,
@@ -622,68 +617,74 @@ private fun HyperCeilerNavigationSwitchBar(
                                 )
                             }
                         },
-                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    items.forEachIndexed { index, destination ->
-                        HyperCeilerNavItem(
-                            destination = destination,
-                            selected = index == selectedIndex,
-                            showLabel = style.floatingMode != MiuixFloatingNavigationBarDisplayMode.IconOnly,
-                            iconSize = style.floatingIconSize,
-                            itemHorizontalPadding = style.floatingItemHorizontalPadding,
-                            unselectedAlpha = style.unselectedAlpha,
-                            suppressPressEffect = true,
-                            onClick = { onDestinationClick(destination) },
-                            modifier = Modifier.weight(1f),
-                        )
+                    MiuiBlurredSurface(
+                        modifier = Modifier.fillMaxSize(),
+                        fallbackBackdrop = if (useBackdropBlur) blurBackdrop else null,
+                        fallbackBlurColors = blurColors,
+                        overlayAlphaFallbackDark = 0.48f,
+                        overlayAlphaFallbackLight = 0.54f,
+                        overlayAlphaNativeDark = 0.52f,
+                        overlayAlphaNativeLight = 0.58f,
+                    ) {}
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        items.forEachIndexed { index, destination ->
+                            HyperCeilerNavItem(
+                                destination = destination,
+                                selected = index == selectedIndex,
+                                showLabel = style.floatingMode != MiuixFloatingNavigationBarDisplayMode.IconOnly,
+                                iconSize = style.floatingIconSize,
+                                itemHorizontalPadding = style.floatingItemHorizontalPadding,
+                                unselectedAlpha = style.unselectedAlpha,
+                                suppressPressEffect = true,
+                                onClick = { onDestinationClick(destination) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 }
             }
         } else {
-            Column(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .let { if (backdrop != null) it.textureBlur(backdrop, shape = androidx.compose.ui.graphics.RectangleShape, blurRadiusX = 32f, blurRadiusY = 32f) else it }
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = if (backdrop != null) 0.7f else 1f))
+            MiuiBlurredSurface(
+                modifier = modifier.fillMaxWidth(),
+                fallbackBackdrop = if (useBackdropBlur) blurBackdrop else null,
+                fallbackBlurColors = blurColors,
+                overlayAlphaFallbackDark = 0.48f,
+                overlayAlphaFallbackLight = 0.54f,
+                overlayAlphaNativeDark = 0.52f,
+                overlayAlphaNativeLight = 0.58f,
             ) {
-                if (style.bottomShowDivider) {
-                    HorizontalDivider()
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = if (style.bottomWindowInsetsPadding) navBottomInset else 0.dp)
-                        .height(style.bottomContainerHeight),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    items.forEachIndexed { index, destination ->
-                        HyperCeilerNavItem(
-                            destination = destination,
-                            selected = index == selectedIndex,
-                            showLabel = style.bottomShowLabel,
-                            iconSize = style.bottomIconSize,
-                            itemHorizontalPadding = style.bottomItemHorizontalPadding,
-                            unselectedAlpha = style.unselectedAlpha,
-                            suppressPressEffect = false,
-                            onClick = { onDestinationClick(destination) },
-                            modifier = Modifier.weight(1f),
-                        )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    if (style.bottomShowDivider) {
+                        HorizontalDivider()
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = if (style.bottomWindowInsetsPadding) navBottomInset else 0.dp)
+                            .height(style.bottomContainerHeight),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        items.forEachIndexed { index, destination ->
+                            HyperCeilerNavItem(
+                                destination = destination,
+                                selected = index == selectedIndex,
+                                showLabel = style.bottomShowLabel,
+                                iconSize = style.bottomIconSize,
+                                itemHorizontalPadding = style.bottomItemHorizontalPadding,
+                                unselectedAlpha = style.unselectedAlpha,
+                                suppressPressEffect = false,
+                                onClick = { onDestinationClick(destination) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 }
             }
         }
-    }
-}
-
-private fun routeTitle(route: String?): String {
-    return when {
-        route == "home" -> "主页"
-        route == "apps" -> "应用"
-        route == "settings" -> "设置"
-        route?.startsWith("app_channels/") == true -> "渠道设置"
-        route == "blacklist" -> "通知黑名单"
-        route == "ai_config" -> "AI 配置"
-        else -> "HyperIsland"
     }
 }
 
@@ -692,14 +693,14 @@ private fun primaryCardModifier(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
 ): Modifier {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     return modifier
         .clip(shape)
         .then(
             if (isDarkTheme) {
                 Modifier.border(
                     1.dp,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.34f),
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
                     shape,
                 )
             } else {
@@ -710,7 +711,7 @@ private fun primaryCardModifier(
 
 @Composable
 private fun OverlayPopupMenuContainer(content: @Composable () -> Unit) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     val containerShape = RoundedCornerShape(16.dp)
     Box(
         modifier = Modifier
@@ -747,21 +748,197 @@ private fun openExternalUrl(context: Context, url: String) {
     }
 }
 
+private fun isBlurEffectEnabled(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+    return runCatching {
+        val wm = context.getSystemService(WindowManager::class.java)
+        wm?.isCrossWindowBlurEnabled == true
+    }.getOrDefault(false)
+}
+
+@Composable
+private fun MiuiBlurredSurface(
+    modifier: Modifier = Modifier,
+    fallbackBackdrop: LayerBackdrop? = null,
+    fallbackBlurColors: BlurColors = BlurColors(),
+    overlayAlphaFallbackDark: Float = 0.48f,
+    overlayAlphaFallbackLight: Float = 0.54f,
+    overlayAlphaNativeDark: Float = 0.52f,
+    overlayAlphaNativeLight: Float = 0.58f,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val context = LocalContext.current
+    val blurRadiusPx = with(LocalDensity.current) { 46.dp.roundToPx() }
+    var nativeBlurApplied by remember { mutableStateOf(false) }
+    val useFallbackBlur = fallbackBackdrop != null && !nativeBlurApplied
+    val overlayAlpha = if (useFallbackBlur) {
+        if (isAppInDarkTheme()) overlayAlphaFallbackDark else overlayAlphaFallbackLight
+    } else {
+        if (isAppInDarkTheme()) overlayAlphaNativeDark else overlayAlphaNativeLight
+    }
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = { ctx ->
+                View(ctx).apply {
+                    isClickable = false
+                    isFocusable = false
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                }
+            },
+            modifier = Modifier.matchParentSize(),
+            update = { view ->
+                nativeBlurApplied = MiuiTopBarBlurCompat.apply(view, context, blurRadiusPx)
+            },
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .let {
+                    if (useFallbackBlur) {
+                        it.textureBlur(
+                            backdrop = fallbackBackdrop,
+                            shape = RectangleShape,
+                            blurRadiusX = BAR_BLUR_RADIUS,
+                            blurRadiusY = BAR_BLUR_RADIUS,
+                            noiseCoefficient = BAR_BLUR_NOISE,
+                            colors = fallbackBlurColors,
+                        )
+                    } else {
+                        it
+                    }
+                },
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = overlayAlpha)),
+        )
+        content()
+    }
+}
+
+@Composable
+private fun MiuiBlurredTopBar(
+    modifier: Modifier = Modifier,
+    fallbackBackdrop: LayerBackdrop? = null,
+    fallbackBlurColors: BlurColors = BlurColors(),
+    content: @Composable BoxScope.() -> Unit,
+) {
+    MiuiBlurredSurface(
+        modifier = modifier,
+        fallbackBackdrop = fallbackBackdrop,
+        fallbackBlurColors = fallbackBlurColors,
+        content = content,
+    )
+}
+
+private object MiuiTopBarBlurCompat {
+    private const val TAG = "MiuiTopBarBlur"
+    private var loggedOnce = false
+
+    private val fanBlurClass: Class<*>? by lazy {
+        runCatching { Class.forName("fan.core.utils.MiuiBlurUtils") }.getOrNull()
+    }
+    private val fanIsEnable: Method? by lazy {
+        runCatching { fanBlurClass?.getDeclaredMethod("isEnable") }.getOrNull()
+    }
+    private val fanIsEffectEnable: Method? by lazy {
+        runCatching { fanBlurClass?.getDeclaredMethod("isEffectEnable", Context::class.java) }.getOrNull()
+    }
+    private val fanSetBackgroundBlur: Method? by lazy {
+        runCatching {
+            fanBlurClass?.getDeclaredMethod("setBackgroundBlur", View::class.java, Int::class.javaPrimitiveType)
+        }.getOrNull()
+    }
+    private val fanSetViewBlurMode: Method? by lazy {
+        runCatching {
+            fanBlurClass?.getDeclaredMethod("setViewBlurMode", View::class.java, Int::class.javaPrimitiveType)
+        }.getOrNull()
+    }
+
+    private val setBackgroundBlur: Method? by lazy {
+        runCatching { View::class.java.getDeclaredMethod("setBackgroundBlur", Int::class.javaPrimitiveType) }.getOrNull()
+    }
+    private val setViewBlurMode: Method? by lazy {
+        runCatching { View::class.java.getDeclaredMethod("setViewBlurMode", Int::class.javaPrimitiveType) }.getOrNull()
+    }
+    private val setPassWindowBlurEnabled: Method? by lazy {
+        runCatching {
+            View::class.java.getDeclaredMethod("setPassWindowBlurEnabled", Boolean::class.javaPrimitiveType)
+        }.getOrNull()
+    }
+    private val setMiBackgroundBlurMode: Method? by lazy {
+        runCatching { View::class.java.getDeclaredMethod("setMiBackgroundBlurMode", Int::class.javaPrimitiveType) }.getOrNull()
+    }
+    private val setMiBackgroundBlurRadius: Method? by lazy {
+        runCatching { View::class.java.getDeclaredMethod("setMiBackgroundBlurRadius", Int::class.javaPrimitiveType) }.getOrNull()
+    }
+    private val setMiViewBlurMode: Method? by lazy {
+        runCatching { View::class.java.getDeclaredMethod("setMiViewBlurMode", Int::class.javaPrimitiveType) }.getOrNull()
+    }
+
+    fun apply(view: View, context: Context, radiusPx: Int): Boolean {
+        return runCatching {
+            var applied = false
+            val safeRadius = radiusPx.coerceIn(1, 500)
+
+            val fanEnabled = runCatching { fanIsEnable?.invoke(null) as? Boolean }.getOrNull() ?: false
+            val fanEffectEnabled = runCatching { fanIsEffectEnable?.invoke(null, context) as? Boolean }.getOrNull() ?: false
+            if (fanEnabled && fanEffectEnabled && fanSetBackgroundBlur != null && fanSetViewBlurMode != null) {
+                fanSetBackgroundBlur?.invoke(null, view, safeRadius)
+                fanSetViewBlurMode?.invoke(null, view, 0)
+                applied = true
+            }
+
+            if (!applied) {
+                setPassWindowBlurEnabled?.invoke(view, true)
+                setMiBackgroundBlurMode?.invoke(view, 1)
+                setMiBackgroundBlurRadius?.invoke(view, safeRadius)
+                setMiViewBlurMode?.invoke(view, 1)
+                applied = setMiBackgroundBlurMode != null && setMiBackgroundBlurRadius != null
+            }
+
+            if (!applied && setBackgroundBlur != null && setViewBlurMode != null) {
+                setBackgroundBlur?.invoke(view, safeRadius)
+                setViewBlurMode?.invoke(view, 0)
+                applied = true
+            }
+
+            if (!loggedOnce) {
+                loggedOnce = true
+                Log.i(
+                    TAG,
+                    "applied=$applied, fanClass=${fanBlurClass != null}, fanEnabled=$fanEnabled, fanEffectEnabled=$fanEffectEnabled",
+                )
+            }
+            applied
+        }.getOrDefault(false)
+    }
+}
+
 @Composable
 private fun HyperIslandComposeApp() {
-    val navController = rememberNavController()
+    val backStack = remember { mutableStateListOf<AppScreen>(AppScreen.Home) }
     val navigationEventDispatcherOwner = rememberNavigationEventDispatcherOwner(parent = null)
     val backdrop = rememberLayerBackdrop()
     val context = LocalContext.current
+    val blurEnabled = remember(context) { isBlurEffectEnabled(context) }
+    val activeBackdrop = if (blurEnabled) backdrop else null
+    val topBarFallbackBlurColors = barBlurColors()
     val homeVm: HomeViewModel = viewModel()
     val appsVm: AppsViewModel = viewModel()
     val blacklistVm: BlacklistViewModel = viewModel()
     val settingsVm: SettingsViewModel = viewModel()
     val settingsState by settingsVm.uiState.collectAsStateWithLifecycle()
-    LaunchedEffect(settingsState.themeMode) {
-        val targetMode = resolveNightMode(settingsState.themeMode)
-        if (AppCompatDelegate.getDefaultNightMode() != targetMode) {
-            AppCompatDelegate.setDefaultNightMode(targetMode)
+    var useFloatingNavigationBarUi by remember { mutableStateOf(settingsState.useFloatingNavigationBar) }
+    LaunchedEffect(settingsState.useFloatingNavigationBar) {
+        useFloatingNavigationBarUi = settingsState.useFloatingNavigationBar
+    }
+    SideEffect {
+        forcedAppDarkMode = when (settingsState.themeMode) {
+            "dark" -> true
+            "light" -> false
+            else -> null
         }
     }
     val appsState by appsVm.uiState.collectAsStateWithLifecycle()
@@ -836,7 +1013,7 @@ private fun HyperIslandComposeApp() {
             unselectedAlpha = 0.4f,
         )
     }
-    val activeNavStyleState = if (settingsState.useFloatingNavigationBar) {
+    val activeNavStyleState = if (useFloatingNavigationBarUi) {
                         capsuleNavStyleState
     } else {
         bottomNavStyleState
@@ -888,32 +1065,72 @@ private fun HyperIslandComposeApp() {
         }
     }
 
-    val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentScreen = backStack.lastOrNull() ?: AppScreen.Home
+    val currentTopLevelScreen = topLevelScreen(currentScreen)
+    fun topLevelIndexOf(screen: AppScreen): Int = when (topLevelScreen(screen)) {
+        AppScreen.Home -> 0
+        AppScreen.Apps -> 1
+        else -> 2
+    }
+    fun topLevelScreenOf(index: Int): AppScreen = when (index) {
+        1 -> AppScreen.Apps
+        2 -> AppScreen.Settings
+        else -> AppScreen.Home
+    }
+    var selectedTopLevelIndex by rememberSaveable { mutableIntStateOf(topLevelIndexOf(currentTopLevelScreen)) }
+    val isAppChannelsScreen = currentScreen is AppScreen.AppChannels
+    val isChannelSettingsScreen = currentScreen is AppScreen.ChannelSettings
+    val isBlacklistScreen = currentScreen == AppScreen.Blacklist
+    val isAiConfigScreen = currentScreen == AppScreen.AiConfig
+    val isAppsPrimaryScreen = currentScreen == AppScreen.Apps
 
     val appListState = rememberLazyListState()
-
-    val scope = rememberCoroutineScope()
-    val selectedIndex = items.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
-    val onPrimaryDestinationClick: (TopLevelDestination) -> Unit = { destination ->
-        navController.navigate(destination.route) {
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
+    fun navigateTo(screen: AppScreen) {
+        if (backStack.lastOrNull() != screen) {
+            backStack.add(screen)
         }
     }
-    val topBarTitle = if (currentRoute?.startsWith("channel_settings/") == true) {
-        Uri.decode(backStackEntry?.arguments?.getString("channelName").orEmpty())
-            .ifBlank { "渠道详情" }
-    } else {
-        routeTitle(currentRoute)
+    fun popScreen(): Boolean {
+        return if (backStack.size > 1) {
+            backStack.removeLast()
+            true
+        } else {
+            false
+        }
     }
-    val isSecondaryRoute = currentRoute?.startsWith("app_channels/") == true ||
-        currentRoute?.startsWith("channel_settings/") == true ||
-        currentRoute == "blacklist" ||
-        currentRoute == "ai_config"
+    fun navigateTopLevel(screen: AppScreen) {
+        val target = topLevelScreen(screen)
+        val latest = backStack.lastOrNull() ?: AppScreen.Home
+        if (latest == target && backStack.size == 1) return
+        if (backStack.size == 1) {
+            // 一级页面切换使用同层替换，避免被识别为 push/pop 导致动画方向异常。
+            backStack[0] = target
+            return
+        }
+        backStack.clear()
+        backStack.add(target)
+    }
+    val selectedIndex = selectedTopLevelIndex
+    val onPrimaryDestinationClick: (TopLevelDestination) -> Unit = { destination ->
+        val targetIndex = items.indexOfFirst { it.route == destination.route }.let { if (it == -1) 0 else it }
+        selectedTopLevelIndex = targetIndex
+        val target = topLevelScreenOf(targetIndex)
+        navigateTopLevel(target)
+    }
+    val topBarTitle = if (currentScreen is AppScreen.ChannelSettings) {
+        currentScreen.channelName.ifBlank { "渠道详情" }
+    } else {
+        screenTitle(currentScreen)
+    }
+    val isSecondaryRoute = isAppChannelsScreen || isChannelSettingsScreen || isBlacklistScreen || isAiConfigScreen
+    LaunchedEffect(currentTopLevelScreen, isSecondaryRoute) {
+        if (!isSecondaryRoute) {
+            val latestIndex = topLevelIndexOf(currentTopLevelScreen)
+            if (selectedTopLevelIndex != latestIndex) {
+                selectedTopLevelIndex = latestIndex
+            }
+        }
+    }
     val secondaryTopBarStyleState = remember {
         TopBarStyleState(
             variant = TopBarVariant.Secondary,
@@ -940,8 +1157,8 @@ private fun HyperIslandComposeApp() {
     }
     val activeTopBarStyleState = when {
         isSecondaryRoute -> secondaryTopBarStyleState
-        currentRoute == "apps" -> appsTopBarStyleState
-        currentRoute == "settings" -> settingsTopBarStyleState
+        currentScreen == AppScreen.Apps -> appsTopBarStyleState
+        currentScreen == AppScreen.Settings -> settingsTopBarStyleState
         else -> homeTopBarStyleState
     }
     fun dismissTransientUi(): Boolean {
@@ -979,6 +1196,18 @@ private fun HyperIslandComposeApp() {
             else -> false
         }
     }
+    fun handleNavigationBack(): Boolean {
+        if (dismissTransientUi()) return true
+        if (popScreen()) return true
+        return if (currentScreen != AppScreen.Home) {
+            backStack.clear()
+            backStack.add(AppScreen.Home)
+            true
+        } else {
+            (context as? ComponentActivity)?.finish()
+            true
+        }
+    }
     val shouldHandleBack = showAppsMenu || showAppChannelsMenu || showBlacklistMenu || showRestartDialog || showSponsorDialog || isAppsSearchExpanded || isBlacklistSearchExpanded
     val homeScrollBehavior = MiuixScrollBehavior(
         state = rememberTopAppBarState(),
@@ -993,275 +1222,393 @@ private fun HyperIslandComposeApp() {
         canScroll = { !popupShowing },
     )
     val topBarOwnerRoute = when {
-        currentRoute?.startsWith("app_channels/") == true ||
-            currentRoute?.startsWith("channel_settings/") == true -> "apps"
-        currentRoute == "blacklist" || currentRoute == "ai_config" -> "settings"
-        else -> currentRoute
+        isAppChannelsScreen || isChannelSettingsScreen -> "apps"
+        isBlacklistScreen || isAiConfigScreen -> "settings"
+        currentScreen == AppScreen.Apps -> "apps"
+        currentScreen == AppScreen.Settings -> "settings"
+        else -> "home"
     }
     val activeTopBarScrollBehavior = when (topBarOwnerRoute) {
         "apps" -> appsScrollBehavior
         "settings" -> settingsScrollBehavior
         else -> homeScrollBehavior
     }
-    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-
-    BackHandler(enabled = shouldHandleBack) {
-        dismissTransientUi()
+    BackHandler {
+        if (!dismissTransientUi()) {
+            handleNavigationBack()
+        }
     }
-    val layoutDirection = LocalLayoutDirection.current
-    val insets = WindowInsets.navigationBars.asPaddingValues()
-    val isAppsRoute = currentRoute == "apps"
     val topBarCollapseProgress by remember(
-        currentRoute,
+        currentScreen,
         activeTopBarScrollBehavior.state,
     ) {
         derivedStateOf {
             activeTopBarScrollBehavior.state.collapsedFraction.coerceIn(0f, 1f)
         }
     }
-    val isAppsLargeTitleExpanded by remember(currentRoute, appsScrollBehavior.state) {
+    val isAppsLargeTitleExpanded by remember(currentScreen, appsScrollBehavior.state) {
         derivedStateOf {
-            currentRoute == "apps" && appsScrollBehavior.state.collapsedFraction < 0.98f
+            isAppsPrimaryScreen && appsScrollBehavior.state.collapsedFraction < 0.98f
         }
     }
-    
-    CompositionLocalProvider(
-        LocalNavigationEventDispatcherOwner.provides(navigationEventDispatcherOwner),
-    ) {
-        MiuixScaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                val topBarScrollBehavior = activeTopBarScrollBehavior
-                
-                val isAppsRoute = currentRoute == "apps"
-                val isBlacklistRoute = currentRoute == "blacklist"
-                val showTopBarExtraContent =
-                    (isAppsRoute && (appsSelectionMode || isAppsSearchExpanded)) ||
-                    isBlacklistRoute
-                val searchExpandTransitionMs = 260
-                val collapseProgress = topBarCollapseProgress
-                val baseExpandedAlpha = when {
-                    isAppsRoute && showTopBarExtraContent -> 0.72f
-                    activeTopBarStyleState.variant == TopBarVariant.PrimaryHome -> 0.62f
-                    else -> 0.68f
-                }
-                val baseCollapsedAlpha = when {
-                    activeTopBarStyleState.variant == TopBarVariant.Secondary -> 0.88f
-                    isAppsRoute && showTopBarExtraContent -> 0.9f
-                    else -> 0.86f
-                }
-                val topBarSurfaceAlpha = androidx.compose.ui.util.lerp(
-                    baseExpandedAlpha,
-                    baseCollapsedAlpha,
-                    collapseProgress,
-                )
-                val topBarBlurRadius = androidx.compose.ui.util.lerp(
-                    16f,
-                    if (activeTopBarStyleState.variant == TopBarVariant.Secondary) 22f else 26f,
-                    collapseProgress,
-                )
-                val topBarBackgroundColor = lerp(
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0f),
-                    MaterialTheme.colorScheme.surface.copy(alpha = topBarSurfaceAlpha),
-                    collapseProgress,
-                )
-                val shouldBlurTopBar = collapseProgress > 0.02f
-                
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .let {
-                                if (backdrop != null) {
-                                    it.textureBlur(
-                                        backdrop,
-                                        shape = RectangleShape,
-                                        blurRadiusX = topBarBlurRadius,
-                                        blurRadiusY = topBarBlurRadius,
-                                    )
-                                } else it
-                            }
-                            .alpha(if (shouldBlurTopBar) 1f else 0f)
-                            .background(topBarBackgroundColor)
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            settingsVm.importConfigFromUri(uri)
+        }
+    }
+    val topLevelSaveableStateHolder = rememberSaveableStateHolder()
+    val selectedIndexInBar = topLevelIndexOf(currentScreen)
+
+    LaunchedEffect(Unit) {
+        homeVm.events.collect {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+    LaunchedEffect(Unit) {
+        appsVm.events.collect {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+    LaunchedEffect(Unit) {
+        settingsVm.events.collect {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+    LaunchedEffect(Unit) {
+        blacklistVm.events.collect {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Composable
+    fun SceneContent(scene: AppScreen, innerPadding: PaddingValues) {
+        CompositionLocalProvider(LocalContentPadding provides innerPadding) {
+            when (scene) {
+                AppScreen.Home -> {
+                    val uiState by homeVm.uiState.collectAsStateWithLifecycle()
+                    HomeScreen(
+                        uiState = uiState,
+                        onRefresh = homeVm::refreshStatus,
+                        onSendTest = homeVm::sendTest,
+                        modifier = Modifier.nestedScroll(homeScrollBehavior.nestedScrollConnection),
                     )
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                }
+                AppScreen.Apps -> {
+                    AppsScreen(
+                        state = appsState,
+                        onRefresh = appsVm::refresh,
+                        onQueryChange = appsVm::setQuery,
+                        onAppEnabledChange = appsVm::setEnabled,
+                        onAppSelectedChange = appsVm::toggleSelectedPackage,
+                        onSelectAll = appsVm::setSelectedPackages,
+                        onOpenAppChannels = { pkg -> navigateTo(AppScreen.AppChannels(pkg)) },
+                        onBatchApplyGlobal = appsVm::batchApplyToAllEnabledApps,
+                        onBatchApplySelected = appsVm::batchApplyToSelectedApps,
+                        onSelectionModeChanged = { appsSelectionMode = it },
+                        appListState = appListState,
+                        selectionRequestId = appsSelectionRequestId,
+                        exitSelectionRequestId = appsExitSelectionRequestId,
+                        enableSelectedRequestId = appsEnableSelectedRequestId,
+                        disableSelectedRequestId = appsDisableSelectedRequestId,
+                        selectEnabledRequestId = appsSelectEnabledRequestId,
+                        batchSelectedRequestId = appsBatchSelectedRequestId,
+                        enableAllRequestId = appsEnableAllRequestId,
+                        disableAllRequestId = appsDisableAllRequestId,
+                        batchRequestId = appsBatchRequestId,
+                        topAppBarScrollBehavior = appsScrollBehavior,
+                        canPullToRefresh = true,
+                        modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+                AppScreen.Settings -> {
+                    SettingsScreen(
+                        state = settingsState,
+                        onToggle = { key, enabled ->
+                            if (key == PrefKeys.USE_FLOATING_NAVIGATION_BAR) {
+                                useFloatingNavigationBarUi = enabled
+                            }
+                            settingsVm.updateSwitch(key, enabled)
+                        },
+                        onMarqueeSpeed = settingsVm::updateMarqueeSpeed,
+                        onBigIslandWidth = settingsVm::updateBigIslandMaxWidth,
+                        onThemeModeChange = settingsVm::updateThemeMode,
+                        onLocaleChange = settingsVm::updateLocale,
+                        onHideDesktopIcon = settingsVm::setDesktopIconHidden,
+                        onOpenBlacklist = { navigateTo(AppScreen.Blacklist) },
+                        onOpenAiConfig = { navigateTo(AppScreen.AiConfig) },
+                        onCheckUpdate = { openExternalUrl(context, GITHUB_RELEASE_URL) },
+                        onOpenGithub = { openExternalUrl(context, GITHUB_REPO_URL) },
+                        onExportToFile = settingsVm::exportConfigToFile,
+                        onPickImportFile = {
+                            importLauncher.launch(arrayOf("application/json", "text/plain"))
+                        },
+                        onExportToClipboard = settingsVm::exportConfigToClipboard,
+                        onImportFromClipboard = settingsVm::importConfigFromClipboard,
+                        modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+                is AppScreen.AppChannels -> {
+                    val vm: AppChannelsViewModel = viewModel()
+                    val state by vm.uiState.collectAsStateWithLifecycle()
+                    LaunchedEffect(scene.packageName) {
+                        vm.setPackageNameIfEmpty(scene.packageName)
+                    }
+                    AppChannelsScreen(
+                        state = state,
+                        onRefresh = vm::refresh,
+                        onSetAppEnabled = vm::setAppEnabled,
+                        onToggleChannel = vm::toggleChannel,
+                        onEnableAllChannels = vm::enableAllChannels,
+                        onOpenChannelSettings = { channelId, channelName ->
+                            navigateTo(
+                                AppScreen.ChannelSettings(
+                                    packageName = scene.packageName,
+                                    channelId = channelId,
+                                    channelName = channelName,
+                                ),
+                            )
+                        },
+                        onBatchApplyToEnabledChannels = vm::batchApplyToEnabledChannels,
+                        enableAllRequestId = appChannelsEnableAllRequestId,
+                        batchRequestId = appChannelsBatchRequestId,
+                        modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+                is AppScreen.ChannelSettings -> {
+                    val vm: AppChannelsViewModel = viewModel()
+                    val state by vm.uiState.collectAsStateWithLifecycle()
+                    LaunchedEffect(scene.packageName) {
+                        vm.setPackageNameIfEmpty(scene.packageName)
+                    }
+                    ChannelSettingsScreen(
+                        state = state,
+                        channelId = scene.channelId,
+                        onRefresh = vm::refresh,
+                        onSetTemplate = { vm.setTemplate(scene.channelId, it) },
+                        onSetTimeout = { vm.setTimeout(scene.channelId, it) },
+                        onSetSetting = { setting, value ->
+                            vm.setSetting(scene.channelId, setting, value)
+                        },
+                        onSetHighlightColor = { vm.setHighlightColor(scene.channelId, it) },
+                        modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+                AppScreen.Blacklist -> {
+                    BlacklistScreen(
+                        state = blacklistState,
+                        onRefresh = blacklistVm::refresh,
+                        onQueryChange = blacklistVm::setQuery,
+                        onSetBlacklisted = blacklistVm::setBlacklisted,
+                        canPullToRefresh = false,
+                        modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+                AppScreen.AiConfig -> {
+                    val vm: AiConfigViewModel = viewModel()
+                    val uiState by vm.uiState.collectAsStateWithLifecycle()
+                    LaunchedEffect(Unit) {
+                        vm.events.collect {
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    AiConfigScreen(
+                        state = uiState,
+                        onUpdate = vm::setState,
+                        onSave = vm::save,
+                        onTest = vm::testConnection,
+                        modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
+                    )
+                }
+            }
+        }
+    }
+
+    MiuixScaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            MiuiBlurredTopBar(
+                modifier = Modifier.fillMaxWidth(),
+                fallbackBackdrop = activeBackdrop,
+                fallbackBlurColors = topBarFallbackBlurColors,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     MiuixTopAppBar(
                         title = topBarTitle,
+                        scrollBehavior = activeTopBarScrollBehavior,
                         modifier = Modifier.fillMaxWidth(),
                         color = Color.Transparent,
+                        defaultWindowInsetsPadding = false,
                         navigationIcon = {
-                            when (activeTopBarStyleState.variant) {
-                                TopBarVariant.Secondary -> {
-                                    MiuixIconButton(onClick = {
-                                        backDispatcher?.onBackPressed() ?: run {
-                                            val dismissed = dismissTransientUi()
-                                            if (!dismissed) {
-                                                navController.popBackStack()
-                                            }
-                                        }
-                                    }) {
+                            when {
+                                isSecondaryRoute -> {
+                                    MiuixIconButton(onClick = { handleNavigationBack() }) {
                                         Icon(
                                             imageVector = MiuixIcons.Basic.ArrowRight,
                                             contentDescription = "返回",
                                             modifier = Modifier.rotate(180f),
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
                                 }
-
-                                TopBarVariant.PrimaryApps -> {
-                                    if (appsSelectionMode) {
-                                        MiuixIconButton(onClick = { appsExitSelectionRequestId += 1 }) {
-                                            FaIcon(
-                                                glyph = FaGlyph.Times,
-                                                contentDescription = "退出多选",
-                                            )
-                                        }
-                                    } else {
-                                        Spacer(modifier = Modifier.size(40.dp))
+                                currentScreen == AppScreen.Apps && appsSelectionMode -> {
+                                    MiuixIconButton(onClick = { appsExitSelectionRequestId += 1 }) {
+                                        FaIcon(
+                                            glyph = FaGlyph.Times,
+                                            contentDescription = "退出多选",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                        )
                                     }
                                 }
-
-                                else -> Spacer(modifier = Modifier.size(40.dp))
+                                else -> {
+                                    Spacer(modifier = Modifier.size(40.dp))
+                                }
                             }
                         },
                         actions = {
-                            when (activeTopBarStyleState.variant) {
-                                TopBarVariant.Secondary -> {
-                                    if (currentRoute?.startsWith("app_channels/") == true) {
-                                        Box {
-                                            BackHandler(enabled = showAppChannelsMenu) {
-                                                showAppChannelsMenu = false
-                                            }
-                                            MiuixIconButton(onClick = { showAppChannelsMenu = true }) {
-                                                Icon(
-                                                    imageVector = MiuixIcons.Regular.MoreCircle,
-                                                    contentDescription = "渠道页更多操作",
-                                                )
-                                            }
-                                            OverlayListPopup(
-                                                show = showAppChannelsMenu,
-                                                alignment = MiuixPopupPositionProvider.Align.End,
-                                                onDismissRequest = { showAppChannelsMenu = false },
-                                                onDismissFinished = {},
-                                            ) {
-                                                val menuItems = listOf(
-                                                    "启用全部渠道" to {
-                                                        showAppChannelsMenu = false
-                                                        appChannelsEnableAllRequestId += 1
-                                                    },
-                                                    "批量设置渠道配置" to {
-                                                        showAppChannelsMenu = false
-                                                        appChannelsBatchRequestId += 1
-                                                    },
-                                                )
-                                                OverlayPopupMenuContainer {
-                                                    menuItems.forEachIndexed { index, (title, action) ->
-                                                        MiuixDropdownImpl(
-                                                            text = title,
-                                                            optionSize = menuItems.size,
-                                                            isSelected = false,
-                                                            onSelectedIndexChange = { action() },
-                                                            index = index,
-                                                        )
+                            when {
+                                isSecondaryRoute -> {
+                                    when {
+                                        currentScreen is AppScreen.AppChannels || currentScreen is AppScreen.ChannelSettings -> {
+                                            Box {
+                                                BackHandler(enabled = showAppChannelsMenu) {
+                                                    showAppChannelsMenu = false
+                                                }
+                                                MiuixIconButton(onClick = { showAppChannelsMenu = true }) {
+                                                    Icon(
+                                                        imageVector = MiuixIcons.Regular.MoreCircle,
+                                                        contentDescription = "渠道页更多操作",
+                                                        tint = MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                }
+                                                OverlayListPopup(
+                                                    show = showAppChannelsMenu,
+                                                    alignment = MiuixPopupPositionProvider.Align.End,
+                                                    onDismissRequest = { showAppChannelsMenu = false },
+                                                    onDismissFinished = {},
+                                                ) {
+                                                    val menuItems = listOf(
+                                                        "启用全部渠道" to {
+                                                            showAppChannelsMenu = false
+                                                            appChannelsEnableAllRequestId += 1
+                                                        },
+                                                        "批量设置渠道配置" to {
+                                                            showAppChannelsMenu = false
+                                                            appChannelsBatchRequestId += 1
+                                                        },
+                                                    )
+                                                    OverlayPopupMenuContainer {
+                                                        menuItems.forEachIndexed { index, (title, action) ->
+                                                            MiuixDropdownImpl(
+                                                                text = title,
+                                                                optionSize = menuItems.size,
+                                                                isSelected = false,
+                                                                onSelectedIndexChange = { action() },
+                                                                index = index,
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    } else if (currentRoute == "blacklist") {
-                                        MiuixIconButton(
-                                            onClick = {
-                                                if (!isBlacklistSearchExpanded) {
-                                                    blacklistSearchFieldValue = TextFieldValue(
-                                                        text = blacklistState.query,
-                                                        selection = TextRange(blacklistState.query.length),
+                                        currentScreen == AppScreen.Blacklist -> {
+                                            MiuixIconButton(
+                                                onClick = {
+                                                    if (!isBlacklistSearchExpanded) {
+                                                        blacklistSearchFieldValue = TextFieldValue(
+                                                            text = blacklistState.query,
+                                                            selection = TextRange(blacklistState.query.length),
+                                                        )
+                                                    }
+                                                    isBlacklistSearchExpanded = !isBlacklistSearchExpanded
+                                                },
+                                            ) {
+                                                Icon(
+                                                    imageVector = MiuixIcons.Regular.Search,
+                                                    contentDescription = "搜索",
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            }
+                                            Box {
+                                                BackHandler(enabled = showBlacklistMenu) {
+                                                    showBlacklistMenu = false
+                                                }
+                                                MiuixIconButton(onClick = { showBlacklistMenu = true }) {
+                                                    Icon(
+                                                        imageVector = MiuixIcons.Regular.MoreCircle,
+                                                        contentDescription = "黑名单页更多操作",
+                                                        tint = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 }
-                                                isBlacklistSearchExpanded = !isBlacklistSearchExpanded
-                                            },
-                                        ) {
-                                            Icon(
-                                                imageVector = MiuixIcons.Regular.Search,
-                                                contentDescription = "搜索",
-                                            )
-                                        }
-                                        Box {
-                                            BackHandler(enabled = showBlacklistMenu) {
-                                                showBlacklistMenu = false
-                                            }
-                                            MiuixIconButton(onClick = { showBlacklistMenu = true }) {
-                                                Icon(
-                                                    imageVector = MiuixIcons.Regular.MoreCircle,
-                                                    contentDescription = "黑名单页更多操作",
-                                                )
-                                            }
-                                            OverlayListPopup(
-                                                show = showBlacklistMenu,
-                                                alignment = MiuixPopupPositionProvider.Align.End,
-                                                onDismissRequest = { showBlacklistMenu = false },
-                                                onDismissFinished = {},
-                                            ) {
-                                                val menuItems = listOf(
-                                                    "游戏预设" to {
-                                                        showBlacklistMenu = false
-                                                        blacklistVm.applyGamePreset()
-                                                    },
-                                                    "全部加入" to {
-                                                        showBlacklistMenu = false
-                                                        blacklistVm.enableAllVisible()
-                                                    },
-                                                    "全部移除" to {
-                                                        showBlacklistMenu = false
-                                                        blacklistVm.disableAllVisible()
-                                                    },
-                                                    (if (blacklistState.showSystemApps) "隐藏系统应用" else "显示系统应用") to {
-                                                        showBlacklistMenu = false
-                                                        blacklistVm.setShowSystemApps(!blacklistState.showSystemApps)
-                                                    },
-                                                    "刷新" to {
-                                                        showBlacklistMenu = false
-                                                        blacklistVm.refresh()
-                                                    },
-                                                )
-                                                OverlayPopupMenuContainer {
-                                                    menuItems.forEachIndexed { index, (title, action) ->
-                                                        MiuixDropdownImpl(
-                                                            text = title,
-                                                            optionSize = menuItems.size,
-                                                            isSelected = false,
-                                                            onSelectedIndexChange = { action() },
-                                                            index = index,
-                                                        )
+                                                OverlayListPopup(
+                                                    show = showBlacklistMenu,
+                                                    alignment = MiuixPopupPositionProvider.Align.End,
+                                                    onDismissRequest = { showBlacklistMenu = false },
+                                                    onDismissFinished = {},
+                                                ) {
+                                                    val menuItems = listOf(
+                                                        "游戏预设" to {
+                                                            showBlacklistMenu = false
+                                                            blacklistVm.applyGamePreset()
+                                                        },
+                                                        "全部加入" to {
+                                                            showBlacklistMenu = false
+                                                            blacklistVm.enableAllVisible()
+                                                        },
+                                                        "全部移除" to {
+                                                            showBlacklistMenu = false
+                                                            blacklistVm.disableAllVisible()
+                                                        },
+                                                        (if (blacklistState.showSystemApps) "隐藏系统应用" else "显示系统应用") to {
+                                                            showBlacklistMenu = false
+                                                            blacklistVm.setShowSystemApps(!blacklistState.showSystemApps)
+                                                        },
+                                                        "刷新" to {
+                                                            showBlacklistMenu = false
+                                                            blacklistVm.refresh()
+                                                        },
+                                                    )
+                                                    OverlayPopupMenuContainer {
+                                                        menuItems.forEachIndexed { index, (title, action) ->
+                                                            MiuixDropdownImpl(
+                                                                text = title,
+                                                                optionSize = menuItems.size,
+                                                                isSelected = false,
+                                                                onSelectedIndexChange = { action() },
+                                                                index = index,
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
-
-                                TopBarVariant.PrimaryHome -> {
+                                currentScreen == AppScreen.Home -> {
                                     MiuixIconButton(onClick = { openExternalUrl(context, DOCUMENTATION_URL) }) {
                                         Icon(
                                             imageVector = MiuixIcons.Regular.Info,
                                             contentDescription = "文档",
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
                                     MiuixIconButton(onClick = { showSponsorDialog = true }) {
                                         Icon(
                                             imageVector = MiuixIcons.Regular.Create,
                                             contentDescription = "赞助",
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
                                     MiuixIconButton(onClick = { showRestartDialog = true }) {
                                         Icon(
                                             imageVector = MiuixIcons.Regular.Refresh,
                                             contentDescription = "重启作用域",
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
                                 }
-
-                                TopBarVariant.PrimaryApps -> {
+                                currentScreen == AppScreen.Apps -> {
                                     MiuixIconButton(
                                         onClick = {
                                             if (!isAppsSearchExpanded) {
@@ -1276,6 +1623,7 @@ private fun HyperIslandComposeApp() {
                                         Icon(
                                             imageVector = MiuixIcons.Regular.Search,
                                             contentDescription = "搜索",
+                                            tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
                                     if (!appsSelectionMode) {
@@ -1283,6 +1631,7 @@ private fun HyperIslandComposeApp() {
                                             Icon(
                                                 imageVector = MiuixIcons.Regular.SelectAll,
                                                 contentDescription = "进入多选",
+                                                tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
                                     }
@@ -1294,6 +1643,7 @@ private fun HyperIslandComposeApp() {
                                             Icon(
                                                 imageVector = MiuixIcons.Regular.MoreCircle,
                                                 contentDescription = "更多操作",
+                                                tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
                                         OverlayListPopup(
@@ -1359,90 +1709,89 @@ private fun HyperIslandComposeApp() {
                                         }
                                     }
                                 }
-
-                                TopBarVariant.PrimarySettings -> Unit
+                                else -> Unit
                             }
                         },
-                        scrollBehavior = topBarScrollBehavior,
-                        defaultWindowInsetsPadding = activeTopBarStyleState.defaultWindowInsetsPadding,
                     )
-                    
-                    if (isAppsRoute) {
-                        if (isAppsSearchExpanded || appsSelectionMode) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .animateContentSize(animationSpec = tween(durationMillis = searchExpandTransitionMs)),
-                            ) {
-                                AnimatedVisibility(
-                                    visible = isAppsSearchExpanded,
-                                    enter = fadeIn(animationSpec = tween(durationMillis = searchExpandTransitionMs)) +
-                                        expandVertically(animationSpec = tween(durationMillis = searchExpandTransitionMs)),
-                                    exit = fadeOut(animationSpec = tween(durationMillis = 180)) +
-                                        shrinkVertically(animationSpec = tween(durationMillis = 220)),
-                                    label = "apps_search_bar_visibility",
-                                ) {
-                                    MiuixTextField(
-                                        value = appsSearchFieldValue,
-                                        onValueChange = {
-                                            appsSearchFieldValue = it
-                                            appsVm.setQuery(it.text)
-                                        },
-                                        label = "搜索应用 / 包名",
-                                        useLabelAsPlaceholder = true,
-                                        modifier = Modifier
-                                            .focusRequester(appsSearchFocusRequester)
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                                    )
-                                }
 
-                                AnimatedVisibility(
-                                    visible = appsSelectionMode,
-                                    enter = fadeIn(animationSpec = tween(durationMillis = searchExpandTransitionMs)) +
-                                        expandVertically(animationSpec = tween(durationMillis = searchExpandTransitionMs)),
-                                    exit = fadeOut(animationSpec = tween(durationMillis = 180)) +
-                                        shrinkVertically(animationSpec = tween(durationMillis = 220)),
-                                    label = "apps_selection_info_visibility",
+                    if (currentScreen == AppScreen.Apps && (isAppsSearchExpanded || appsSelectionMode)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(animationSpec = tween(durationMillis = 240)),
+                        ) {
+                            AnimatedVisibility(
+                                visible = isAppsSearchExpanded,
+                                enter = fadeIn(animationSpec = tween(durationMillis = 240)) +
+                                    expandVertically(animationSpec = tween(durationMillis = 240)),
+                                exit = fadeOut(animationSpec = tween(durationMillis = 180)) +
+                                    shrinkVertically(animationSpec = tween(durationMillis = 220)),
+                                label = "apps_search_bar_visibility",
+                            ) {
+                                MiuixTextField(
+                                    value = appsSearchFieldValue,
+                                    onValueChange = {
+                                        appsSearchFieldValue = it
+                                        appsVm.setQuery(it.text)
+                                    },
+                                    label = "搜索应用 / 包名",
+                                    useLabelAsPlaceholder = true,
+                                    modifier = Modifier
+                                        .focusRequester(appsSearchFocusRequester)
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                )
+                            }
+                            AnimatedVisibility(
+                                visible = appsSelectionMode,
+                                enter = fadeIn(animationSpec = tween(durationMillis = 240)) +
+                                    expandVertically(animationSpec = tween(durationMillis = 240)),
+                                exit = fadeOut(animationSpec = tween(durationMillis = 180)) +
+                                    shrinkVertically(animationSpec = tween(durationMillis = 220)),
+                                label = "apps_selection_info_visibility",
+                            ) {
+                                val visiblePackages = appsState.filteredApps.map { it.packageName }.toSet()
+                                val allVisibleSelected = visiblePackages.isNotEmpty() &&
+                                    visiblePackages.all { appsState.selectedPackages.contains(it) }
+                                val selectAllState = if (allVisibleSelected) {
+                                    ToggleableState.On
+                                } else if (appsState.selectedPackages.isNotEmpty()) {
+                                    ToggleableState.Indeterminate
+                                } else {
+                                    ToggleableState.Off
+                                }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    val visiblePackages = appsState.filteredApps.map { it.packageName }.toSet()
-                                    val allVisibleSelected = visiblePackages.isNotEmpty() && visiblePackages.all { appsState.selectedPackages.contains(it) }
-                                    val selectAllState = if (allVisibleSelected) ToggleableState.On else if (appsState.selectedPackages.isNotEmpty()) ToggleableState.Indeterminate else ToggleableState.Off
-                                    
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Text("已选择 ${appsState.selectedPackages.size} 项", style = MaterialTheme.typography.bodySmall)
-                                        MiuixCheckbox(
-                                            state = selectAllState,
-                                            onClick = {
-                                                if (allVisibleSelected) {
-                                                    appsVm.setSelectedPackages(appsState.selectedPackages - visiblePackages)
-                                                } else {
-                                                    appsVm.setSelectedPackages(appsState.selectedPackages + visiblePackages)
-                                                }
+                                    Text("已选择 ${appsState.selectedPackages.size} 项", style = MaterialTheme.typography.bodySmall)
+                                    MiuixCheckbox(
+                                        state = selectAllState,
+                                        onClick = {
+                                            if (allVisibleSelected) {
+                                                appsVm.setSelectedPackages(appsState.selectedPackages - visiblePackages)
+                                            } else {
+                                                appsVm.setSelectedPackages(appsState.selectedPackages + visiblePackages)
                                             }
-                                        )
-                                    }
+                                        },
+                                    )
                                 }
                             }
                         }
                     }
-
-                    if (isBlacklistRoute) {
+                    if (currentScreen == AppScreen.Blacklist) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .animateContentSize(animationSpec = tween(durationMillis = searchExpandTransitionMs)),
+                                .animateContentSize(animationSpec = tween(durationMillis = 240)),
                         ) {
                             AnimatedVisibility(
                                 visible = isBlacklistSearchExpanded,
-                                enter = fadeIn(animationSpec = tween(durationMillis = searchExpandTransitionMs)) +
-                                    expandVertically(animationSpec = tween(durationMillis = searchExpandTransitionMs)),
+                                enter = fadeIn(animationSpec = tween(durationMillis = 240)) +
+                                    expandVertically(animationSpec = tween(durationMillis = 240)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 180)) +
                                     shrinkVertically(animationSpec = tween(durationMillis = 220)),
                                 label = "blacklist_search_bar_visibility",
@@ -1461,510 +1810,125 @@ private fun HyperIslandComposeApp() {
                                         .padding(horizontal = 16.dp, vertical = 8.dp),
                                 )
                             }
-                            Text(
-                                text = "已加入黑名单 ${blacklistState.blacklistedPackages.size} 项",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                            )
                         }
                     }
-                }
-                }
-            },
-            bottomBar = {}, // Handle bottom bar as overlay so list draws beneath it for `.textureBlur`
-        ) { innerPadding ->
-            val bottomOverlayPaddingTarget = when {
-                isSecondaryRoute -> 0.dp
-                activeNavStyleState.floating -> {
-                    activeNavStyleState.floatingBottomOffset +
-                        activeNavStyleState.floatingContainerHeight +
-                        if (activeNavStyleState.floatingWindowInsetsPadding) {
-                            insets.calculateBottomPadding()
-                        } else {
-                            0.dp
-                        }
-                }
-                else -> {
-                    activeNavStyleState.bottomContainerHeight +
-                        if (activeNavStyleState.bottomWindowInsetsPadding) {
-                            insets.calculateBottomPadding()
-                        } else {
-                            0.dp
-                        }
                 }
             }
-            val bottomOverlayPadding by animateDpAsState(
-                targetValue = bottomOverlayPaddingTarget,
-                animationSpec = tween(durationMillis = 320),
-                label = "bottom_overlay_padding_transition",
-            )
-            val combinedPadding = PaddingValues(
-                start = innerPadding.calculateStartPadding(layoutDirection),
-                end = innerPadding.calculateEndPadding(layoutDirection),
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + bottomOverlayPadding
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                // Background content capturing box
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .layerBackdrop(backdrop)
-                        .consumeWindowInsets(combinedPadding),
-                ) {
-                    CompositionLocalProvider(LocalContentPadding provides combinedPadding) {
-                        NavHost(
-                            navController = navController,
-                            startDestination = "home",
-                            enterTransition = {
-                                val fromRoute = initialState.destination.route
-                                val toRoute = targetState.destination.route
-                                val fromLevel = routeLevel(fromRoute)
-                                val toLevel = routeLevel(toRoute)
-                                val mainSwitchDirection = resolveMainSwitchDirection(fromRoute, toRoute)
-                                when {
-                                    mainSwitchDirection != null -> {
-                                        slideIntoContainer(
-                                            mainSwitchDirection,
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    toLevel > fromLevel -> {
-                                        // HyperCeiler-like push: new page overlays from right.
-                                        slideIntoContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.Left,
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    else -> {
-                                        val direction = resolveRouteForwardSlideDirection(fromRoute, toRoute)
-                                        if (direction != null) {
-                                            slideIntoContainer(
-                                                direction,
-                                                animationSpec = tween(
-                                                    durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                    easing = FastOutSlowInEasing,
-                                                ),
-                                            )
-                                        } else {
-                                            EnterTransition.None
-                                        }
-                                    }
-                                }
-                            },
-                            exitTransition = {
-                                val fromRoute = initialState.destination.route
-                                val toRoute = targetState.destination.route
-                                val fromLevel = routeLevel(fromRoute)
-                                val toLevel = routeLevel(toRoute)
-                                val mainSwitchDirection = resolveMainSwitchDirection(fromRoute, toRoute)
-                                when {
-                                    mainSwitchDirection != null -> {
-                                        slideOutOfContainer(
-                                            mainSwitchDirection,
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    toLevel > fromLevel -> {
-                                        // Keep background page as an underlay while pushing.
-                                        fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + scaleOut(
-                                            targetScale = 0.97f,
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    else -> {
-                                        val direction = resolveRouteForwardSlideDirection(fromRoute, toRoute)
-                                        if (direction != null) {
-                                            slideOutOfContainer(
-                                                direction,
-                                                animationSpec = tween(
-                                                    durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                    easing = FastOutSlowInEasing,
-                                                ),
-                                            )
-                                        } else {
-                                            ExitTransition.None
-                                        }
-                                    }
-                                }
-                            },
-                            popEnterTransition = {
-                                val fromRoute = initialState.destination.route
-                                val toRoute = targetState.destination.route
-                                val fromLevel = routeLevel(fromRoute)
-                                val toLevel = routeLevel(toRoute)
-                                val mainSwitchDirection = resolveMainSwitchDirection(fromRoute, toRoute)
-                                when {
-                                    mainSwitchDirection != null -> {
-                                        slideIntoContainer(
-                                            mainSwitchDirection,
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    toLevel < fromLevel -> {
-                                        // Underlay page re-appears from the back.
-                                        fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + scaleIn(
-                                            initialScale = 0.97f,
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    else -> {
-                                        val direction = resolveRoutePopSlideDirection(fromRoute, toRoute)
-                                        if (direction != null) {
-                                            slideIntoContainer(
-                                                direction,
-                                                animationSpec = tween(
-                                                    durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                    easing = FastOutSlowInEasing,
-                                                ),
-                                            )
-                                        } else {
-                                            EnterTransition.None
-                                        }
-                                    }
-                                }
-                            },
-                            popExitTransition = {
-                                val fromRoute = initialState.destination.route
-                                val toRoute = targetState.destination.route
-                                val fromLevel = routeLevel(fromRoute)
-                                val toLevel = routeLevel(toRoute)
-                                val mainSwitchDirection = resolveMainSwitchDirection(fromRoute, toRoute)
-                                when {
-                                    mainSwitchDirection != null -> {
-                                        slideOutOfContainer(
-                                            mainSwitchDirection,
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    toLevel < fromLevel -> {
-                                        // Top overlay page leaves to right on back.
-                                        slideOutOfContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.Right,
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        ) + fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = OVERLAY_TRANSITION_DURATION_MS,
-                                                easing = FastOutSlowInEasing,
-                                            ),
-                                        )
-                                    }
-                                    else -> {
-                                        val direction = resolveRoutePopSlideDirection(fromRoute, toRoute)
-                                        if (direction != null) {
-                                            slideOutOfContainer(
-                                                direction,
-                                                animationSpec = tween(
-                                                    durationMillis = ROUTE_TRANSITION_DURATION_MS,
-                                                    easing = FastOutSlowInEasing,
-                                                ),
-                                            )
-                                        } else {
-                                            ExitTransition.None
-                                        }
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            composable("home") {
-                                val uiState by homeVm.uiState.collectAsStateWithLifecycle()
-                                LaunchedEffect(Unit) {
-                                    homeVm.events.collect {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                HomeScreen(
-                                    uiState = uiState,
-                                    onRefresh = homeVm::refreshStatus,
-                                    onSendTest = homeVm::sendTest,
-                                    modifier = Modifier.nestedScroll(homeScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable("apps") {
-                                LaunchedEffect(Unit) {
-                                    appsVm.events.collect {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                AppsScreen(
-                                    state = appsState,
-                                    onRefresh = appsVm::refresh,
-                                    onQueryChange = appsVm::setQuery,
-                                    onAppEnabledChange = appsVm::setEnabled,
-                                    onAppSelectedChange = appsVm::toggleSelectedPackage,
-                                    onSelectAll = appsVm::setSelectedPackages,
-                                    onOpenAppChannels = { pkg -> navController.navigate("app_channels/$pkg") },
-                                    onBatchApplyGlobal = appsVm::batchApplyToAllEnabledApps,
-                                    onBatchApplySelected = appsVm::batchApplyToSelectedApps,
-                                    onSelectionModeChanged = { appsSelectionMode = it },
-
-                                    appListState = appListState,
-                                    selectionRequestId = appsSelectionRequestId,
-                                    exitSelectionRequestId = appsExitSelectionRequestId,
-                                    enableSelectedRequestId = appsEnableSelectedRequestId,
-                                    disableSelectedRequestId = appsDisableSelectedRequestId,
-                                    selectEnabledRequestId = appsSelectEnabledRequestId,
-                                    batchSelectedRequestId = appsBatchSelectedRequestId,
-                                    enableAllRequestId = appsEnableAllRequestId,
-                                    disableAllRequestId = appsDisableAllRequestId,
-                                    batchRequestId = appsBatchRequestId,
-                                    topAppBarScrollBehavior = appsScrollBehavior,
-                                    canPullToRefresh = true,
-                                    modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable("settings") {
-                                val importLauncher = rememberLauncherForActivityResult(
-                                    contract = ActivityResultContracts.OpenDocument(),
-                                ) { uri ->
-                                    if (uri != null) {
-                                        settingsVm.importConfigFromUri(uri)
-                                    }
-                                }
-                                LaunchedEffect(Unit) {
-                                    settingsVm.events.collect {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                SettingsScreen(
-                                    state = settingsState,
-                                    onToggle = settingsVm::updateSwitch,
-                                    onMarqueeSpeed = settingsVm::updateMarqueeSpeed,
-                                    onBigIslandWidth = settingsVm::updateBigIslandMaxWidth,
-                                    onThemeModeChange = settingsVm::updateThemeMode,
-                                    onLocaleChange = settingsVm::updateLocale,
-                                    onHideDesktopIcon = settingsVm::setDesktopIconHidden,
-                                    onOpenBlacklist = { navController.navigate("blacklist") },
-                                    onOpenAiConfig = { navController.navigate("ai_config") },
-                                    onCheckUpdate = { openExternalUrl(context, GITHUB_RELEASE_URL) },
-                                    onOpenGithub = { openExternalUrl(context, GITHUB_REPO_URL) },
-                                    onExportToFile = settingsVm::exportConfigToFile,
-                                    onPickImportFile = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
-                                    onExportToClipboard = settingsVm::exportConfigToClipboard,
-                                    onImportFromClipboard = settingsVm::importConfigFromClipboard,
-                                    modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable(
-                                route = "app_channels/{packageName}",
-                                arguments = listOf(navArgument("packageName") { type = NavType.StringType }),
-                            ) { backStack ->
-                                val vm: AppChannelsViewModel = viewModel()
-                                val state by vm.uiState.collectAsStateWithLifecycle()
-                                val packageNameArg = backStack.arguments?.getString("packageName").orEmpty()
-                                LaunchedEffect(packageNameArg) {
-                                    vm.setPackageNameIfEmpty(packageNameArg)
-                                }
-                                AppChannelsScreen(
-                                    state = state,
-                                    onRefresh = vm::refresh,
-                                    onSetAppEnabled = vm::setAppEnabled,
-                                    onToggleChannel = vm::toggleChannel,
-                                    onEnableAllChannels = vm::enableAllChannels,
-                                    onOpenChannelSettings = { channelId, channelName ->
-                                        navController.navigate(
-                                            "channel_settings/${Uri.encode(packageNameArg)}/${Uri.encode(channelId)}/${Uri.encode(channelName)}",
-                                        )
-                                    },
-                                    onBatchApplyToEnabledChannels = vm::batchApplyToEnabledChannels,
-                                    enableAllRequestId = appChannelsEnableAllRequestId,
-                                    batchRequestId = appChannelsBatchRequestId,
-                                    modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable(
-                                route = "channel_settings/{packageName}/{channelId}/{channelName}",
-                                arguments = listOf(
-                                    navArgument("packageName") { type = NavType.StringType },
-                                    navArgument("channelId") { type = NavType.StringType },
-                                    navArgument("channelName") { type = NavType.StringType },
-                                ),
-                            ) { backStack ->
-                                val vm: AppChannelsViewModel = viewModel()
-                                val state by vm.uiState.collectAsStateWithLifecycle()
-                                val packageNameArg = Uri.decode(
-                                    backStack.arguments?.getString("packageName").orEmpty(),
-                                )
-                                val channelIdArg = Uri.decode(
-                                    backStack.arguments?.getString("channelId").orEmpty(),
-                                )
-                                LaunchedEffect(packageNameArg) {
-                                    vm.setPackageNameIfEmpty(packageNameArg)
-                                }
-                                ChannelSettingsScreen(
-                                    state = state,
-                                    channelId = channelIdArg,
-                                    onRefresh = vm::refresh,
-                                    onSetTemplate = { vm.setTemplate(channelIdArg, it) },
-                                    onSetTimeout = { vm.setTimeout(channelIdArg, it) },
-                                    onSetSetting = { setting, value -> vm.setSetting(channelIdArg, setting, value) },
-                                    onSetHighlightColor = { vm.setHighlightColor(channelIdArg, it) },
-                                    modifier = Modifier.nestedScroll(appsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable("blacklist") {
-                                LaunchedEffect(Unit) {
-                                    blacklistVm.events.collect {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                BlacklistScreen(
-                                    state = blacklistState,
-                                    onRefresh = blacklistVm::refresh,
-                                    onQueryChange = blacklistVm::setQuery,
-                                    onSetBlacklisted = blacklistVm::setBlacklisted,
-                                    canPullToRefresh = false,
-                                    modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                            composable("ai_config") {
-                                val vm: AiConfigViewModel = viewModel()
-                                val uiState by vm.uiState.collectAsStateWithLifecycle()
-                                LaunchedEffect(Unit) {
-                                    vm.events.collect {
-                                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                AiConfigScreen(
-                                    state = uiState,
-                                    onUpdate = vm::setState,
-                                    onSave = vm::save,
-                                    onTest = vm::testConnection,
-                                    modifier = Modifier.nestedScroll(settingsScrollBehavior.nestedScrollConnection),
-                                )
-                            }
-                        }
+        },
+        bottomBar = {
+            if (!isSecondaryRoute) {
+                HyperCeilerNavigationSwitchBar(
+                    items = items,
+                    selectedIndex = selectedIndexInBar,
+                    style = activeNavStyleState,
+                    onDestinationClick = onPrimaryDestinationClick,
+                    backdrop = activeBackdrop,
+                )
+            }
+        },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .let {
+                    if (activeBackdrop != null) {
+                        it.layerBackdrop(activeBackdrop)
+                    } else {
+                        it
                     }
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .fillMaxWidth()
-                            .height(combinedPadding.calculateTopPadding() + 72.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.surface.copy(alpha = androidx.compose.ui.util.lerp(0.18f, 0.56f, topBarCollapseProgress)),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = androidx.compose.ui.util.lerp(0.08f, 0.32f, topBarCollapseProgress)),
-                                        Color.Transparent,
-                                    ),
-                                ),
-                            ),
-                    )
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .height(insets.calculateBottomPadding() + 96.dp)
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.24f),
-                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.46f),
-                                    ),
-                                ),
-                            ),
-                    )
-                } // End of layerBackdrop box
-
-                if (!isSecondaryRoute) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentAlignment = Alignment.BottomCenter,
-                    ) {
-                        HyperCeilerNavigationSwitchBar(
-                            items = items,
-                            selectedIndex = selectedIndex,
-                            style = activeNavStyleState,
-                            onDestinationClick = onPrimaryDestinationClick,
-                            backdrop = backdrop,
+                }
+                .consumeWindowInsets(innerPadding),
+        ) {
+            AnimatedContent(
+                targetState = currentScreen,
+                label = "scene_content_switch",
+                transitionSpec = {
+                    val initialDepth = screenDepth(initialState)
+                    val targetDepth = screenDepth(targetState)
+                    val initialTopIndex = topLevelIndexOf(initialState)
+                    val targetTopIndex = topLevelIndexOf(targetState)
+                    if (initialDepth == 1 && targetDepth == 1) {
+                        val forward = targetTopIndex > initialTopIndex
+                        (
+                            slideInHorizontally(
+                                animationSpec = tween(durationMillis = 340),
+                                initialOffsetX = { full -> if (forward) full / 6 else -full / 6 },
+                            ) + fadeIn(animationSpec = tween(durationMillis = 340))
+                        ) togetherWith (
+                            slideOutHorizontally(
+                                animationSpec = tween(durationMillis = 260),
+                                targetOffsetX = { full -> if (forward) -full / 12 else full / 12 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = 220))
+                        )
+                    } else if (targetDepth > initialDepth) {
+                        (
+                            slideInHorizontally(
+                                animationSpec = tween(durationMillis = 320),
+                                initialOffsetX = { full -> full / 3 },
+                            ) + fadeIn(animationSpec = tween(durationMillis = 320))
+                        ) togetherWith (
+                            slideOutHorizontally(
+                                animationSpec = tween(durationMillis = 260),
+                                targetOffsetX = { full -> -full / 6 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = 220))
+                        )
+                    } else if (targetDepth < initialDepth) {
+                        (
+                            slideInHorizontally(
+                                animationSpec = tween(durationMillis = 300),
+                                initialOffsetX = { full -> -full / 4 },
+                            ) + fadeIn(animationSpec = tween(durationMillis = 280))
+                        ) togetherWith (
+                            slideOutHorizontally(
+                                animationSpec = tween(durationMillis = 240),
+                                targetOffsetX = { full -> full / 3 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = 200))
+                        )
+                    } else {
+                        val forward = targetTopIndex >= initialTopIndex
+                        (
+                            slideInHorizontally(
+                                animationSpec = tween(durationMillis = 280),
+                                initialOffsetX = { full -> if (forward) full / 5 else -full / 5 },
+                            ) + fadeIn(animationSpec = tween(durationMillis = 280))
+                        ) togetherWith (
+                            slideOutHorizontally(
+                                animationSpec = tween(durationMillis = 220),
+                                targetOffsetX = { full -> if (forward) -full / 7 else full / 7 },
+                            ) + fadeOut(animationSpec = tween(durationMillis = 200))
                         )
                     }
+                },
+            ) { scene ->
+                val topLevel = topLevelScreen(scene)
+                if (screenDepth(scene) == 1) {
+                    val stateKey = when (topLevel) {
+                        AppScreen.Home -> "top_home"
+                        AppScreen.Apps -> "top_apps"
+                        else -> "top_settings"
+                    }
+                    topLevelSaveableStateHolder.SaveableStateProvider(stateKey) {
+                        SceneContent(scene = scene, innerPadding = innerPadding)
+                    }
+                } else {
+                    SceneContent(scene = scene, innerPadding = innerPadding)
                 }
             }
-            SponsorDialog(
-                show = showSponsorDialog,
-                onDismiss = { showSponsorDialog = false },
-            )
-            RestartScopeDialog(
-                show = showRestartDialog,
-                onDismiss = { showRestartDialog = false },
-                onConfirm = { systemUi, downloads, xmsf ->
-                    showRestartDialog = false
-                    homeVm.restartScopes(systemUi, downloads, xmsf)
-                },
-            )
         }
     }
+    SponsorDialog(
+        show = showSponsorDialog,
+        onDismiss = { showSponsorDialog = false },
+    )
+    RestartScopeDialog(
+        show = showRestartDialog,
+        onDismiss = { showRestartDialog = false },
+        onConfirm = { systemUi, downloads, xmsf ->
+            showRestartDialog = false
+            homeVm.restartScopes(systemUi, downloads, xmsf)
+        },
+    )
 }
-
 @Composable
 private fun HomeScreen(
     uiState: HomeUiState,
@@ -1994,25 +1958,79 @@ private fun HomeScreen(
         item {
             MiuixCard(modifier = primaryCardModifier(Modifier.fillMaxWidth())) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("模块状态", style = MaterialTheme.typography.titleMedium)
                     val statusText = when (uiState.moduleActive) {
-                        null -> "检测中..."
+                        null -> "检测中"
                         true -> "已激活"
                         false -> "未激活"
                     }
-                    Text("LSPosed API: ${uiState.lsposedApiVersion}")
-                    Text("模块状态: $statusText")
-                    Text("Focus 协议版本: ${uiState.focusProtocolVersion}")
+                    val statusAccent = when (uiState.moduleActive) {
+                        null -> MaterialTheme.colorScheme.outline
+                        true -> Color(0xFF38B46A)
+                        false -> MaterialTheme.colorScheme.error
+                    }
+                    val statusHint = when (uiState.moduleActive) {
+                        null -> "正在读取作用域状态"
+                        true -> "模块与作用域工作正常"
+                        false -> "请检查 LSPosed 激活与作用域重启"
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Text(
+                                "模块状态",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                statusHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(statusAccent.copy(alpha = 0.14f))
+                                .border(
+                                    width = 1.dp,
+                                    color = statusAccent.copy(alpha = 0.42f),
+                                    shape = RoundedCornerShape(999.dp),
+                                )
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = statusAccent,
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    HomeStatusInfoRow(
+                        label = "LSPosed API",
+                        value = uiState.lsposedApiVersion.toString(),
+                    )
+                    HomeStatusInfoRow(
+                        label = "Focus 协议版本",
+                        value = uiState.focusProtocolVersion.toString(),
+                    )
                 }
             }
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 MiuixButton(onClick = onRefresh, modifier = Modifier.weight(1f)) {
-                    Text("刷新状态")
+                    Text("刷新状态", color = MaterialTheme.colorScheme.onBackground)
                 }
                 MiuixButton(onClick = onSendTest, modifier = Modifier.weight(1f)) {
-                    Text("发送测试通知")
+                    Text("发送测试通知", color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -2055,9 +2073,34 @@ private fun HomeScreen(
 }
 
 @Composable
+private fun HomeStatusInfoRow(
+    label: String,
+    value: String,
+    valueColor: Color = MaterialTheme.colorScheme.onBackground,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = valueColor,
+        )
+    }
+}
+
+@Composable
 private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     val panelShape = RoundedCornerShape(16.dp)
     val qrBitmap = remember {
         runCatching {
@@ -2131,7 +2174,7 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("关闭")
+                Text("关闭", color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }
@@ -2143,7 +2186,7 @@ private fun RestartScopeDialog(
     onDismiss: () -> Unit,
     onConfirm: (Boolean, Boolean, Boolean) -> Unit,
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     val scopeCardShape = RoundedCornerShape(16.dp)
     var restartSystemUi by remember { mutableStateOf(true) }
     var restartDownloads by remember { mutableStateOf(true) }
@@ -2225,7 +2268,7 @@ private fun RestartScopeDialog(
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(if (allSelected) "全不选" else "全选")
+                    Text(if (allSelected) "全不选" else "全选", color = MaterialTheme.colorScheme.onBackground)
                 }
                 MiuixButton(
                     onClick = { onConfirm(restartSystemUi, restartDownloads, restartXmsf) },
@@ -2256,7 +2299,11 @@ private fun ScopeCheckboxRow(title: String, subtitle: String, checked: Boolean, 
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -2451,7 +2498,7 @@ private fun SettingsScreen(
                 ) { onToggle(PrefKeys.ROUND_ICON, it) }
                 ToggleItem(
                     "悬浮底部导航栏",
-                    "启用后使用 FloatingNavigationBar 样式",
+                    "",
                     state.useFloatingNavigationBar,
                 ) { onToggle(PrefKeys.USE_FLOATING_NAVIGATION_BAR, it) }
                 SliderItem(
@@ -2467,7 +2514,7 @@ private fun SettingsScreen(
                 )
                 ToggleSliderItem(
                     "修改超级岛最大宽度",
-                    "开启后修改超级岛的最大宽度",
+                    "",
                     state.bigIslandMaxWidthEnabled,
                     valueText = "${state.bigIslandMaxWidth} dp",
                     value = state.bigIslandMaxWidth.toFloat(),
@@ -2625,7 +2672,13 @@ private fun MainActivityPreview() {
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
                     MiuixTopAppBar(
-                        title = routeTitle(selectedRoute),
+                        title = screenTitle(
+                            when (selectedRoute) {
+                                "apps" -> AppScreen.Apps
+                                "settings" -> AppScreen.Settings
+                                else -> AppScreen.Home
+                            },
+                        ),
                         scrollBehavior = activePrimaryScrollBehavior,
                         defaultWindowInsetsPadding = false,
                     )
@@ -2791,7 +2844,11 @@ private fun SettingsEntryItem(title: String, subtitle: String, onClick: () -> Un
                 .weight(1f)
                 .padding(end = 8.dp),
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             if (subtitle.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -2808,6 +2865,7 @@ private fun SettingsEntryItem(title: String, subtitle: String, onClick: () -> Un
             Icon(
                 imageVector = MiuixIcons.Basic.ArrowRight,
                 contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -2815,9 +2873,13 @@ private fun SettingsEntryItem(title: String, subtitle: String, onClick: () -> Un
 
 @Composable
 private fun SectionTitle(title: String) {
-    MiuixSmallTitle(
+    val isDarkTheme = isAppInDarkTheme()
+    Text(
         text = title,
-        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDarkTheme) 0.92f else 0.88f),
+        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
     )
 }
 
@@ -2845,7 +2907,11 @@ private fun ToggleItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             if (subtitle.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -2878,28 +2944,23 @@ private fun SliderItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                    if (showResetButton) {
-                        MiuixIconButton(
-                            onClick = onResetToDefault,
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = MiuixIcons.Regular.Refresh,
-                                contentDescription = "恢复默认值",
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                }
+                SliderResetButton(
+                    show = showResetButton,
+                    onClick = onResetToDefault,
+                )
                 Text(
                     valueText,
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(72.dp),
                 )
@@ -2946,7 +3007,11 @@ private fun ToggleSliderItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
                 if (subtitle.isNotEmpty()) {
                     Text(
                         subtitle,
@@ -2975,28 +3040,40 @@ private fun ToggleSliderItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                        if (showResetButton) {
-                            MiuixIconButton(
-                                onClick = onResetToDefault,
-                                modifier = Modifier.size(28.dp)
-                            ) {
-                                Icon(
-                                    imageVector = MiuixIcons.Regular.Refresh,
-                                    contentDescription = "恢复默认值",
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        }
-                    }
+                    SliderResetButton(
+                        show = showResetButton,
+                        onClick = onResetToDefault,
+                    )
                     Text(
                         valueText,
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.End,
                         modifier = Modifier.width(72.dp),
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SliderResetButton(
+    show: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        if (!show) return@Box
+        MiuixIconButton(
+            onClick = onClick,
+            modifier = Modifier.size(24.dp),
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Regular.Refresh,
+                contentDescription = "恢复默认值",
+                modifier = Modifier.size(13.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

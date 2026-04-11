@@ -55,9 +55,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.foundation.isSystemInDarkTheme
 import io.github.hyperisland.ui.FaGlyph
 import io.github.hyperisland.ui.FaIcon
+import io.github.hyperisland.ui.isAppInDarkTheme
 import top.yukonga.miuix.kmp.basic.Button as MiuixButton
 import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
@@ -90,7 +90,7 @@ private fun sectionCardModifier(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
 ): Modifier {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     return modifier
         .clip(shape)
         .then(
@@ -402,6 +402,7 @@ fun AppChannelsScreen(
                             text = if (state.appName.isBlank()) state.packageName else state.appName,
                             fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                         Text(
                             state.packageName,
@@ -439,7 +440,9 @@ fun AppChannelsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(it, color = MaterialTheme.colorScheme.error)
-                    MiuixButton(onClick = onRefresh) { Text("重试") }
+                    MiuixButton(onClick = onRefresh) {
+                        Text("重试", color = MaterialTheme.colorScheme.onBackground)
+                    }
                 }
             }
             return@LazyColumn
@@ -473,7 +476,9 @@ fun AppChannelsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    MiuixButton(onClick = onRefresh) { Text("刷新") }
+                    MiuixButton(onClick = onRefresh) {
+                        Text("刷新", color = MaterialTheme.colorScheme.onBackground)
+                    }
                 }
             }
         } else {
@@ -543,7 +548,9 @@ fun ChannelSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(state.error, color = MaterialTheme.colorScheme.error)
-            MiuixButton(onClick = onRefresh) { Text("重试") }
+                    MiuixButton(onClick = onRefresh) {
+                        Text("重试", color = MaterialTheme.colorScheme.onBackground)
+                    }
         }
         return
     }
@@ -556,7 +563,9 @@ fun ChannelSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text("未找到该通知渠道", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            MiuixButton(onClick = onRefresh) { Text("刷新") }
+                MiuixButton(onClick = onRefresh) {
+                    Text("刷新", color = MaterialTheme.colorScheme.onBackground)
+                }
         }
         return
     }
@@ -640,7 +649,11 @@ private fun ChannelListItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(channel.name, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        channel.name,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -664,6 +677,11 @@ private fun ChannelListItem(
                     Icon(
                         imageVector = MiuixIcons.Regular.Settings,
                         contentDescription = "渠道设置",
+                        tint = if (enabled) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                        },
                     )
                 }
                 MiuixSwitch(
@@ -672,7 +690,11 @@ private fun ChannelListItem(
                 )
             }
             if (channel.description.isNotBlank()) {
-                Text("描述: ${channel.description}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    "描述: ${channel.description}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -998,7 +1020,7 @@ private fun InputDialogRow(
                     onClick = { showDialog = false },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("取消")
+                    Text("取消", color = MaterialTheme.colorScheme.onBackground)
                 }
                 MiuixButton(
                     onClick = {
@@ -1095,6 +1117,7 @@ private fun BatchApplyDialog(
                 FaIcon(
                     glyph = FaGlyph.Times,
                     contentDescription = "取消",
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
         },
@@ -1138,6 +1161,7 @@ private fun BatchApplyDialog(
                 FaIcon(
                     glyph = FaGlyph.Check,
                     contentDescription = "应用",
+                    tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
         },
@@ -1256,8 +1280,16 @@ private fun AppItemRow(
             AppListIcon(app = app)
             Spacer(modifier = Modifier.size(10.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(app.appName, fontWeight = FontWeight.SemiBold)
-                Text(app.packageName, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    app.appName,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    app.packageName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             if (selectionMode) {
                 MiuixCheckbox(

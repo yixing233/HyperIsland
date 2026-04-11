@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +28,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.github.hyperisland.ui.isAppInDarkTheme
 import io.github.hyperisland.ui.app.AppIcon
 import io.github.hyperisland.ui.app.AppItem
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -49,7 +49,7 @@ private fun blacklistCardModifier(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
 ): Modifier {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     return modifier
         .clip(shape)
         .then(
@@ -177,6 +177,7 @@ private fun EmptyBlacklistState(
             Text(
                 text = if (query.isBlank()) "没有可显示的应用" else "没有匹配的应用",
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 text = if (query.isBlank()) "可以尝试显示系统应用或下拉刷新。" else "换个关键词试试。",
@@ -185,7 +186,7 @@ private fun EmptyBlacklistState(
             )
             if (query.isNotBlank()) {
                 MiuixButton(onClick = onClearQuery) {
-                    Text("清空搜索")
+                    Text("清空搜索", color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
@@ -217,6 +218,7 @@ private fun BlacklistAppRow(
                 Text(
                     text = app.appName,
                     fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                 )
                 Spacer(modifier = Modifier.height(4.dp))

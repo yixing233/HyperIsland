@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +46,7 @@ import top.yukonga.miuix.kmp.icon.extended.Hide
 import top.yukonga.miuix.kmp.icon.extended.Show
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import io.github.hyperisland.ui.isAppInDarkTheme
 
 private const val DEFAULT_AI_TIMEOUT = 3
 private const val DEFAULT_AI_TEMPERATURE = 0.1
@@ -57,7 +57,7 @@ private fun aiCardModifier(
     modifier: Modifier = Modifier,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
 ): Modifier {
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
     return modifier
         .clip(shape)
         .then(
@@ -103,7 +103,12 @@ fun AiConfigScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("AI 增强", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                "AI 增强",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
             MiuixCard(modifier = aiCardModifier(Modifier.fillMaxWidth())) {
                 Row(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).padding(16.dp),
@@ -111,9 +116,13 @@ fun AiConfigScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Text("启用 AI 摘要")
+                        Text("启用 AI 摘要", color = MaterialTheme.colorScheme.onBackground)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("由 AI 生成超级岛左右文本，超时或失败时自动回退", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "由 AI 生成超级岛左右文本，超时或失败时自动回退",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     MiuixSwitch(
                         checked = state.enabled,
@@ -124,7 +133,12 @@ fun AiConfigScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             if (state.enabled) {
-                Text("API 参数", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "API 参数",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
                 MiuixCard(modifier = aiCardModifier(Modifier.fillMaxWidth())) {
                     Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         MiuixTextField(
@@ -145,13 +159,14 @@ fun AiConfigScreen(
                             visualTransformation = if (keyObscured) PasswordVisualTransformation() else VisualTransformation.None,
                             trailingIcon = {
                                 MiuixIconButton(onClick = { keyObscured = !keyObscured }) {
-                                    Icon(
-                                        imageVector = if (keyObscured) MiuixIcons.Regular.Show else MiuixIcons.Regular.Hide,
-                                        contentDescription = if (keyObscured) "显示密钥" else "隐藏密钥",
-                                    )
-                                }
-                            },
-                        )
+                            Icon(
+                                imageVector = if (keyObscured) MiuixIcons.Regular.Show else MiuixIcons.Regular.Hide,
+                                contentDescription = if (keyObscured) "显示密钥" else "隐藏密钥",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                )
                         MiuixTextField(
                             value = state.model,
                             onValueChange = { onUpdate(state.copy(model = it)) },
@@ -176,9 +191,13 @@ fun AiConfigScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                                Text("提示词放在用户消息")
+                                Text("提示词放在用户消息", color = MaterialTheme.colorScheme.onBackground)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text("某些模型不支持系统指令，开启后将提示词放在用户消息中", style = MaterialTheme.typography.bodySmall)
+                                Text(
+                                    "某些模型不支持系统指令，开启后将提示词放在用户消息中",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                             MiuixSwitch(
                                 checked = state.promptInUser,
@@ -222,10 +241,13 @@ fun AiConfigScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                             MiuixButton(onClick = onTest, enabled = !state.testing, modifier = Modifier.weight(1f)) {
-                                Text(if (state.testing) "测试中..." else "测试连接")
+                                Text(
+                                    if (state.testing) "测试中..." else "测试连接",
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                )
                             }
                             MiuixButton(onClick = onSave, modifier = Modifier.weight(1f)) {
-                                Text("保存")
+                                Text("保存", color = MaterialTheme.colorScheme.onBackground)
                             }
                         }
 
@@ -241,6 +263,7 @@ fun AiConfigScreen(
                     Text(
                         "AI 会接收每条通知的应用包名、标题、正文，并返回短左文案（来源）与短右文案（内容）。兼容 OpenAI 格式 API（如 DeepSeek、Claude）。无响应时会自动回退默认逻辑。",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -269,34 +292,29 @@ private fun SliderItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground)
                 if (subtitle.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                    if (showResetButton) {
-                        MiuixIconButton(
-                            onClick = onResetToDefault,
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Icon(
-                                imageVector = MiuixIcons.Regular.Refresh,
-                                contentDescription = "恢复默认值",
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                }
+                SliderResetButton(
+                    show = showResetButton,
+                    onClick = onResetToDefault,
+                )
                 Text(
                     valueText,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(64.dp),
                 )
@@ -309,6 +327,27 @@ private fun SliderItem(
             steps = steps,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun SliderResetButton(
+    show: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(modifier = Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+        if (!show) return@Box
+        MiuixIconButton(
+            onClick = onClick,
+            modifier = Modifier.size(24.dp),
+        ) {
+            Icon(
+                imageVector = MiuixIcons.Regular.Refresh,
+                contentDescription = "恢复默认值",
+                modifier = Modifier.size(13.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

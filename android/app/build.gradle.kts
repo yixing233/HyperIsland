@@ -95,8 +95,8 @@ flutter {
 
 configurations.all {
     resolutionStrategy {
-        force("androidx.core:core:1.15.0")
-        force("androidx.core:core-ktx:1.15.0")
+        force("androidx.core:core:1.18.0")
+        force("androidx.core:core-ktx:1.18.0")
     }
 }
 
@@ -111,12 +111,12 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
-    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.navigation:navigation-compose:2.9.0")
+    implementation("androidx.navigation3:navigation3-runtime-android:1.1.0-rc01")
     implementation("androidx.navigationevent:navigationevent-compose:1.0.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
@@ -128,6 +128,7 @@ dependencies {
     implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-icons-android:0.9.0")
     implementation("top.yukonga.miuix.kmp:miuix-blur-android:0.9.0")
+    implementation("top.yukonga.miuix.kmp:miuix-navigation3-ui-android:0.9.0")
 
     implementation("io.github.d4viddf:hyperisland_kit:0.4.3")
     compileOnly("io.github.libxposed:api:101.0.0")
