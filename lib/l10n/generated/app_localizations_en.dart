@@ -524,6 +524,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Image+Text+Right Text Button';
 
   @override
+  String get rendererImageTextWithProgressName => 'IM Image+Text+Progress';
+
+  @override
   String get islandIcon => 'Island icon';
 
   @override
@@ -535,6 +538,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get focusIconLabel => 'Focus icon';
+
+  @override
+  String get focusExpressionCustomizationSection =>
+      'Focus advanced customization';
+
+  @override
+  String get islandExpressionCustomizationSection =>
+      'Island advanced customization';
+
+  @override
+  String get expandCustomization => 'Expand';
+
+  @override
+  String get collapseCustomization => 'Collapse';
+
+  @override
+  String get availablePlaceholdersLabel => 'Available placeholders';
+
+  @override
+  String get expressionFunctionsLabel => 'Expression functions';
+
+  @override
+  String get focusTitleExprLabel => 'Focus title expression';
+
+  @override
+  String get focusContentExprLabel => 'Focus content expression';
+
+  @override
+  String get focusIconSourceLabel => 'Focus icon source';
+
+  @override
+  String get focusPicProfileSourceLabel => 'Profile icon source';
+
+  @override
+  String get focusAppIconPkgLabel => 'App icon package';
+
+  @override
+  String get focusSecondaryIconSourceLabel => 'Secondary icon source';
+
+  @override
+  String get chatTitleColorLabel => 'Chat title color';
+
+  @override
+  String get chatTitleColorDarkLabel => 'Chat title color (dark)';
+
+  @override
+  String get chatContentColorLabel => 'Chat content color';
+
+  @override
+  String get chatContentColorDarkLabel => 'Chat content color (dark)';
+
+  @override
+  String get progressColorLabel => 'Progress color';
+
+  @override
+  String get progressBarColorLabel => 'Progress bar color';
+
+  @override
+  String get progressBarColorEndLabel => 'Progress bar end color';
+
+  @override
+  String get placeholderTitle => 'Notification title';
+
+  @override
+  String get placeholderSubtitle => 'Notification content';
+
+  @override
+  String get placeholderSubtitleOrTitle => 'Content (fallback title)';
+
+  @override
+  String get placeholderPkg => 'Package name';
+
+  @override
+  String get placeholderChannelId => 'Channel ID';
+
+  @override
+  String get placeholderProgress => 'Notification progress';
+
+  @override
+  String get placeholderStateLabel => 'State label';
+
+  @override
+  String get placeholderProgressText => 'Progress text';
+
+  @override
+  String get placeholderAiLeft => 'AI left text';
+
+  @override
+  String get placeholderAiRight => 'AI right text';
+
+  @override
+  String get placeholderRawTitle => 'Raw title';
+
+  @override
+  String get placeholderRawSubtitle => 'Raw subtitle';
+
+  @override
+  String get placeholderRawSubtitleOrTitle => 'Raw subtitle (fallback title)';
+
+  @override
+  String get islandLeftExprLabel => 'Island left expression';
+
+  @override
+  String get islandRightExprLabel => 'Island right expression';
 
   @override
   String get focusNotificationLabel => 'Focus notification';
@@ -581,7 +688,46 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outerGlowLabel => 'Outer glow';
 
   @override
+  String get outEffectColorLabel => 'Outer glow color';
+
+  @override
   String get highlightColorHint => '#RRGGBB format, leave empty for default';
+
+  @override
+  String get actionBgColorLabel => 'Action background color';
+
+  @override
+  String get actionBgColorDarkLabel => 'Action background color (dark)';
+
+  @override
+  String get actionTitleColorLabel => 'Action title color';
+
+  @override
+  String get actionTitleColorDarkLabel => 'Action title color (dark)';
+
+  @override
+  String get action1BgColorLabel => 'Action 1 background color';
+
+  @override
+  String get action1BgColorDarkLabel => 'Action 1 background color (dark)';
+
+  @override
+  String get action1TitleColorLabel => 'Action 1 title color';
+
+  @override
+  String get action1TitleColorDarkLabel => 'Action 1 title color (dark)';
+
+  @override
+  String get action2BgColorLabel => 'Action 2 background color';
+
+  @override
+  String get action2BgColorDarkLabel => 'Action 2 background color (dark)';
+
+  @override
+  String get action2TitleColorLabel => 'Action 2 title color';
+
+  @override
+  String get action2TitleColorDarkLabel => 'Action 2 title color (dark)';
 
   @override
   String get textHighlightLabel => 'Text highlight';

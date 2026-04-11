@@ -8,11 +8,12 @@ import io.github.hyperisland.xposed.log
 import io.github.hyperisland.xposed.logError
 import io.github.hyperisland.xposed.islanddispatch.IslandRequest
 import io.github.hyperisland.xposed.template.core.contracts.IslandTemplate
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationEngine
 import io.github.hyperisland.xposed.template.core.models.NotifData
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 import io.github.hyperisland.xposed.utils.toRounded
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
+import io.github.hyperisland.xposed.renderer.RendererContext
 import io.github.hyperisland.xposed.renderer.resolveRenderer
 
 /**
@@ -29,6 +30,10 @@ object NotificationIslandNotification : IslandTemplate {
     const val TEMPLATE_ID = "notification_island"
 
     override val id = TEMPLATE_ID
+    override val defaultFocusTitleExpr: String = "${'$'}{title}"
+    override val defaultFocusContentExpr: String = "${'$'}{subtitle_or_title}"
+    override val defaultIslandLeftExpr: String = "${'$'}{title}"
+    override val defaultIslandRightExpr: String = "${'$'}{subtitle_or_title}"
 
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
         if (data.focusNotif == "off") {
@@ -36,8 +41,8 @@ object NotificationIslandNotification : IslandTemplate {
             return
         }
         try {
-            val vm = process(context, data)
-            resolveRenderer(data.renderer).render(context, extras, vm)
+            val ctx = process(context, data)
+            resolveRenderer(data.renderer).render(context, extras, ctx)
             //ConfigManager.module()?.log("$TAG: injected — ${data.title} | left=${vm.leftTitle} | right=${vm.rightTitle} | buttons=${data.actions.size} | isOngoing=${data.isOngoing}")
         } catch (e: Exception) {
             logError("$TAG: injection error: ${e.message}")
@@ -55,12 +60,18 @@ object NotificationIslandNotification : IslandTemplate {
                 "app_icon"    -> data.appIconRaw ?: fallbackIcon
                 else          -> data.largeIcon ?: data.notifIcon ?: fallbackIcon
             }.toRounded(context)
+            val islandText = FocusCustomizationEngine.resolveIslandText(
+                data = data,
+                templateId = TEMPLATE_ID,
+                defaultLeft = data.title,
+                defaultRight = data.subtitle.ifEmpty { data.title },
+            )
 
             IslandDispatcher.post(
                 context,
                 IslandRequest(
-                    title            = data.title,
-                    content          = data.subtitle.ifEmpty { data.title },
+                    title            = islandText.first,
+                    content          = islandText.second,
                     icon             = displayIcon,
                     timeoutSecs      = data.islandTimeout,
                     firstFloat       = data.firstFloat == "on",
@@ -69,6 +80,7 @@ object NotificationIslandNotification : IslandTemplate {
                     preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon != "off",
                     contentIntent    = data.contentIntent,
                     isOngoing        = data.isOngoing,
+                    outerGlow        = data.outerGlow,
                     actions          = data.actions.take(2),
                 ),
             )
@@ -80,7 +92,7 @@ object NotificationIslandNotification : IslandTemplate {
 
     // ── 消息处理 ──────────────────────────────────────────────────────────────
 
-    fun process(context: Context, data: NotifData): IslandViewModel {
+    fun process(context: Context, data: NotifData): RendererContext {
         val fallbackIcon = Icon.createWithResource(context, android.R.drawable.ic_dialog_info)
 
         val islandIcon = when (data.iconMode) {
@@ -90,17 +102,12 @@ object NotificationIslandNotification : IslandTemplate {
             else          -> data.largeIcon ?: data.notifIcon ?: fallbackIcon
         }.toRounded(context)
 
-        val focusIcon = when (data.focusIconMode) {
-            "notif_small" -> data.notifIcon ?: data.appIconRaw ?: fallbackIcon
-            "notif_large" -> data.largeIcon ?: data.appIconRaw ?: data.notifIcon ?: fallbackIcon
-            "app_icon"    -> data.appIconRaw ?: fallbackIcon
-            else          -> data.largeIcon ?: data.appIconRaw ?: data.notifIcon ?: fallbackIcon
-        }.toRounded(context)
+        val focusIcon = (data.largeIcon ?: data.appIconRaw ?: data.notifIcon ?: fallbackIcon).toRounded(context)
 
         val showNotification   = data.focusNotif != "off"
         val shouldPreserveIcon = showNotification && data.preserveStatusBarSmallIcon != "off"
 
-        return IslandViewModel(
+        val baseVm = IslandViewModel(
             templateId        = TEMPLATE_ID,
             leftTitle         = data.title,
             rightTitle        = data.subtitle.ifEmpty { data.title },
@@ -109,7 +116,6 @@ object NotificationIslandNotification : IslandTemplate {
             islandIcon        = islandIcon,
             focusIcon         = focusIcon,
             circularProgress  = null,
-            showRightSide     = true,
             actions           = data.actions,
             updatable         = data.isOngoing,
             showNotification  = showNotification,
@@ -126,6 +132,11 @@ object NotificationIslandNotification : IslandTemplate {
             showLeftNarrowFont = data.showLeftNarrowFont,
             showRightNarrowFont = data.showRightNarrowFont,
             outerGlow = data.outerGlow,
+            outEffectColor = null,
         )
+        val applyResult = FocusCustomizationEngine.apply(context, data, baseVm)
+        val vm = FocusCustomizationEngine.applyIsland(data, applyResult.vm)
+        return RendererContext(vm = vm, payload = applyResult.rendererPayload)
     }
+
 }

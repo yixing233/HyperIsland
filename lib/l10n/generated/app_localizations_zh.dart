@@ -503,6 +503,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get rendererImageTextWithRightTextButtonName => '新图文组件 + 右侧文本按钮';
 
   @override
+  String get rendererImageTextWithProgressName => 'IM图文组件 + 进度条组件';
+
+  @override
   String get islandIcon => '超级岛图标';
 
   @override
@@ -513,6 +516,108 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get focusIconLabel => '焦点图标';
+
+  @override
+  String get focusExpressionCustomizationSection => '焦点高级自定义';
+
+  @override
+  String get islandExpressionCustomizationSection => '超级岛高级自定义';
+
+  @override
+  String get expandCustomization => '展开';
+
+  @override
+  String get collapseCustomization => '收起';
+
+  @override
+  String get availablePlaceholdersLabel => '可用占位符';
+
+  @override
+  String get expressionFunctionsLabel => '表达式函数';
+
+  @override
+  String get focusTitleExprLabel => '焦点标题表达式';
+
+  @override
+  String get focusContentExprLabel => '焦点正文表达式';
+
+  @override
+  String get focusIconSourceLabel => '焦点图标来源';
+
+  @override
+  String get focusPicProfileSourceLabel => '头像图标来源';
+
+  @override
+  String get focusAppIconPkgLabel => '应用图标包名';
+
+  @override
+  String get focusSecondaryIconSourceLabel => '副图标来源';
+
+  @override
+  String get chatTitleColorLabel => '聊天标题颜色';
+
+  @override
+  String get chatTitleColorDarkLabel => '聊天标题暗色';
+
+  @override
+  String get chatContentColorLabel => '聊天正文颜色';
+
+  @override
+  String get chatContentColorDarkLabel => '聊天正文暗色';
+
+  @override
+  String get progressColorLabel => '进度条颜色';
+
+  @override
+  String get progressBarColorLabel => '进度条颜色';
+
+  @override
+  String get progressBarColorEndLabel => '进度条结束颜色';
+
+  @override
+  String get placeholderTitle => '通知标题';
+
+  @override
+  String get placeholderSubtitle => '通知正文';
+
+  @override
+  String get placeholderSubtitleOrTitle => '正文（空则标题）';
+
+  @override
+  String get placeholderPkg => '包名';
+
+  @override
+  String get placeholderChannelId => '渠道 ID';
+
+  @override
+  String get placeholderProgress => '通知进度';
+
+  @override
+  String get placeholderStateLabel => '状态文本';
+
+  @override
+  String get placeholderProgressText => '进度文本';
+
+  @override
+  String get placeholderAiLeft => 'AI 左侧文本';
+
+  @override
+  String get placeholderAiRight => 'AI 右侧文本';
+
+  @override
+  String get placeholderRawTitle => '原始标题';
+
+  @override
+  String get placeholderRawSubtitle => '原始正文';
+
+  @override
+  String get placeholderRawSubtitleOrTitle => '原始正文（空则标题）';
+
+  @override
+  String get islandLeftExprLabel => '超级岛左侧表达式';
+
+  @override
+  String get islandRightExprLabel => '超级岛右侧表达式';
 
   @override
   String get focusNotificationLabel => '焦点通知';
@@ -557,7 +662,46 @@ class AppLocalizationsZh extends AppLocalizations {
   String get outerGlowLabel => '外圈光效';
 
   @override
+  String get outEffectColorLabel => '外圈光效颜色';
+
+  @override
   String get highlightColorHint => '#RRGGBB 格式，留空使用默认';
+
+  @override
+  String get actionBgColorLabel => '按钮背景色';
+
+  @override
+  String get actionBgColorDarkLabel => '按钮背景色（暗色）';
+
+  @override
+  String get actionTitleColorLabel => '按钮文字颜色';
+
+  @override
+  String get actionTitleColorDarkLabel => '按钮文字颜色（暗色）';
+
+  @override
+  String get action1BgColorLabel => '按钮1背景色';
+
+  @override
+  String get action1BgColorDarkLabel => '按钮1背景色（暗色）';
+
+  @override
+  String get action1TitleColorLabel => '按钮1文字颜色';
+
+  @override
+  String get action1TitleColorDarkLabel => '按钮1文字颜色（暗色）';
+
+  @override
+  String get action2BgColorLabel => '按钮2背景色';
+
+  @override
+  String get action2BgColorDarkLabel => '按钮2背景色（暗色）';
+
+  @override
+  String get action2TitleColorLabel => '按钮2文字颜色';
+
+  @override
+  String get action2TitleColorDarkLabel => '按钮2文字颜色（暗色）';
 
   @override
   String get textHighlightLabel => '文本高亮';

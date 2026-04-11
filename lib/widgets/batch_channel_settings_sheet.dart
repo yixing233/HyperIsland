@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import '../controllers/settings_controller.dart';
 import '../controllers/whitelist_controller.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'section_label.dart';
+import 'color_value_field.dart';
 
 // ── 操作模式（sealed class）──────────────────────────────────────────────────
 
@@ -19,7 +21,6 @@ class SingleChannelMode extends ChannelSettingsMode {
     required this.template,
     required this.renderer,
     required this.iconMode,
-    required this.focusIconMode,
     required this.focusNotif,
     required this.preserveSmallIcon,
     required this.showIslandIcon,
@@ -35,13 +36,15 @@ class SingleChannelMode extends ChannelSettingsMode {
     required this.showLeftNarrowFont,
     required this.showRightNarrowFont,
     required this.outerGlow,
+    required this.outEffectColor,
+    required this.focusCustom,
+    required this.islandCustom,
   });
 
   final String channelName;
   final String template;
   final String renderer;
   final String iconMode;
-  final String focusIconMode;
   final String focusNotif;
   final String preserveSmallIcon;
   final String showIslandIcon;
@@ -57,6 +60,9 @@ class SingleChannelMode extends ChannelSettingsMode {
   final String showLeftNarrowFont;
   final String showRightNarrowFont;
   final String outerGlow;
+  final String outEffectColor;
+  final String focusCustom;
+  final String islandCustom;
 }
 
 /// 批量模式：对多个渠道批量操作，字段默认"不更改"。
@@ -114,17 +120,20 @@ class BatchChannelSettingsSheet extends StatefulWidget {
     required this.mode,
     required this.templateLabels,
     required this.rendererLabels,
+    required this.controller,
   });
 
   final ChannelSettingsMode mode;
   final Map<String, String> templateLabels;
   final Map<String, String> rendererLabels;
+  final WhitelistController controller;
 
   static Future<BatchApplyResult?> show(
     BuildContext context, {
     required ChannelSettingsMode mode,
     required Map<String, String> templateLabels,
     required Map<String, String> rendererLabels,
+    required WhitelistController controller,
   }) {
     return showModalBottomSheet<BatchApplyResult>(
       context: context,
@@ -138,6 +147,7 @@ class BatchChannelSettingsSheet extends StatefulWidget {
         mode: mode,
         templateLabels: templateLabels,
         rendererLabels: rendererLabels,
+        controller: controller,
       ),
     );
   }
@@ -157,7 +167,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   String? _template;
   String? _renderer;
   String? _iconMode;
-  String? _focusIconMode;
   String? _focusNotif;
   String? _preserveSmallIcon;
   String? _showIslandIcon;
@@ -173,12 +182,25 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
   bool? _showLeftNarrowFont;
   bool? _showRightNarrowFont;
   String? _outerGlow;
+  String? _outEffectColor;
+  String? _focusCustom;
+  String? _islandCustom;
+
+  Map<String, dynamic>? _focusSchema;
+  Map<String, dynamic>? _islandSchema;
+  bool _loadingFocusSchema = false;
+  bool _focusCustomExpanded = false;
+  final Map<String, TextEditingController> _focusControllers = {};
+  bool _loadingIslandSchema = false;
+  bool _islandCustomExpanded = false;
+  final Map<String, TextEditingController> _islandControllers = {};
 
   // 仅 BatchChannelMode + SingleAppScope 下使用
   bool _onlyEnabled = false;
 
   late final TextEditingController _timeoutController;
   late final TextEditingController _highlightColorController;
+  late final TextEditingController _outEffectColorController;
 
   bool get _isSingle => widget.mode is SingleChannelMode;
   bool get _dynamicHighlightEnabled =>
@@ -195,7 +217,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _template = m.template;
       _renderer = m.renderer;
       _iconMode = m.iconMode;
-      _focusIconMode = m.focusIconMode;
       _focusNotif = m.focusNotif;
       _preserveSmallIcon = m.preserveSmallIcon;
       _showIslandIcon = m.showIslandIcon;
@@ -211,19 +232,417 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _showLeftNarrowFont = m.showLeftNarrowFont == kTriOptOn;
       _showRightNarrowFont = m.showRightNarrowFont == kTriOptOn;
       _outerGlow = m.outerGlow;
+      _outEffectColor = m.outEffectColor;
+      _focusCustom = m.focusCustom;
+      _islandCustom = m.islandCustom;
       _timeoutController = TextEditingController(text: m.islandTimeout);
       _highlightColorController = TextEditingController(text: m.highlightColor);
+      _outEffectColorController = TextEditingController(text: m.outEffectColor);
     } else {
       _timeoutController = TextEditingController();
       _highlightColorController = TextEditingController();
+      _outEffectColorController = TextEditingController();
     }
+    _loadFocusSchema();
   }
 
   @override
   void dispose() {
     _timeoutController.dispose();
     _highlightColorController.dispose();
+    _outEffectColorController.dispose();
+    for (final c in _focusControllers.values) {
+      c.dispose();
+    }
+    for (final c in _islandControllers.values) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _loadFocusSchema() async {
+    final template = _template;
+    final renderer = _renderer;
+    if (template == null || renderer == null) return;
+    setState(() => _loadingFocusSchema = true);
+    final schema = await widget.controller.getFocusCustomizationSchema(
+      template,
+      renderer,
+    );
+    if (!mounted) return;
+    final merged = await widget.controller.mergeFocusCustomizationDefaults(
+      template,
+      renderer,
+      _focusCustom,
+    );
+    if (!mounted) return;
+
+    final json = _decodeJson(merged);
+    _rebuildFocusControllers(schema, json);
+
+    setState(() {
+      _focusSchema = schema;
+      _focusCustom = merged;
+      _loadingFocusSchema = false;
+    });
+    _loadIslandSchema();
+  }
+
+  Future<void> _loadIslandSchema() async {
+    final template = _template;
+    if (template == null) return;
+    setState(() => _loadingIslandSchema = true);
+    final schema = await widget.controller.getIslandCustomizationSchema(
+      template,
+    );
+    if (!mounted) return;
+    final merged = await widget.controller.mergeIslandCustomizationDefaults(
+      template,
+      _islandCustom,
+    );
+    if (!mounted) return;
+
+    final json = _decodeJson(merged);
+    _rebuildIslandControllers(schema, json);
+    setState(() {
+      _islandSchema = schema;
+      _islandCustom = merged;
+      _loadingIslandSchema = false;
+    });
+  }
+
+  Map<String, dynamic> _decodeJson(String raw) {
+    try {
+      final decoded = raw.isEmpty ? {} : (jsonDecode(raw) as Map);
+      return decoded.cast<String, dynamic>();
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  void _rebuildFocusControllers(
+    Map<String, dynamic>? schema,
+    Map<String, dynamic> json,
+  ) {
+    for (final c in _focusControllers.values) {
+      c.dispose();
+    }
+    _focusControllers.clear();
+
+    final fields = (schema?['fields'] as List?)?.cast<Map>() ?? const [];
+    for (final field in fields) {
+      final type = (field['type'] ?? '').toString();
+      final key = (field['key'] ?? '').toString();
+      if (key.isEmpty) continue;
+      if (type == 'text_expr' ||
+          type == 'text' ||
+          type == 'regex' ||
+          type == 'number' ||
+          type == 'color' ||
+          type == 'select') {
+        final def = (field['defaultValue'] ?? '').toString();
+        final value = (json[key] ?? def).toString();
+        _focusControllers[key] = TextEditingController(text: value);
+      }
+    }
+  }
+
+  void _syncFocusCustomFromControllers() {
+    final map = <String, dynamic>{};
+    _focusControllers.forEach((key, ctl) {
+      map[key] = ctl.text;
+    });
+    _focusCustom = jsonEncode(map);
+  }
+
+  void _rebuildIslandControllers(
+    Map<String, dynamic>? schema,
+    Map<String, dynamic> json,
+  ) {
+    for (final c in _islandControllers.values) {
+      c.dispose();
+    }
+    _islandControllers.clear();
+    final fields = (schema?['fields'] as List?)?.cast<Map>() ?? const [];
+    for (final field in fields) {
+      final key = (field['key'] ?? '').toString();
+      if (key.isEmpty) continue;
+      final def = (field['defaultValue'] ?? '').toString();
+      final value = (json[key] ?? def).toString();
+      _islandControllers[key] = TextEditingController(text: value);
+    }
+  }
+
+  void _syncIslandCustomFromControllers() {
+    final map = <String, dynamic>{};
+    _islandControllers.forEach((key, ctl) {
+      map[key] = ctl.text;
+    });
+    _islandCustom = jsonEncode(map);
+  }
+
+  Widget _buildFocusCustomizationFields() {
+    final l10n = AppLocalizations.of(context)!;
+    final schema = _focusSchema;
+    if (schema == null) {
+      return const SizedBox.shrink();
+    }
+
+    final placeholders =
+        (schema['placeholders'] as List?)?.cast<Map>() ?? const <Map>[];
+    final functions =
+        (schema['functions'] as List?)?.cast<Map>() ?? const <Map>[];
+    final fields = (schema['fields'] as List?)?.cast<Map>() ?? const <Map>[];
+
+    if (fields.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final children = <Widget>[];
+
+    if (placeholders.isNotEmpty) {
+      final tips = placeholders
+          .map((p) {
+            final key = (p['key'] ?? '').toString();
+            if (key.isEmpty) return null;
+            return _formatPlaceholderTip(key);
+          })
+          .whereType<String>()
+          .join('  |  ');
+      children.add(
+        _SettingField(
+          label: l10n.availablePlaceholdersLabel,
+          child: SelectableText(tips),
+        ),
+      );
+      children.add(const SizedBox(height: 10));
+    }
+
+    if (functions.isNotEmpty) {
+      final tips = functions
+          .map((f) => (f['example'] ?? '').toString())
+          .where((e) => e.isNotEmpty)
+          .join('  |  ');
+      if (tips.isNotEmpty) {
+        children.add(
+          _SettingField(
+            label: l10n.expressionFunctionsLabel,
+            child: SelectableText(tips),
+          ),
+        );
+        children.add(const SizedBox(height: 10));
+      }
+    }
+
+    for (final field in fields) {
+      final key = (field['key'] ?? '').toString();
+      final label = _localizedFieldLabel(
+        key,
+        (field['label'] ?? key).toString(),
+        l10n,
+      );
+      final type = (field['type'] ?? '').toString();
+      if (key.isEmpty) continue;
+
+      if (type == 'select') {
+        final options =
+            (field['options'] as List?)?.cast<Map>() ?? const <Map>[];
+        final items = options
+            .map(
+              (o) => DropdownMenuItem<String?>(
+                value: (o['value'] ?? '').toString(),
+                child: Text(
+                  _localizedOptionLabel(
+                    key,
+                    (o['value'] ?? '').toString(),
+                    (o['label'] ?? o['value'] ?? '').toString(),
+                    l10n,
+                  ),
+                ),
+              ),
+            )
+            .toList();
+        final ctl = _focusControllers.putIfAbsent(
+          key,
+          () => TextEditingController(
+            text: (field['defaultValue'] ?? '').toString(),
+          ),
+        );
+        children.add(
+          _BatchSettingRow(
+            label: label,
+            value: ctl.text,
+            showNotChange: false,
+            items: items,
+            onChanged: (v) {
+              setState(() {
+                ctl.text = v ?? '';
+                _syncFocusCustomFromControllers();
+              });
+            },
+          ),
+        );
+      } else if (type == 'color') {
+        final options =
+            (field['options'] as List?)?.cast<Map>() ?? const <Map>[];
+        final items = options
+            .map(
+              (o) => DropdownMenuItem<String>(
+                value: (o['value'] ?? '').toString(),
+                child: Text(
+                  _localizedOptionLabel(
+                    key,
+                    (o['value'] ?? '').toString(),
+                    (o['label'] ?? o['value'] ?? '').toString(),
+                    l10n,
+                  ),
+                ),
+              ),
+            )
+            .toList();
+        final presetItems = items.isEmpty ? null : items;
+        final ctl = _focusControllers.putIfAbsent(
+          key,
+          () => TextEditingController(
+            text: (field['defaultValue'] ?? '').toString(),
+          ),
+        );
+        children.add(
+          _SettingField(
+            label: label,
+            child: ColorValueField(
+              controller: ctl,
+              decoration: _fieldDecoration(context),
+              previewColor: _parseColor(ctl.text),
+              previewFallbackColor: Theme.of(context).colorScheme.primary,
+              onChanged: (_) => setState(_syncFocusCustomFromControllers),
+              onPickColor: () async {
+                final color = await _showColorPicker(context);
+                if (color != null) {
+                  ctl.text = _toHexColor(color);
+                  setState(_syncFocusCustomFromControllers);
+                }
+              },
+              presetItems: presetItems,
+              onPresetSelected: presetItems == null
+                  ? null
+                  : (v) {
+                      ctl.text = v;
+                      setState(_syncFocusCustomFromControllers);
+                    },
+            ),
+          ),
+        );
+      } else {
+        final ctl = _focusControllers.putIfAbsent(
+          key,
+          () => TextEditingController(
+            text: (field['defaultValue'] ?? '').toString(),
+          ),
+        );
+        final isNumber = type == 'number';
+        children.add(
+          _SettingField(
+            label: label,
+            child: TextFormField(
+              controller: ctl,
+              keyboardType: isNumber
+                  ? TextInputType.number
+                  : TextInputType.text,
+              inputFormatters: isNumber
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : null,
+              decoration: _fieldDecoration(context),
+              onChanged: (_) {
+                setState(_syncFocusCustomFromControllers);
+              },
+            ),
+          ),
+        );
+      }
+      children.add(const SizedBox(height: 10));
+    }
+
+    if (children.isNotEmpty) {
+      children.removeLast();
+    }
+
+    return Column(children: children);
+  }
+
+  Widget _buildIslandCustomizationFields() {
+    final l10n = AppLocalizations.of(context)!;
+    final schema = _islandSchema;
+    if (schema == null) return const SizedBox.shrink();
+    final placeholders =
+        (schema['placeholders'] as List?)?.cast<Map>() ?? const <Map>[];
+    final functions =
+        (schema['functions'] as List?)?.cast<Map>() ?? const <Map>[];
+    final fields = (schema['fields'] as List?)?.cast<Map>() ?? const <Map>[];
+    if (fields.isEmpty) return const SizedBox.shrink();
+
+    final children = <Widget>[];
+    if (placeholders.isNotEmpty) {
+      final tips = placeholders
+          .map((p) {
+            final key = (p['key'] ?? '').toString();
+            if (key.isEmpty) return null;
+            return _formatPlaceholderTip(key);
+          })
+          .whereType<String>()
+          .join('  |  ');
+      children.add(
+        _SettingField(
+          label: l10n.availablePlaceholdersLabel,
+          child: SelectableText(tips),
+        ),
+      );
+      children.add(const SizedBox(height: 10));
+    }
+    if (functions.isNotEmpty) {
+      final tips = functions
+          .map((f) => (f['example'] ?? '').toString())
+          .where((e) => e.isNotEmpty)
+          .join('  |  ');
+      if (tips.isNotEmpty) {
+        children.add(
+          _SettingField(
+            label: l10n.expressionFunctionsLabel,
+            child: SelectableText(tips),
+          ),
+        );
+        children.add(const SizedBox(height: 10));
+      }
+    }
+
+    for (final field in fields) {
+      final key = (field['key'] ?? '').toString();
+      final label = _localizedFieldLabel(
+        key,
+        (field['label'] ?? key).toString(),
+        l10n,
+      );
+      if (key.isEmpty) continue;
+      final ctl = _islandControllers.putIfAbsent(
+        key,
+        () => TextEditingController(
+          text: (field['defaultValue'] ?? '').toString(),
+        ),
+      );
+      children.add(
+        _SettingField(
+          label: label,
+          child: TextFormField(
+            controller: ctl,
+            decoration: _fieldDecoration(context),
+            onChanged: (_) => setState(_syncIslandCustomFromControllers),
+          ),
+        ),
+      );
+      children.add(const SizedBox(height: 10));
+    }
+    if (children.isNotEmpty) children.removeLast();
+    return Column(children: children);
   }
 
   Color? _parseColor(String? hex) {
@@ -235,10 +654,77 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
     return Color(value).withAlpha(255);
   }
 
-  Future<Color?> _showColorPicker(BuildContext context) async {
+  String _toHexColor(Color color) =>
+      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
+  String _formatPlaceholderTip(String key) {
+    return '\${$key}';
+  }
+
+  String _localizedFieldLabel(
+    String key,
+    String fallback,
+    AppLocalizations l10n,
+  ) {
+    final localized = switch (key) {
+      'focus_title_expr' => l10n.focusTitleExprLabel,
+      'focus_content_expr' => l10n.focusContentExprLabel,
+      'focus_icon_mode' => l10n.focusIconSourceLabel,
+      'focus_pic_profile_mode' => l10n.focusPicProfileSourceLabel,
+      'focus_app_icon_pkg' => l10n.focusAppIconPkgLabel,
+      'focus_app_icon_pkg_mode' => l10n.focusSecondaryIconSourceLabel,
+      'progress_color' => l10n.progressColorLabel,
+      'progress_bar_color' => l10n.progressBarColorLabel,
+      'progress_bar_color_end' => l10n.progressBarColorEndLabel,
+      'chat_title_color' => l10n.chatTitleColorLabel,
+      'chat_title_color_dark' => l10n.chatTitleColorDarkLabel,
+      'chat_content_color' => l10n.chatContentColorLabel,
+      'chat_content_color_dark' => l10n.chatContentColorDarkLabel,
+      'action_1_bg_color' => l10n.action1BgColorLabel,
+      'action_1_bg_color_dark' => l10n.action1BgColorDarkLabel,
+      'action_1_title_color' => l10n.action1TitleColorLabel,
+      'action_1_title_color_dark' => l10n.action1TitleColorDarkLabel,
+      'action_2_bg_color' => l10n.action2BgColorLabel,
+      'action_2_bg_color_dark' => l10n.action2BgColorDarkLabel,
+      'action_2_title_color' => l10n.action2TitleColorLabel,
+      'action_2_title_color_dark' => l10n.action2TitleColorDarkLabel,
+      'island_left_expr' => l10n.islandLeftExprLabel,
+      'island_right_expr' => l10n.islandRightExprLabel,
+      _ => fallback,
+    };
+    return localized;
+  }
+
+  String _localizedOptionLabel(
+    String fieldKey,
+    String value,
+    String fallback,
+    AppLocalizations l10n,
+  ) {
+    if (fieldKey == 'focus_icon_mode' ||
+        fieldKey == 'focus_pic_profile_mode' ||
+        fieldKey == 'focus_app_icon_pkg_mode') {
+      switch (value) {
+        case kIconModeAuto:
+          return l10n.iconModeAuto;
+        case kIconModeNotifSmall:
+          return l10n.iconModeNotifSmall;
+        case kIconModeNotifLarge:
+          return l10n.iconModeNotifLarge;
+        case kIconModeAppIcon:
+          return l10n.iconModeAppIcon;
+      }
+    }
+    return fallback;
+  }
+
+  Future<Color?> _showColorPicker(
+    BuildContext context, {
+    String? initialHex,
+  }) async {
     final l10n = AppLocalizations.of(context)!;
     final initialColor =
-        _parseColor(_highlightColor) ?? Theme.of(context).colorScheme.primary;
+        _parseColor(initialHex) ?? Theme.of(context).colorScheme.primary;
     final hsv = HSVColor.fromColor(initialColor);
 
     HSVColor selectedColor = hsv;
@@ -343,7 +829,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _template != null ||
       _renderer != null ||
       _iconMode != null ||
-      _focusIconMode != null ||
       _focusNotif != null ||
       _preserveSmallIcon != null ||
       _showIslandIcon != null ||
@@ -358,7 +843,10 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
       _showRightHighlight != null ||
       _showLeftNarrowFont != null ||
       _showRightNarrowFont != null ||
-      _outerGlow != null;
+      _outerGlow != null ||
+      _outEffectColor != null ||
+      _focusCustom != null ||
+      _islandCustom != null;
 
   String _title(AppLocalizations l10n) => switch (widget.mode) {
     SingleChannelMode m => m.channelName,
@@ -384,7 +872,6 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
           'template': _template,
           'renderer': _renderer,
           'icon': _iconMode,
-          'focus_icon': _focusIconMode,
           'focus': _focusNotif,
           'preserve_small_icon': _focusNotif == kTriOptOff
               ? kTriOptOff
@@ -414,6 +901,11 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
               ? null
               : (_showRightNarrowFont! ? kTriOptOn : kTriOptOff),
           'outer_glow': _isSingle ? (_outerGlow ?? kTriOptDefault) : _outerGlow,
+          'out_effect_color': _isSingle
+              ? (_outEffectColor ?? '')
+              : _outEffectColor,
+          'focus_custom': _focusCustom,
+          'island_custom': _islandCustom,
         },
         onlyEnabled: switch (widget.mode) {
           BatchChannelMode(scope: SingleAppScope()) => _onlyEnabled,
@@ -526,7 +1018,10 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => setState(() => _template = v),
+                    onChanged: (v) {
+                      setState(() => _template = v);
+                      _loadFocusSchema();
+                    },
                   ),
                   SizedBox(height: rowGap),
                   _BatchSettingRow(
@@ -541,7 +1036,10 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => setState(() => _renderer = v),
+                    onChanged: (v) {
+                      setState(() => _renderer = v);
+                      _loadFocusSchema();
+                    },
                   ),
                   SizedBox(height: blockGap),
 
@@ -702,80 +1200,43 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                   // 高亮颜色
                   _SettingField(
                     label: l10n.highlightColorLabel,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _highlightColorController,
-                            enabled: !_dynamicHighlightEnabled,
-                            readOnly: _dynamicHighlightEnabled,
-                            textInputAction: TextInputAction.done,
-                            scrollPadding: EdgeInsets.zero,
-                            onTapOutside: (_) {
-                              FocusManager.instance.primaryFocus?.unfocus();
+                    child: ColorValueField(
+                      controller: _highlightColorController,
+                      enabled: !_dynamicHighlightEnabled,
+                      readOnly: _dynamicHighlightEnabled,
+                      decoration: _fieldDecoration(
+                        context,
+                        hintText: _isSingle
+                            ? l10n.highlightColorHint
+                            : l10n.noChange,
+                      ),
+                      previewColor: _parseColor(_highlightColor),
+                      previewFallbackColor: cs.primary,
+                      onChanged: _dynamicHighlightEnabled
+                          ? null
+                          : (v) {
+                              final trimmed = v.trim();
+                              setState(() {
+                                _highlightColor = trimmed.isNotEmpty
+                                    ? trimmed
+                                    : null;
+                              });
                             },
-                            decoration:
-                                _fieldDecoration(
-                                  context,
-                                  hintText: _isSingle
-                                      ? l10n.highlightColorHint
-                                      : l10n.noChange,
-                                ).copyWith(
-                                  suffixIcon:
-                                      !_dynamicHighlightEnabled &&
-                                          _highlightColorController
-                                              .text
-                                              .isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(
-                                            Icons.clear,
-                                            size: 18,
-                                          ),
-                                          onPressed: () {
-                                            _highlightColorController.clear();
-                                            setState(
-                                              () => _highlightColor = null,
-                                            );
-                                          },
-                                        )
-                                      : null,
-                                ),
-                            onChanged: _dynamicHighlightEnabled
-                                ? null
-                                : (v) {
-                                    final trimmed = v.trim();
-                                    setState(() {
-                                      _highlightColor = trimmed.isNotEmpty
-                                          ? trimmed
-                                          : null;
-                                    });
-                                  },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: _dynamicHighlightEnabled
-                              ? null
-                              : () async {
-                                  final color = await _showColorPicker(context);
-                                  if (color != null) {
-                                    final hex =
-                                        '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
-                                    _highlightColorController.text = hex;
-                                    setState(() => _highlightColor = hex);
-                                  }
-                                },
-                          child: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: _parseColor(_highlightColor) ?? cs.primary,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: cs.outline),
-                            ),
-                          ),
-                        ),
-                      ],
+                      onClear: () {
+                        _highlightColorController.clear();
+                        setState(() => _highlightColor = null);
+                      },
+                      onPickColor: () async {
+                        final color = await _showColorPicker(
+                          context,
+                          initialHex: _highlightColor,
+                        );
+                        if (color != null) {
+                          final hex = _toHexColor(color);
+                          _highlightColorController.text = hex;
+                          setState(() => _highlightColor = hex);
+                        }
+                      },
                     ),
                   ),
                   SizedBox(height: rowGap),
@@ -871,36 +1332,41 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                       ],
                     ),
                   ),
+                  if (_isSingle) ...[
+                    SizedBox(height: rowGap),
+                    SectionLabel(l10n.islandExpressionCustomizationSection),
+                    SizedBox(height: sectionTitleGap),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(
+                        () => _islandCustomExpanded = !_islandCustomExpanded,
+                      ),
+                      icon: Icon(
+                        _islandCustomExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                      ),
+                      label: Text(
+                        _islandCustomExpanded
+                            ? l10n.collapseCustomization
+                            : l10n.expandCustomization,
+                      ),
+                    ),
+                    if (_islandCustomExpanded) ...[
+                      SizedBox(height: rowGap),
+                      if (_loadingIslandSchema)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        )
+                      else
+                        _buildIslandCustomizationFields(),
+                    ],
+                  ],
                   SizedBox(height: blockGap),
 
                   // ── 焦点通知 ───────────────────────────────────────────
                   SectionLabel(l10n.focusNotificationLabel),
                   SizedBox(height: sectionTitleGap),
-                  _BatchSettingRow(
-                    label: l10n.focusIconLabel,
-                    value: _focusIconMode,
-                    showNotChange: !_isSingle,
-                    items: [
-                      DropdownMenuItem(
-                        value: kIconModeAuto,
-                        child: Text(l10n.iconModeAuto),
-                      ),
-                      DropdownMenuItem(
-                        value: kIconModeNotifSmall,
-                        child: Text(l10n.iconModeNotifSmall),
-                      ),
-                      DropdownMenuItem(
-                        value: kIconModeNotifLarge,
-                        child: Text(l10n.iconModeNotifLarge),
-                      ),
-                      DropdownMenuItem(
-                        value: kIconModeAppIcon,
-                        child: Text(l10n.iconModeAppIcon),
-                      ),
-                    ],
-                    onChanged: (v) => setState(() => _focusIconMode = v),
-                  ),
-                  SizedBox(height: rowGap),
                   _BatchSettingRow(
                     label: l10n.focusNotificationLabel,
                     value: _focusNotif,
@@ -1005,6 +1471,36 @@ class _BatchChannelSettingsSheetState extends State<BatchChannelSettingsSheet> {
                     ],
                     onChanged: (v) => setState(() => _outerGlow = v),
                   ),
+                  if (_isSingle) ...[
+                    SizedBox(height: rowGap),
+                    SectionLabel(l10n.focusExpressionCustomizationSection),
+                    SizedBox(height: sectionTitleGap),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(
+                        () => _focusCustomExpanded = !_focusCustomExpanded,
+                      ),
+                      icon: Icon(
+                        _focusCustomExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                      ),
+                      label: Text(
+                        _focusCustomExpanded
+                            ? l10n.collapseCustomization
+                            : l10n.expandCustomization,
+                      ),
+                    ),
+                    if (_focusCustomExpanded) ...[
+                      SizedBox(height: rowGap),
+                      if (_loadingFocusSchema)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        )
+                      else
+                        _buildFocusCustomizationFields(),
+                    ],
+                  ],
                   SizedBox(height: endGap),
                 ],
               ),

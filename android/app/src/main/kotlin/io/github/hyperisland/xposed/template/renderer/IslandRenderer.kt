@@ -4,7 +4,12 @@ import android.app.Notification
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import io.github.hyperisland.xposed.template.core.models.IslandViewModel
+import io.github.hyperisland.xposed.renderer.image_text_with_buttons.ImageTextWithButtonsRenderer
+import io.github.hyperisland.xposed.renderer.image_text_with_buttons_wrap.ImageTextWithButtonsWrapRenderer
+import io.github.hyperisland.xposed.renderer.image_text_with_progress.ImageTextWithProgressRenderer
+import io.github.hyperisland.xposed.renderer.image_text_with_right_text_button.ImageTextWithRightTextButtonRenderer
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldRegistry
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationFieldSpec
 
 /**
  * 灵动岛渲染器接口。
@@ -14,7 +19,15 @@ import io.github.hyperisland.xposed.template.core.models.IslandViewModel
  */
 interface IslandRenderer {
     val id: String
-    fun render(context: Context, extras: Bundle, vm: IslandViewModel)
+    val focusCustomizationFields: List<FocusCustomizationFieldSpec>
+        get() = listOf(
+            FocusCustomizationFieldRegistry.focusTitleExpr,
+            FocusCustomizationFieldRegistry.focusContentExpr,
+            FocusCustomizationFieldRegistry.focusIconMode,
+        )
+    val customizationContributor: RendererCustomizationContributor?
+        get() = null
+    fun render(context: Context, extras: Bundle, ctx: RendererContext)
 }
 
 // ── 共享工具函数 ──────────────────────────────────────────────────────────────
@@ -118,6 +131,17 @@ fun injectOuterGlow(jsonParam: String, outerGlow: Boolean): String {
     } catch (_: Exception) { jsonParam }
 }
 
+/** 将 outEffectColor 注入到 param_v2.outEffectColor。 */
+fun injectOutEffectColor(jsonParam: String, outEffectColor: String?): String {
+    if (outEffectColor.isNullOrBlank()) return jsonParam
+    return try {
+        val json = org.json.JSONObject(jsonParam)
+        val pv2 = json.optJSONObject("param_v2") ?: return jsonParam
+        pv2.put("outEffectColor", outEffectColor)
+        json.toString()
+    } catch (_: Exception) { jsonParam }
+}
+
 /**
  * 根据渲染器 ID 返回对应的 [IslandRenderer] 实例，未匹配时回退到默认渲染器。
  * 新增渲染器只需在此处注册，所有模板无需修改。
@@ -125,6 +149,7 @@ fun injectOuterGlow(jsonParam: String, outerGlow: Boolean): String {
 fun resolveRenderer(id: String): IslandRenderer = when (id) {
     ImageTextWithButtonsWrapRenderer.RENDERER_ID -> ImageTextWithButtonsWrapRenderer
     ImageTextWithRightTextButtonRenderer.RENDERER_ID -> ImageTextWithRightTextButtonRenderer
+    ImageTextWithProgressRenderer.RENDERER_ID -> ImageTextWithProgressRenderer
     else -> ImageTextWithButtonsRenderer
 }
 

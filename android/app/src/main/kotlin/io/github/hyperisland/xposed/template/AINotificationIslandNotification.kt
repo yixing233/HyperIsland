@@ -17,11 +17,13 @@ import io.github.hyperisland.xposed.logError
 import io.github.hyperisland.xposed.logWarn
 import io.github.hyperisland.xposed.islanddispatch.IslandRequest
 import io.github.hyperisland.xposed.template.core.contracts.IslandTemplate
+import io.github.hyperisland.xposed.template.core.contracts.TemplatePlaceholder
+import io.github.hyperisland.xposed.template.core.customization.FocusCustomizationEngine
 import io.github.hyperisland.xposed.template.core.models.NotifData
 import io.github.hyperisland.xposed.template.core.models.IslandViewModel
 import io.github.hyperisland.xposed.utils.toRounded
 import io.github.hyperisland.xposed.hook.FocusNotifStatusBarIconHook
-import io.github.hyperisland.xposed.renderer.ImageTextWithButtonsRenderer
+import io.github.hyperisland.xposed.renderer.RendererContext
 import io.github.hyperisland.xposed.renderer.resolveRenderer
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -43,7 +45,15 @@ object AINotificationIslandNotification : IslandTemplate {
     const val TEMPLATE_ID = "ai_notification_island"
 
     override val id = TEMPLATE_ID
-
+    override val focusExpressionPlaceholders: List<TemplatePlaceholder> = listOf(
+        TemplatePlaceholder("ai_left"),
+        TemplatePlaceholder("ai_right"),
+    )
+    override val islandExpressionPlaceholders: List<TemplatePlaceholder> = focusExpressionPlaceholders
+    override val defaultFocusTitleExpr: String = "${'$'}{title}"
+    override val defaultFocusContentExpr: String = "${'$'}{subtitle_or_title}"
+    override val defaultIslandLeftExpr: String = "${'$'}{title}"
+    override val defaultIslandRightExpr: String = "${'$'}{subtitle_or_title}"
     private val executor = Executors.newCachedThreadPool()
 
     override fun inject(context: Context, extras: Bundle, data: NotifData) {
@@ -65,8 +75,8 @@ object AINotificationIslandNotification : IslandTemplate {
             return
         }
         try {
-            val vm = process(context, data, leftText, rightText)
-            resolveRenderer(data.renderer).render(context, extras, vm)
+            val ctx = process(context, data, leftText, rightText)
+            resolveRenderer(data.renderer).render(context, extras, ctx)
             //ConfigManager.module()?.log("$TAG: injected — title=${data.title} | left=$leftText | right=$rightText | notifId=${data.notifId}")
         } catch (e: Exception) {
             logError("$TAG: injection error: ${e.message}")
@@ -213,11 +223,21 @@ $userPrompt
         try {
             val fallbackIcon = Icon.createWithResource(context, android.R.drawable.ic_dialog_info)
             val displayIcon  = resolveIcon(data, data.iconMode, fallbackIcon).toRounded(context)
+            val islandText = FocusCustomizationEngine.resolveIslandText(
+                data = data,
+                templateId = TEMPLATE_ID,
+                defaultLeft = leftText,
+                defaultRight = rightText,
+                extraVars = mapOf(
+                    "ai_left" to leftText,
+                    "ai_right" to rightText,
+                ),
+            )
             IslandDispatcher.post(
                 context,
                 IslandRequest(
-                    title            = leftText,
-                    content          = rightText,
+                    title            = islandText.first,
+                    content          = islandText.second,
                     icon             = displayIcon,
                     timeoutSecs      = data.islandTimeout,
                     firstFloat       = data.firstFloat == "on",
@@ -226,6 +246,7 @@ $userPrompt
                     preserveStatusBarSmallIcon = data.preserveStatusBarSmallIcon != "off",
                     contentIntent    = data.contentIntent,
                     isOngoing        = data.isOngoing,
+                    outerGlow        = data.outerGlow,
                     actions          = data.actions.take(2),
                 ),
             )
@@ -241,13 +262,13 @@ $userPrompt
         data: NotifData,
         leftText: String  = data.title,
         rightText: String = data.subtitle.ifEmpty { data.title },
-    ): IslandViewModel {
+    ): RendererContext {
         val fallbackIcon     = Icon.createWithResource(context, android.R.drawable.ic_dialog_info)
         val islandIcon       = resolveIcon(data, data.iconMode,      fallbackIcon).toRounded(context)
-        val focusIcon        = resolveIcon(data, data.focusIconMode,  fallbackIcon).toRounded(context)
+        val focusIcon        = (data.largeIcon ?: data.appIconRaw ?: data.notifIcon ?: fallbackIcon).toRounded(context)
         val showNotification = data.focusNotif != "off"
 
-        return IslandViewModel(
+        val baseVm = IslandViewModel(
             templateId        = TEMPLATE_ID,
             leftTitle         = leftText,
             rightTitle        = rightText,
@@ -256,7 +277,6 @@ $userPrompt
             islandIcon        = islandIcon,
             focusIcon         = focusIcon,
             circularProgress  = null,
-            showRightSide     = true,
             actions           = data.actions,
             updatable         = data.isOngoing,
             showNotification  = showNotification,
@@ -273,6 +293,24 @@ $userPrompt
             showLeftNarrowFont = data.showLeftNarrowFont,
             showRightNarrowFont = data.showRightNarrowFont,
             outerGlow = data.outerGlow,
+            outEffectColor = data.outEffectColor,
+        )
+        val applyResult = FocusCustomizationEngine.apply(context, data, baseVm)
+        val vm = FocusCustomizationEngine.applyIsland(data, applyResult.vm)
+        return RendererContext(vm = vm, payload = applyResult.rendererPayload)
+    }
+
+    override fun focusExpressionVars(data: NotifData, vm: IslandViewModel): Map<String, String> {
+        return mapOf(
+            "ai_left" to vm.leftTitle,
+            "ai_right" to vm.rightTitle,
+        )
+    }
+
+    override fun islandExpressionVars(data: NotifData, vm: IslandViewModel): Map<String, String> {
+        return mapOf(
+            "ai_left" to vm.leftTitle,
+            "ai_right" to vm.rightTitle,
         )
     }
 

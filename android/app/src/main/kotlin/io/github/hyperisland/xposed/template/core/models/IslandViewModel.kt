@@ -32,8 +32,8 @@ data class IslandViewModel(
     // ── 可选环形进度 ────────────────────────────────────────────────────────
     /** 进度值 0–100；非 null 时大岛右侧显示环形进度，同时小岛显示进度环。 */
     val circularProgress: Int? = null,
-    /** false 时大岛不渲染右侧区域（仅左侧图标，无文字无进度）。 */
-    val showRightSide: Boolean = true,
+    /** 进度条颜色（#RRGGBB / #AARRGGBB），用于 progressInfo。 */
+    val progressColor: String? = null,
 
     // ── 动作按钮 ────────────────────────────────────────────────────────────
     val actions: List<Notification.Action> = emptyList(),
@@ -62,4 +62,6 @@ data class IslandViewModel(
     val showRightNarrowFont: Boolean = false,
     /** 是否开启大岛外圈光效（outEffectSrc=outer_glow）。 */
     val outerGlow: Boolean = false,
+    /** 大岛外圈光效颜色，十六进制字符串如 "#E040FB"，null 表示不设置。 */
+    val outEffectColor: String? = null,
 )

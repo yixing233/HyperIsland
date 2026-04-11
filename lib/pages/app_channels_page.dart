@@ -192,7 +192,6 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
 
     queueExtra('renderer', widget.controller.setChannelRenderer);
     queueExtra('icon', widget.controller.setChannelIconMode);
-    queueExtra('focus_icon', widget.controller.setChannelFocusIconMode);
     queueExtra('focus', widget.controller.setChannelFocusNotif);
     queueExtra(
       'preserve_small_icon',
@@ -229,6 +228,12 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
       widget.controller.setChannelShowRightNarrowFont,
     );
     queueExtra('outer_glow', widget.controller.setChannelOuterGlow);
+    queueExtra('out_effect_color', widget.controller.setChannelOutEffectColor);
+    queueExtra('focus_custom', widget.controller.setChannelFocusCustomization);
+    queueExtra(
+      'island_custom',
+      widget.controller.setChannelIslandCustomization,
+    );
 
     if (templateChanged || extrasChanged) {
       setState(() {
@@ -282,6 +287,7 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
       ),
       templateLabels: _templateLabels,
       rendererLabels: _rendererLabels,
+      controller: widget.controller,
     );
     if (result == null || !mounted) return;
 
@@ -493,7 +499,6 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                         importanceLabel: _importanceLabel(ch.importance, l10n),
                         isLast: isLast,
                         iconMode: extras['icon'] ?? kIconModeAuto,
-                        focusIconMode: extras['focus_icon'] ?? kIconModeAuto,
                         focusNotif: extras['focus'] ?? kTriOptDefault,
                         preserveSmallIcon:
                             extras['preserve_small_icon'] ?? kTriOptDefault,
@@ -517,6 +522,10 @@ class _AppChannelsPageState extends State<AppChannelsPage> {
                         showRightNarrowFont:
                             extras['show_right_narrow_font'] ?? kTriOptOff,
                         outerGlow: extras['outer_glow'] ?? kTriOptDefault,
+                        outEffectColor: extras['out_effect_color'] ?? '',
+                        focusCustom: extras['focus_custom'] ?? '',
+                        islandCustom: extras['island_custom'] ?? '',
+                        controller: widget.controller,
                         onToggle: (v) => _toggle(ch.id, v),
                         onSettingsApplied: (s) =>
                             _applyChannelSettings(ch.id, s),
@@ -615,7 +624,6 @@ class _ChannelTile extends StatelessWidget {
     required this.importanceLabel,
     required this.isLast,
     required this.iconMode,
-    required this.focusIconMode,
     required this.focusNotif,
     required this.preserveSmallIcon,
     required this.showIslandIcon,
@@ -631,6 +639,10 @@ class _ChannelTile extends StatelessWidget {
     required this.showLeftNarrowFont,
     required this.showRightNarrowFont,
     required this.outerGlow,
+    required this.outEffectColor,
+    required this.focusCustom,
+    required this.islandCustom,
+    required this.controller,
     required this.onToggle,
     required this.onSettingsApplied,
   });
@@ -645,7 +657,6 @@ class _ChannelTile extends StatelessWidget {
   final String importanceLabel;
   final bool isLast;
   final String iconMode;
-  final String focusIconMode;
   final String focusNotif;
   final String preserveSmallIcon;
   final String showIslandIcon;
@@ -661,6 +672,10 @@ class _ChannelTile extends StatelessWidget {
   final String showLeftNarrowFont;
   final String showRightNarrowFont;
   final String outerGlow;
+  final String outEffectColor;
+  final String focusCustom;
+  final String islandCustom;
+  final WhitelistController controller;
   final ValueChanged<bool> onToggle;
   final ValueChanged<Map<String, String?>> onSettingsApplied;
 
@@ -672,7 +687,6 @@ class _ChannelTile extends StatelessWidget {
         template: template,
         renderer: renderer,
         iconMode: iconMode,
-        focusIconMode: focusIconMode,
         focusNotif: focusNotif,
         preserveSmallIcon: preserveSmallIcon,
         showIslandIcon: showIslandIcon,
@@ -688,9 +702,13 @@ class _ChannelTile extends StatelessWidget {
         showLeftNarrowFont: showLeftNarrowFont,
         showRightNarrowFont: showRightNarrowFont,
         outerGlow: outerGlow,
+        outEffectColor: outEffectColor,
+        focusCustom: focusCustom,
+        islandCustom: islandCustom,
       ),
       templateLabels: templateLabels,
       rendererLabels: rendererLabels,
+      controller: controller,
     );
     if (result != null) onSettingsApplied(result.settings);
   }
@@ -771,6 +789,13 @@ class _ChannelTile extends StatelessWidget {
             ),
           ),
         ),
+        if (!isLast)
+          Divider(
+            height: 1,
+            thickness: 1,
+            indent: 16,
+            color: cs.outlineVariant.withValues(alpha: 0.4),
+          ),
       ],
     );
   }

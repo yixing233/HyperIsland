@@ -167,6 +167,7 @@ class WhitelistPageState extends State<WhitelistPage> {
       ),
       templateLabels: templateLabels,
       rendererLabels: rendererLabels,
+      controller: _ctrl,
     );
     if (result == null || !mounted) return;
 

@@ -7,9 +7,7 @@ import io.github.hyperisland.xposed.template.core.contracts.IslandTemplate
 import io.github.hyperisland.xposed.template.core.filters.BlacklistFilter
 import io.github.hyperisland.xposed.template.core.models.NotifData
 import io.github.hyperisland.xposed.templates.AINotificationIslandNotification
-import io.github.hyperisland.xposed.templates.DownloadLiteIslandNotification
 import io.github.hyperisland.xposed.templates.GenericDownloadIslandNotification
-import io.github.hyperisland.xposed.templates.NotificationIslandLiteNotification
 import io.github.hyperisland.xposed.templates.NotificationIslandNotification
 /**
  * 模板注册表。
@@ -26,10 +24,10 @@ object TemplateRegistry {
     private val registry: Map<String, IslandTemplate> = listOf<IslandTemplate>(
         GenericDownloadIslandNotification,
         NotificationIslandNotification,
-        NotificationIslandLiteNotification,
-        DownloadLiteIslandNotification,
         AINotificationIslandNotification,
     ).associateBy { it.id }
+
+    fun getTemplate(templateId: String): IslandTemplate? = registry[templateId]
 
     fun dispatch(
         templateId: String,

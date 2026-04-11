@@ -996,6 +996,12 @@ abstract class AppLocalizations {
   /// **'新图文组件 + 右侧文本按钮'**
   String get rendererImageTextWithRightTextButtonName;
 
+  /// No description provided for @rendererImageTextWithProgressName.
+  ///
+  /// In zh, this message translates to:
+  /// **'IM图文组件 + 进度条组件'**
+  String get rendererImageTextWithProgressName;
+
   /// No description provided for @islandIcon.
   ///
   /// In zh, this message translates to:
@@ -1019,6 +1025,210 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'焦点图标'**
   String get focusIconLabel;
+
+  /// No description provided for @focusExpressionCustomizationSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'焦点高级自定义'**
+  String get focusExpressionCustomizationSection;
+
+  /// No description provided for @islandExpressionCustomizationSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛高级自定义'**
+  String get islandExpressionCustomizationSection;
+
+  /// No description provided for @expandCustomization.
+  ///
+  /// In zh, this message translates to:
+  /// **'展开'**
+  String get expandCustomization;
+
+  /// No description provided for @collapseCustomization.
+  ///
+  /// In zh, this message translates to:
+  /// **'收起'**
+  String get collapseCustomization;
+
+  /// No description provided for @availablePlaceholdersLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'可用占位符'**
+  String get availablePlaceholdersLabel;
+
+  /// No description provided for @expressionFunctionsLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'表达式函数'**
+  String get expressionFunctionsLabel;
+
+  /// No description provided for @focusTitleExprLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'焦点标题表达式'**
+  String get focusTitleExprLabel;
+
+  /// No description provided for @focusContentExprLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'焦点正文表达式'**
+  String get focusContentExprLabel;
+
+  /// No description provided for @focusIconSourceLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'焦点图标来源'**
+  String get focusIconSourceLabel;
+
+  /// No description provided for @focusPicProfileSourceLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'头像图标来源'**
+  String get focusPicProfileSourceLabel;
+
+  /// No description provided for @focusAppIconPkgLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'应用图标包名'**
+  String get focusAppIconPkgLabel;
+
+  /// No description provided for @focusSecondaryIconSourceLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'副图标来源'**
+  String get focusSecondaryIconSourceLabel;
+
+  /// No description provided for @chatTitleColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天标题颜色'**
+  String get chatTitleColorLabel;
+
+  /// No description provided for @chatTitleColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天标题暗色'**
+  String get chatTitleColorDarkLabel;
+
+  /// No description provided for @chatContentColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天正文颜色'**
+  String get chatContentColorLabel;
+
+  /// No description provided for @chatContentColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'聊天正文暗色'**
+  String get chatContentColorDarkLabel;
+
+  /// No description provided for @progressColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'进度条颜色'**
+  String get progressColorLabel;
+
+  /// No description provided for @progressBarColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'进度条颜色'**
+  String get progressBarColorLabel;
+
+  /// No description provided for @progressBarColorEndLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'进度条结束颜色'**
+  String get progressBarColorEndLabel;
+
+  /// No description provided for @placeholderTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知标题'**
+  String get placeholderTitle;
+
+  /// No description provided for @placeholderSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知正文'**
+  String get placeholderSubtitle;
+
+  /// No description provided for @placeholderSubtitleOrTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'正文（空则标题）'**
+  String get placeholderSubtitleOrTitle;
+
+  /// No description provided for @placeholderPkg.
+  ///
+  /// In zh, this message translates to:
+  /// **'包名'**
+  String get placeholderPkg;
+
+  /// No description provided for @placeholderChannelId.
+  ///
+  /// In zh, this message translates to:
+  /// **'渠道 ID'**
+  String get placeholderChannelId;
+
+  /// No description provided for @placeholderProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'通知进度'**
+  String get placeholderProgress;
+
+  /// No description provided for @placeholderStateLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'状态文本'**
+  String get placeholderStateLabel;
+
+  /// No description provided for @placeholderProgressText.
+  ///
+  /// In zh, this message translates to:
+  /// **'进度文本'**
+  String get placeholderProgressText;
+
+  /// No description provided for @placeholderAiLeft.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 左侧文本'**
+  String get placeholderAiLeft;
+
+  /// No description provided for @placeholderAiRight.
+  ///
+  /// In zh, this message translates to:
+  /// **'AI 右侧文本'**
+  String get placeholderAiRight;
+
+  /// No description provided for @placeholderRawTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始标题'**
+  String get placeholderRawTitle;
+
+  /// No description provided for @placeholderRawSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始正文'**
+  String get placeholderRawSubtitle;
+
+  /// No description provided for @placeholderRawSubtitleOrTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'原始正文（空则标题）'**
+  String get placeholderRawSubtitleOrTitle;
+
+  /// No description provided for @islandLeftExprLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛左侧表达式'**
+  String get islandLeftExprLabel;
+
+  /// No description provided for @islandRightExprLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'超级岛右侧表达式'**
+  String get islandRightExprLabel;
 
   /// No description provided for @focusNotificationLabel.
   ///
@@ -1104,11 +1314,89 @@ abstract class AppLocalizations {
   /// **'外圈光效'**
   String get outerGlowLabel;
 
+  /// No description provided for @outEffectColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'外圈光效颜色'**
+  String get outEffectColorLabel;
+
   /// No description provided for @highlightColorHint.
   ///
   /// In zh, this message translates to:
   /// **'#RRGGBB 格式，留空使用默认'**
   String get highlightColorHint;
+
+  /// No description provided for @actionBgColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮背景色'**
+  String get actionBgColorLabel;
+
+  /// No description provided for @actionBgColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮背景色（暗色）'**
+  String get actionBgColorDarkLabel;
+
+  /// No description provided for @actionTitleColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮文字颜色'**
+  String get actionTitleColorLabel;
+
+  /// No description provided for @actionTitleColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮文字颜色（暗色）'**
+  String get actionTitleColorDarkLabel;
+
+  /// No description provided for @action1BgColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮1背景色'**
+  String get action1BgColorLabel;
+
+  /// No description provided for @action1BgColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮1背景色（暗色）'**
+  String get action1BgColorDarkLabel;
+
+  /// No description provided for @action1TitleColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮1文字颜色'**
+  String get action1TitleColorLabel;
+
+  /// No description provided for @action1TitleColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮1文字颜色（暗色）'**
+  String get action1TitleColorDarkLabel;
+
+  /// No description provided for @action2BgColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮2背景色'**
+  String get action2BgColorLabel;
+
+  /// No description provided for @action2BgColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮2背景色（暗色）'**
+  String get action2BgColorDarkLabel;
+
+  /// No description provided for @action2TitleColorLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮2文字颜色'**
+  String get action2TitleColorLabel;
+
+  /// No description provided for @action2TitleColorDarkLabel.
+  ///
+  /// In zh, this message translates to:
+  /// **'按钮2文字颜色（暗色）'**
+  String get action2TitleColorDarkLabel;
 
   /// No description provided for @textHighlightLabel.
   ///
