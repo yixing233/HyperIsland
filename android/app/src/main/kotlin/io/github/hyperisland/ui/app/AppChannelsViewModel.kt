@@ -137,6 +137,9 @@ class AppChannelsViewModel(
             "show_left_narrow_font" -> current.copy(showLeftNarrowFont = value)
             "show_right_narrow_font" -> current.copy(showRightNarrowFont = value)
             "outer_glow" -> current.copy(outerGlow = value)
+            "out_effect_color" -> current.copy(outEffectColor = value)
+            "focus_custom" -> current.copy(focusCustom = value)
+            "island_custom" -> current.copy(islandCustom = value)
             else -> return
         }
         repo.setChannelSetting(packageName, channelId, setting, value)

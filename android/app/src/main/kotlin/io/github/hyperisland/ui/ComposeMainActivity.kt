@@ -47,7 +47,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import top.yukonga.miuix.kmp.basic.TextField as MiuixTextField
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator as MiuixCircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.Checkbox as MiuixCheckbox
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -106,6 +105,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -273,14 +273,14 @@ private fun topLevelScreen(screen: AppScreen): AppScreen = when (screen) {
     AppScreen.AiConfig -> AppScreen.Settings
 }
 
-private fun screenTitle(screen: AppScreen): String = when (screen) {
-    AppScreen.Home -> "主页"
-    AppScreen.Apps -> "应用"
-    AppScreen.Settings -> "设置"
-    is AppScreen.AppChannels -> "渠道设置"
-    is AppScreen.ChannelSettings -> "渠道详情"
-    AppScreen.Blacklist -> "通知黑名单"
-    AppScreen.AiConfig -> "AI 配置"
+private fun screenTitle(language: UiLanguage, screen: AppScreen): String = when (screen) {
+    AppScreen.Home -> textOf(language, "主页", "Home")
+    AppScreen.Apps -> textOf(language, "应用", "Apps")
+    AppScreen.Settings -> textOf(language, "设置", "Settings")
+    is AppScreen.AppChannels -> textOf(language, "渠道设置", "Channel Settings")
+    is AppScreen.ChannelSettings -> textOf(language, "渠道详情", "Channel Details")
+    AppScreen.Blacklist -> textOf(language, "通知黑名单", "Notification Blacklist")
+    AppScreen.AiConfig -> textOf(language, "AI 配置", "AI Config")
 }
 
 private fun screenDepth(screen: AppScreen): Int = when (screen) {
@@ -715,12 +715,6 @@ private fun OverlayPopupMenuContainer(content: @Composable () -> Unit) {
     val containerShape = RoundedCornerShape(16.dp)
     Box(
         modifier = Modifier
-            .clip(containerShape)
-            .background(
-                MaterialTheme.colorScheme.surface.copy(
-                    alpha = if (isDarkTheme) 0.95f else 0.98f,
-                ),
-            )
             .then(
                 if (isDarkTheme) {
                     Modifier.border(
@@ -733,8 +727,18 @@ private fun OverlayPopupMenuContainer(content: @Composable () -> Unit) {
                 },
             ),
     ) {
-        MiuixListPopupColumn {
-            content()
+        Box(
+            modifier = Modifier
+                .clip(containerShape)
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(
+                        alpha = if (isDarkTheme) 0.95f else 0.98f,
+                    ),
+                ),
+        ) {
+            MiuixListPopupColumn {
+                content()
+            }
         }
     }
 }
@@ -785,7 +789,9 @@ private fun MiuiBlurredSurface(
                     setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 }
             },
-            modifier = Modifier.matchParentSize(),
+            modifier = Modifier
+                .matchParentSize()
+                .zIndex(-3f),
             update = { view ->
                 nativeBlurApplied = MiuiTopBarBlurCompat.apply(view, context, blurRadiusPx)
             },
@@ -793,6 +799,7 @@ private fun MiuiBlurredSurface(
         Box(
             modifier = Modifier
                 .matchParentSize()
+                .zIndex(-2f)
                 .let {
                     if (useFallbackBlur) {
                         it.textureBlur(
@@ -811,9 +818,12 @@ private fun MiuiBlurredSurface(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = overlayAlpha)),
+                .zIndex(-1f)
+                .background(MaterialTheme.colorScheme.background.copy(alpha = overlayAlpha)),
         )
-        content()
+        Box(modifier = Modifier.zIndex(1f)) {
+            content()
+        }
     }
 }
 
@@ -930,6 +940,7 @@ private fun HyperIslandComposeApp() {
     val blacklistVm: BlacklistViewModel = viewModel()
     val settingsVm: SettingsViewModel = viewModel()
     val settingsState by settingsVm.uiState.collectAsStateWithLifecycle()
+    val uiLanguage = rememberUiLanguage(settingsState.locale)
     var useFloatingNavigationBarUi by remember { mutableStateOf(settingsState.useFloatingNavigationBar) }
     LaunchedEffect(settingsState.useFloatingNavigationBar) {
         useFloatingNavigationBarUi = settingsState.useFloatingNavigationBar
@@ -963,9 +974,9 @@ private fun HyperIslandComposeApp() {
     val popupShowing = showAppsMenu || showAppChannelsMenu || showBlacklistMenu
 
     val items = listOf(
-        TopLevelDestination("home", "主页", HomeFilledIcon),
-        TopLevelDestination("apps", "应用", MiuixIcons.Regular.All),
-        TopLevelDestination("settings", "设置", SettingsFilledIcon),
+        TopLevelDestination("home", textOf(uiLanguage, "主页", "Home"), HomeFilledIcon),
+        TopLevelDestination("apps", textOf(uiLanguage, "应用", "Apps"), MiuixIcons.Regular.All),
+        TopLevelDestination("settings", textOf(uiLanguage, "设置", "Settings"), SettingsFilledIcon),
     )
     val capsuleNavStyleState = remember {
         NavigationStyleState(
@@ -1118,9 +1129,9 @@ private fun HyperIslandComposeApp() {
         navigateTopLevel(target)
     }
     val topBarTitle = if (currentScreen is AppScreen.ChannelSettings) {
-        currentScreen.channelName.ifBlank { "渠道详情" }
+        currentScreen.channelName.ifBlank { textOf(uiLanguage, "渠道详情", "Channel Details") }
     } else {
-        screenTitle(currentScreen)
+        screenTitle(uiLanguage, currentScreen)
     }
     val isSecondaryRoute = isAppChannelsScreen || isChannelSettingsScreen || isBlacklistScreen || isAiConfigScreen
     LaunchedEffect(currentTopLevelScreen, isSecondaryRoute) {
@@ -1303,7 +1314,11 @@ private fun HyperIslandComposeApp() {
                         onAppEnabledChange = appsVm::setEnabled,
                         onAppSelectedChange = appsVm::toggleSelectedPackage,
                         onSelectAll = appsVm::setSelectedPackages,
-                        onOpenAppChannels = { pkg -> navigateTo(AppScreen.AppChannels(pkg)) },
+                        onOpenAppChannels = { pkg ->
+                            appChannelsEnableAllRequestId = 0
+                            appChannelsBatchRequestId = 0
+                            navigateTo(AppScreen.AppChannels(pkg))
+                        },
                         onBatchApplyGlobal = appsVm::batchApplyToAllEnabledApps,
                         onBatchApplySelected = appsVm::batchApplyToSelectedApps,
                         onSelectionModeChanged = { appsSelectionMode = it },
@@ -1425,15 +1440,16 @@ private fun HyperIslandComposeApp() {
         }
     }
 
-    MiuixScaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            MiuiBlurredTopBar(
-                modifier = Modifier.fillMaxWidth(),
-                fallbackBackdrop = activeBackdrop,
-                fallbackBlurColors = topBarFallbackBlurColors,
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+    CompositionLocalProvider(LocalUiLanguage provides uiLanguage) {
+        MiuixScaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                MiuiBlurredTopBar(
+                    modifier = Modifier.fillMaxWidth(),
+                    fallbackBackdrop = activeBackdrop,
+                    fallbackBlurColors = topBarFallbackBlurColors,
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                     MiuixTopAppBar(
                         title = topBarTitle,
                         scrollBehavior = activeTopBarScrollBehavior,
@@ -1470,7 +1486,7 @@ private fun HyperIslandComposeApp() {
                             when {
                                 isSecondaryRoute -> {
                                     when {
-                                        currentScreen is AppScreen.AppChannels || currentScreen is AppScreen.ChannelSettings -> {
+                                        currentScreen is AppScreen.AppChannels -> {
                                             Box {
                                                 BackHandler(enabled = showAppChannelsMenu) {
                                                     showAppChannelsMenu = false
@@ -1767,7 +1783,16 @@ private fun HyperIslandComposeApp() {
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text("已选择 ${appsState.selectedPackages.size} 项", style = MaterialTheme.typography.bodySmall)
+                                    val selectedTextColor = if (isAppInDarkTheme()) {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.92f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                    Text(
+                                        "已选择 ${appsState.selectedPackages.size} 项",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = selectedTextColor,
+                                    )
                                     MiuixCheckbox(
                                         state = selectAllState,
                                         onClick = {
@@ -1812,37 +1837,37 @@ private fun HyperIslandComposeApp() {
                             }
                         }
                     }
-                }
-            }
-        },
-        bottomBar = {
-            if (!isSecondaryRoute) {
-                HyperCeilerNavigationSwitchBar(
-                    items = items,
-                    selectedIndex = selectedIndexInBar,
-                    style = activeNavStyleState,
-                    onDestinationClick = onPrimaryDestinationClick,
-                    backdrop = activeBackdrop,
-                )
-            }
-        },
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .let {
-                    if (activeBackdrop != null) {
-                        it.layerBackdrop(activeBackdrop)
-                    } else {
-                        it
                     }
                 }
-                .consumeWindowInsets(innerPadding),
-        ) {
-            AnimatedContent(
-                targetState = currentScreen,
-                label = "scene_content_switch",
-                transitionSpec = {
+            },
+            bottomBar = {
+                if (!isSecondaryRoute) {
+                    HyperCeilerNavigationSwitchBar(
+                        items = items,
+                        selectedIndex = selectedIndexInBar,
+                        style = activeNavStyleState,
+                        onDestinationClick = onPrimaryDestinationClick,
+                        backdrop = activeBackdrop,
+                    )
+                }
+            },
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let {
+                        if (activeBackdrop != null) {
+                            it.layerBackdrop(activeBackdrop)
+                        } else {
+                            it
+                        }
+                    }
+                    .consumeWindowInsets(innerPadding),
+            ) {
+                AnimatedContent(
+                    targetState = currentScreen,
+                    label = "scene_content_switch",
+                    transitionSpec = {
                     val initialDepth = screenDepth(initialState)
                     val targetDepth = screenDepth(targetState)
                     val initialTopIndex = topLevelIndexOf(initialState)
@@ -1914,20 +1939,22 @@ private fun HyperIslandComposeApp() {
                     SceneContent(scene = scene, innerPadding = innerPadding)
                 }
             }
+
+                SponsorDialog(
+                    show = showSponsorDialog,
+                    onDismiss = { showSponsorDialog = false },
+                )
+                RestartScopeDialog(
+                    show = showRestartDialog,
+                    onDismiss = { showRestartDialog = false },
+                    onConfirm = { systemUi, downloads, xmsf ->
+                        showRestartDialog = false
+                        homeVm.restartScopes(systemUi, downloads, xmsf)
+                    },
+                )
+            }
         }
     }
-    SponsorDialog(
-        show = showSponsorDialog,
-        onDismiss = { showSponsorDialog = false },
-    )
-    RestartScopeDialog(
-        show = showRestartDialog,
-        onDismiss = { showRestartDialog = false },
-        onConfirm = { systemUi, downloads, xmsf ->
-            showRestartDialog = false
-            homeVm.restartScopes(systemUi, downloads, xmsf)
-        },
-    )
 }
 @Composable
 private fun HomeScreen(
@@ -1937,10 +1964,10 @@ private fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     val notes = listOf(
-        "1.此页面仅用于测试是否支持超级岛，并不代表实际效果",
-        "2.请在 HyperCeiler 中关闭系统界面和小米服务框架的焦点通知白名单",
-        "3.LSPosed 管理器中激活后，必须重启相关作用域软件",
-        "4.支持通用适配，自行勾选合适的模板尝试",
+        textOf("1.此页面仅用于测试是否支持超级岛，并不代表实际效果", "1. This page only checks whether Dynamic Island is supported and does not represent the final effect."),
+        textOf("2.请在 HyperCeiler 中关闭系统界面和小米服务框架的焦点通知白名单", "2. Disable the focus notification whitelist for System UI and Xiaomi Service Framework in HyperCeiler."),
+        textOf("3.LSPosed 管理器中激活后，必须重启相关作用域软件", "3. After enabling the module in LSPosed Manager, you must restart the related scope apps."),
+        textOf("4.支持通用适配，自行勾选合适的模板尝试", "4. Generic adaptation is supported, so try the templates that fit your app."),
     )
     val contentPadding = LocalContentPadding.current
     LazyColumn(
@@ -1959,9 +1986,9 @@ private fun HomeScreen(
             MiuixCard(modifier = primaryCardModifier(Modifier.fillMaxWidth())) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val statusText = when (uiState.moduleActive) {
-                        null -> "检测中"
-                        true -> "已激活"
-                        false -> "未激活"
+                        null -> textOf("检测中", "Checking")
+                        true -> textOf("已激活", "Active")
+                        false -> textOf("未激活", "Inactive")
                     }
                     val statusAccent = when (uiState.moduleActive) {
                         null -> MaterialTheme.colorScheme.outline
@@ -1969,9 +1996,9 @@ private fun HomeScreen(
                         false -> MaterialTheme.colorScheme.error
                     }
                     val statusHint = when (uiState.moduleActive) {
-                        null -> "正在读取作用域状态"
-                        true -> "模块与作用域工作正常"
-                        false -> "请检查 LSPosed 激活与作用域重启"
+                        null -> textOf("正在读取作用域状态", "Reading scope status")
+                        true -> textOf("模块与作用域工作正常", "Module and scopes are working correctly")
+                        false -> textOf("请检查 LSPosed 激活与作用域重启", "Check LSPosed activation and scope restart")
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1983,7 +2010,7 @@ private fun HomeScreen(
                             verticalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             Text(
-                                "模块状态",
+                                textOf("模块状态", "Module Status"),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
@@ -2018,7 +2045,7 @@ private fun HomeScreen(
                         value = uiState.lsposedApiVersion.toString(),
                     )
                     HomeStatusInfoRow(
-                        label = "Focus 协议版本",
+                        label = textOf("Focus 协议版本", "Focus Protocol"),
                         value = uiState.focusProtocolVersion.toString(),
                     )
                 }
@@ -2027,15 +2054,15 @@ private fun HomeScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 MiuixButton(onClick = onRefresh, modifier = Modifier.weight(1f)) {
-                    Text("刷新状态", color = MaterialTheme.colorScheme.onBackground)
+                    Text(textOf("刷新状态", "Refresh Status"), color = MaterialTheme.colorScheme.onBackground)
                 }
                 MiuixButton(onClick = onSendTest, modifier = Modifier.weight(1f)) {
-                    Text("发送测试通知", color = MaterialTheme.colorScheme.onBackground)
+                    Text(textOf("发送测试通知", "Send Test Notification"), color = MaterialTheme.colorScheme.onBackground)
                 }
             }
         }
         item {
-            MiuixSmallTitle(text = "注意事项")
+            MiuixSmallTitle(text = textOf("注意事项", "Notes"))
         }
         item {
             MiuixCard(modifier = primaryCardModifier(Modifier.fillMaxWidth())) {
@@ -2111,8 +2138,8 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
     }
     OverlayDialog(
         show = show,
-        title = "赞助支持",
-        summary = "赞助作者",
+        title = textOf("赞助支持", "Support the Project"),
+        summary = textOf("赞助作者", "Support the Author"),
         onDismissRequest = onDismiss,
         onDismissFinished = {},
         renderInRootScaffold = false,
@@ -2126,7 +2153,7 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                text = "支持项目持续更新，感谢你的认可。",
+                text = textOf("支持项目持续更新，感谢你的认可。", "Thank you for supporting the project and its continued updates."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
@@ -2157,7 +2184,7 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
                 ) {
                     Image(
                         bitmap = qrBitmap.asImageBitmap(),
-                        contentDescription = "微信赞助二维码",
+                        contentDescription = textOf("微信赞助二维码", "WeChat sponsor QR code"),
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp)),
@@ -2165,7 +2192,7 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
                 }
             } else {
                 Text(
-                    text = "未找到赞助图片 assets/images/wechat.jpg",
+                    text = textOf("未找到赞助图片 assets/images/wechat.jpg", "Sponsor image assets/images/wechat.jpg was not found"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -2174,7 +2201,7 @@ private fun SponsorDialog(show: Boolean, onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("关闭", color = MaterialTheme.colorScheme.onBackground)
+                Text(textOf("关闭", "Close"), color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }
@@ -2186,8 +2213,6 @@ private fun RestartScopeDialog(
     onDismiss: () -> Unit,
     onConfirm: (Boolean, Boolean, Boolean) -> Unit,
 ) {
-    val isDarkTheme = isAppInDarkTheme()
-    val scopeCardShape = RoundedCornerShape(16.dp)
     var restartSystemUi by remember { mutableStateOf(true) }
     var restartDownloads by remember { mutableStateOf(true) }
     var restartXmsf by remember { mutableStateOf(true) }
@@ -2196,7 +2221,7 @@ private fun RestartScopeDialog(
 
     OverlayDialog(
         show = show,
-        title = "选择需要重启的进程",
+        title = textOf("选择需要重启的进程", "Select Processes to Restart"),
         onDismissRequest = onDismiss,
         onDismissFinished = {},
         renderInRootScaffold = false,
@@ -2210,7 +2235,7 @@ private fun RestartScopeDialog(
                 .scrollEndHaptic(),
         ) {
             Text(
-                text = "选择后将依次重启对应进程并刷新岛通知能力。",
+                text = textOf("选择后将依次重启对应进程并刷新岛通知能力。", "The selected processes will be restarted one by one to refresh Dynamic Island support."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -2219,38 +2244,21 @@ private fun RestartScopeDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(scopeCardShape)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceVariant.copy(
-                            alpha = if (isDarkTheme) 0.22f else 0.12f,
-                        ),
-                    )
-                    .then(
-                        if (isDarkTheme) {
-                            Modifier.border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.40f),
-                                scopeCardShape,
-                            )
-                        } else {
-                            Modifier
-                        },
-                    )
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 ScopeCheckboxRow(
-                    title = "系统界面",
+                    title = textOf("系统界面", "System UI"),
                     subtitle = "com.android.systemui",
                     checked = restartSystemUi,
                 ) { restartSystemUi = !restartSystemUi }
                 ScopeCheckboxRow(
-                    title = "下载管理",
+                    title = textOf("下载管理", "Download Manager"),
                     subtitle = "com.android.providers.downloads",
                     checked = restartDownloads,
                 ) { restartDownloads = !restartDownloads }
                 ScopeCheckboxRow(
-                    title = "小米服务框架",
+                    title = textOf("小米服务框架", "Xiaomi Service Framework"),
                     subtitle = "com.xiaomi.xmsf",
                     checked = restartXmsf,
                 ) { restartXmsf = !restartXmsf }
@@ -2268,7 +2276,10 @@ private fun RestartScopeDialog(
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text(if (allSelected) "全不选" else "全选", color = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        if (allSelected) textOf("全不选", "Deselect All") else textOf("全选", "Select All"),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
                 MiuixButton(
                     onClick = { onConfirm(restartSystemUi, restartDownloads, restartXmsf) },
@@ -2276,7 +2287,7 @@ private fun RestartScopeDialog(
                     colors = MiuixButtonDefaults.buttonColorsPrimary(),
                 ) {
                     Text(
-                        text = "确定",
+                        text = textOf("确定", "Confirm"),
                         color = MiuixTheme.colorScheme.onPrimary,
                     )
                 }
@@ -2338,21 +2349,22 @@ private fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val themeModeOptions = listOf(
-        "system" to "跟随系统",
-        "light" to "浅色",
-        "dark" to "深色",
+        "system" to textOf("跟随系统", "Follow System"),
+        "light" to textOf("浅色", "Light"),
+        "dark" to textOf("深色", "Dark"),
     )
     val selectedThemeIndex = themeModeOptions.indexOfFirst { it.first == state.themeMode }.coerceAtLeast(0)
 
     val localeOptions = listOf(
-        "__system__" to "跟随系统",
-        "zh" to "中文",
+        "__system__" to textOf("跟随系统", "Follow System"),
+        "zh" to textOf("中文", "Chinese"),
         "en" to "English",
         "ja" to "日本語",
         "tr" to "Türkçe",
     )
     val localeValue = state.locale ?: "__system__"
     val selectedLocaleIndex = localeOptions.indexOfFirst { it.first == localeValue }.coerceAtLeast(0)
+    val qqCopiedToast = textOf("群号已复制到剪贴板", "Group number copied to clipboard")
 
     val contentPadding = LocalContentPadding.current
 
@@ -2369,142 +2381,146 @@ private fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            SectionTitle("AI 增强")
+            SectionTitle(textOf("AI 增强", "AI"))
             SettingsGroupCard {
                 SettingsEntryItem(
-                    title = "AI 通知摘要",
-                    subtitle = if (state.aiEnabled) "已启用 · 点击配置 AI 参数" else "已关闭 · 点击进行配置",
+                    title = textOf("AI 通知摘要", "AI Notification Summary"),
+                    subtitle = if (state.aiEnabled) {
+                        textOf("已启用 · 点击配置 AI 参数", "Enabled · Tap to configure AI")
+                    } else {
+                        textOf("已关闭 · 点击进行配置", "Disabled · Tap to configure")
+                    },
                     onClick = onOpenAiConfig,
                 )
             }
         }
 
         item {
-            SectionTitle("通知黑名单")
+            SectionTitle(textOf("通知黑名单", "Notification Blacklist"))
             SettingsGroupCard {
                 SettingsEntryItem(
-                    title = "通知黑名单",
-                    subtitle = "启动黑名单应用时，停用焦点通知的自动展开功能",
+                    title = textOf("通知黑名单", "Notification Blacklist"),
+                    subtitle = textOf("启动黑名单应用时，停用焦点通知的自动展开功能", "Disable automatic focus expansion when blacklisted apps are opened"),
                     onClick = onOpenBlacklist,
                 )
             }
         }
 
         item {
-            SectionTitle("行为")
+            SectionTitle(textOf("行为", "Behavior"))
             SettingsGroupCard {
                 ToggleItem(
-                    "交互触感",
-                    "为开关、滑块和按钮启用 Hyper 定制震感反馈",
+                    textOf("交互触感", "Interaction Haptics"),
+                    textOf("为开关、滑块和按钮启用 Hyper 定制震感反馈", "Enable custom Hyper haptics for switches, sliders, and buttons"),
                     state.interactionHaptics,
                 ) { onToggle(PrefKeys.INTERACTION_HAPTICS, it) }
                 ToggleItem(
-                    "下载管理器暂停后保留焦点通知",
-                    "显示一条通知，点击以继续下载，可能导致状态不同步",
+                    textOf("下载管理器暂停后保留焦点通知", "Keep Focus Notification After Pause"),
+                    textOf("显示一条通知，点击以继续下载，可能导致状态不同步", "Show a notification you can tap to resume downloads; may cause state desync"),
                     state.resumeNotification,
                 ) { onToggle(PrefKeys.RESUME_NOTIFICATION, it) }
                 ToggleItem(
-                    "移除焦点通知白名单",
-                    "允许所有应用发送焦点通知，无需系统授权",
+                    textOf("移除焦点通知白名单", "Remove Focus Notification Whitelist"),
+                    textOf("允许所有应用发送焦点通知，无需系统授权", "Allow all apps to send focus notifications without system approval"),
                     state.unlockAllFocus,
                 ) { onToggle(PrefKeys.UNLOCK_ALL_FOCUS, it) }
                 ToggleItem(
-                    "移除焦点通知签名验证",
-                    "允许所有应用向手表/手环发送焦点通知，跳过签名校验（需 Hook 小米服务框架）",
+                    textOf("移除焦点通知签名验证", "Bypass Focus Signature Check"),
+                    textOf("允许所有应用向手表/手环发送焦点通知，跳过签名校验（需 Hook 小米服务框架）", "Allow all apps to send focus notifications to watches/bands by skipping signature checks (requires hooking Xiaomi Service Framework)"),
                     state.unlockFocusAuth,
                 ) { onToggle(PrefKeys.UNLOCK_FOCUS_AUTH, it) }
                 ToggleItem(
-                    "显示启动欢迎语",
-                    "应用启动时在超级岛显示欢迎信息",
+                    textOf("显示启动欢迎语", "Show Startup Greeting"),
+                    textOf("应用启动时在超级岛显示欢迎信息", "Show a welcome message in Dynamic Island when the app launches"),
                     state.showWelcome,
                 ) { onToggle(PrefKeys.SHOW_WELCOME, it) }
                 ToggleItem(
-                    "隐藏桌面图标",
-                    "隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开",
+                    textOf("隐藏桌面图标", "Hide Launcher Icon"),
+                    textOf("隐藏启动器中的应用图标，隐藏后可通过 LSPosed 管理器打开", "Hide the launcher icon. After hiding, open the app from LSPosed Manager"),
                     state.hideDesktopIcon,
                     onHideDesktopIcon,
                 )
                 ToggleItem(
-                    "启动时检查更新",
-                    "启动应用时自动检查是否有新版本",
+                    textOf("启动时检查更新", "Check for Updates on Launch"),
+                    textOf("启动应用时自动检查是否有新版本", "Automatically check for a new version when the app starts"),
                     state.checkUpdateOnLaunch,
                 ) { onToggle(PrefKeys.CHECK_UPDATE_ON_LAUNCH, it) }
             }
         }
 
         item {
-            SectionTitle("渠道默认配置")
+            SectionTitle(textOf("渠道默认配置", "Default Channel Settings"))
             SettingsGroupCard {
                 ToggleItem(
-                    "初次展开",
-                    "超级岛初次收到通知后是否展开为焦点通知",
+                    textOf("初次展开", "Expand on First Arrival"),
+                    textOf("超级岛初次收到通知后是否展开为焦点通知", "Whether Dynamic Island should expand into a focus notification the first time one arrives"),
                     state.defaultFirstFloat,
                 ) { onToggle(PrefKeys.DEFAULT_FIRST_FLOAT, it) }
                 ToggleItem(
-                    "更新展开",
-                    "超级岛更新后是否展开通知",
+                    textOf("更新展开", "Expand on Update"),
+                    textOf("超级岛更新后是否展开通知", "Whether Dynamic Island should expand when the notification updates"),
                     state.defaultEnableFloat,
                 ) { onToggle(PrefKeys.DEFAULT_ENABLE_FLOAT, it) }
                 ToggleItem(
-                    "消息滚动",
-                    "超级岛消息过长是否滚动显示",
+                    textOf("消息滚动速度", "Marquee Speed"),
+                    "",
                     state.defaultMarquee,
                 ) { onToggle(PrefKeys.DEFAULT_MARQUEE, it) }
                 ToggleItem(
-                    "高亮动态取色",
-                    "开启后默认使用图标自动取色",
+                    textOf("高亮动态取色", "Dynamic Highlight Color"),
+                    textOf("开启后默认使用图标自动取色", "Use icon-based automatic color extraction by default"),
                     state.defaultDynamicHighlightColor,
                 ) { onToggle(PrefKeys.DEFAULT_DYNAMIC_HIGHLIGHT_COLOR, it) }
                 ToggleItem(
-                    "外圈光效",
+                    textOf("外圈光效", "Outer Glow"),
                     "",
                     state.defaultOuterGlow,
                 ) { onToggle(PrefKeys.DEFAULT_OUTER_GLOW, it) }
                 ToggleItem(
-                    "焦点通知",
-                    "替换通知为焦点通知（关闭后显示原始通知）",
+                    textOf("焦点通知", "Focus Notification"),
+                    textOf("替换通知为焦点通知（关闭后显示原始通知）", "Replace notifications with focus notifications; disable to keep original notifications"),
                     state.defaultFocusNotif,
                 ) { onToggle(PrefKeys.DEFAULT_FOCUS_NOTIF, it) }
                 ToggleItem(
-                    "锁屏通知复原",
-                    "锁屏时跳过焦点通知处理，保持原始通知隐私行为",
+                    textOf("锁屏通知复原", "Restore on Lock Screen"),
+                    textOf("锁屏时跳过焦点通知处理，保持原始通知隐私行为", "Skip focus notification handling on the lock screen to preserve the original privacy behavior"),
                     state.defaultRestoreLockscreen,
                 ) { onToggle(PrefKeys.DEFAULT_RESTORE_LOCKSCREEN, it) }
                 ToggleItem(
-                    "大岛图标",
-                    "开启后显示超级岛的大图标（小岛不受影响）",
+                    textOf("大岛图标", "Large Island Icon"),
+                    textOf("开启后显示超级岛的大图标（小岛不受影响）", "Show the large icon in Dynamic Island; the small island is unaffected"),
                     state.defaultShowIslandIcon,
                 ) { onToggle(PrefKeys.DEFAULT_SHOW_ISLAND_ICON, it) }
                 ToggleItem(
-                    "状态栏图标",
-                    "焦点通知打开时，是否强制保留状态栏小图标",
+                    textOf("状态栏图标", "Status Bar Icon"),
+                    textOf("焦点通知打开时，是否强制保留状态栏小图标", "Force the small status bar icon to remain visible when focus notifications are enabled"),
                     state.defaultPreserveSmallIcon,
                 ) { onToggle(PrefKeys.DEFAULT_PRESERVE_SMALL_ICON, it) }
             }
         }
 
         item {
-            SectionTitle("外观")
+            SectionTitle(textOf("外观", "Appearance"))
             SettingsGroupCard {
                 ToggleItem(
-                    "使用应用图标",
-                    "下载管理器通知使用应用图标",
+                    textOf("使用应用图标", "Use App Icon"),
+                    textOf("下载管理器通知使用应用图标", "Use the app icon for Download Manager notifications"),
                     state.useHookAppIcon,
                 ) { onToggle(PrefKeys.USE_HOOK_APP_ICON, it) }
                 ToggleItem(
-                    "图标圆角",
-                    "为通知图标添加圆角效果",
+                    textOf("图标圆角", "Rounded Icons"),
+                    textOf("为通知图标添加圆角效果", "Apply rounded corners to notification icons"),
                     state.roundIcon,
                 ) { onToggle(PrefKeys.ROUND_ICON, it) }
                 ToggleItem(
-                    "悬浮底部导航栏",
+                    textOf("悬浮底部导航栏", "Floating Bottom Navigation"),
                     "",
                     state.useFloatingNavigationBar,
                 ) { onToggle(PrefKeys.USE_FLOATING_NAVIGATION_BAR, it) }
                 SliderItem(
-                    title = "消息滚动",
-                    subtitle = "滚动速度",
-                        valueText = "${state.marqueeSpeed} px/s",
+                    title = textOf("消息滚动速度", "Marquee Speed"),
+                    subtitle = "",
+                    valueText = "${state.marqueeSpeed} px/s",
                     value = state.marqueeSpeed.toFloat(),
                     defaultValue = DEFAULT_MARQUEE_SPEED.toFloat(),
                     valueRange = 20f..500f,
@@ -2513,7 +2529,7 @@ private fun SettingsScreen(
                     onResetToDefault = { onMarqueeSpeed(DEFAULT_MARQUEE_SPEED) },
                 )
                 ToggleSliderItem(
-                    "修改超级岛最大宽度",
+                    textOf("修改超级岛最大宽度", "Adjust Dynamic Island Max Width"),
                     "",
                     state.bigIslandMaxWidthEnabled,
                     valueText = "${state.bigIslandMaxWidth} dp",
@@ -2526,7 +2542,7 @@ private fun SettingsScreen(
                     onResetToDefault = { onBigIslandWidth(DEFAULT_BIG_ISLAND_MAX_WIDTH) },
                 )
                 MiuixOverlayDropdownPreference(
-                    title = "颜色模式",
+                    title = textOf("颜色模式", "Color Mode"),
                     items = themeModeOptions.map { it.second },
                     selectedIndex = selectedThemeIndex,
                     renderInRootScaffold = false,
@@ -2536,7 +2552,7 @@ private fun SettingsScreen(
                     },
                 )
                 MiuixOverlayDropdownPreference(
-                    title = "语言",
+                    title = textOf("语言", "Language"),
                     items = localeOptions.map { it.second },
                     selectedIndex = selectedLocaleIndex,
                     renderInRootScaffold = false,
@@ -2549,27 +2565,43 @@ private fun SettingsScreen(
         }
 
         item {
-            SectionTitle("配置")
+            SectionTitle(textOf("配置", "Configuration"))
             SettingsGroupCard {
-                SettingsEntryItem("导出到文件", "将配置保存为 JSON 文件", onExportToFile)
-                SettingsEntryItem("导出到剪贴板", "将配置复制为 JSON 文本", onExportToClipboard)
-                SettingsEntryItem("从文件导入", "从 JSON 文件恢复配置", onPickImportFile)
-                SettingsEntryItem("从剪贴板导入", "从剪贴板中的 JSON 文本恢复配置", onImportFromClipboard)
+                SettingsEntryItem(
+                    textOf("导出到文件", "Export to File"),
+                    textOf("将配置保存为 JSON 文件", "Save the configuration as a JSON file"),
+                    onExportToFile,
+                )
+                SettingsEntryItem(
+                    textOf("导出到剪贴板", "Export to Clipboard"),
+                    textOf("将配置复制为 JSON 文本", "Copy the configuration as JSON text"),
+                    onExportToClipboard,
+                )
+                SettingsEntryItem(
+                    textOf("从文件导入", "Import from File"),
+                    textOf("从 JSON 文件恢复配置", "Restore the configuration from a JSON file"),
+                    onPickImportFile,
+                )
+                SettingsEntryItem(
+                    textOf("从剪贴板导入", "Import from Clipboard"),
+                    textOf("从剪贴板中的 JSON 文本恢复配置", "Restore the configuration from JSON text in the clipboard"),
+                    onImportFromClipboard,
+                )
             }
         }
 
         item {
-            SectionTitle("关于")
+            SectionTitle(textOf("关于", "About"))
             SettingsGroupCard {
-                SettingsEntryItem("检查更新", "", onCheckUpdate)
+                SettingsEntryItem(textOf("检查更新", "Check for Updates"), "", onCheckUpdate)
                 SettingsEntryItem("GitHub", "1812z/HyperIsland", onOpenGithub)
                 SettingsEntryItem(
-                    title = "QQ 交流群",
+                    title = textOf("QQ 交流群", "QQ Group"),
                     subtitle = QQ_GROUP_NUMBER,
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("qq_group", QQ_GROUP_NUMBER))
-                        Toast.makeText(context, "群号已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, qqCopiedToast, Toast.LENGTH_SHORT).show()
                     },
                 )
             }
@@ -2673,6 +2705,7 @@ private fun MainActivityPreview() {
                 topBar = {
                     MiuixTopAppBar(
                         title = screenTitle(
+                            UiLanguage.Chinese,
                             when (selectedRoute) {
                                 "apps" -> AppScreen.Apps
                                 "settings" -> AppScreen.Settings
@@ -2873,13 +2906,9 @@ private fun SettingsEntryItem(title: String, subtitle: String, onClick: () -> Un
 
 @Composable
 private fun SectionTitle(title: String) {
-    val isDarkTheme = isAppInDarkTheme()
-    Text(
+    MiuixSmallTitle(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (isDarkTheme) 0.92f else 0.88f),
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+        insideMargin = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
     )
 }
 

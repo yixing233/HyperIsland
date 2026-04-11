@@ -210,6 +210,18 @@ class AppAdaptationRepository(private val context: Context) {
                 "pref_channel_outer_glow_${packageName}_$channelId",
                 "default",
             ) ?: "default",
+            outEffectColor = prefs.getString(
+                "pref_channel_out_effect_color_${packageName}_$channelId",
+                "",
+            ) ?: "",
+            focusCustom = prefs.getString(
+                "pref_channel_focus_custom_${packageName}_$channelId",
+                "",
+            ) ?: "",
+            islandCustom = prefs.getString(
+                "pref_channel_island_custom_${packageName}_$channelId",
+                "",
+            ) ?: "",
         )
     }
 
@@ -232,9 +244,18 @@ class AppAdaptationRepository(private val context: Context) {
             "show_left_narrow_font" -> "pref_channel_show_left_narrow_font_${packageName}_$channelId"
             "show_right_narrow_font" -> "pref_channel_show_right_narrow_font_${packageName}_$channelId"
             "outer_glow" -> "pref_channel_outer_glow_${packageName}_$channelId"
+            "out_effect_color" -> "pref_channel_out_effect_color_${packageName}_$channelId"
+            "focus_custom" -> "pref_channel_focus_custom_${packageName}_$channelId"
+            "island_custom" -> "pref_channel_island_custom_${packageName}_$channelId"
             else -> return
         }
-        if (setting == "highlight_color" && value.isBlank()) {
+        if (
+            (setting == "highlight_color" ||
+                setting == "out_effect_color" ||
+                setting == "focus_custom" ||
+                setting == "island_custom") &&
+            value.isBlank()
+        ) {
             prefs.edit().remove(key).apply()
         } else {
             prefs.edit().putString(key, value).apply()
@@ -270,9 +291,18 @@ class AppAdaptationRepository(private val context: Context) {
                     "show_left_narrow_font" -> "pref_channel_show_left_narrow_font_${packageName}_$channelId"
                     "show_right_narrow_font" -> "pref_channel_show_right_narrow_font_${packageName}_$channelId"
                     "outer_glow" -> "pref_channel_outer_glow_${packageName}_$channelId"
+                    "out_effect_color" -> "pref_channel_out_effect_color_${packageName}_$channelId"
+                    "focus_custom" -> "pref_channel_focus_custom_${packageName}_$channelId"
+                    "island_custom" -> "pref_channel_island_custom_${packageName}_$channelId"
                     else -> null
                 } ?: return@forEach
-                if (setting == "highlight_color" && value.isBlank()) {
+                if (
+                    (setting == "highlight_color" ||
+                        setting == "out_effect_color" ||
+                        setting == "focus_custom" ||
+                        setting == "island_custom") &&
+                    value.isBlank()
+                ) {
                     editor.remove(key)
                 } else {
                     editor.putString(key, value)

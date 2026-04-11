@@ -3,6 +3,7 @@ package io.github.hyperisland.ui.app
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -58,17 +59,19 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import io.github.hyperisland.ui.FaGlyph
 import io.github.hyperisland.ui.FaIcon
 import io.github.hyperisland.ui.isAppInDarkTheme
+import io.github.hyperisland.ui.textOf
 import top.yukonga.miuix.kmp.basic.Button as MiuixButton
 import top.yukonga.miuix.kmp.basic.ButtonDefaults as MiuixButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
 import top.yukonga.miuix.kmp.basic.Checkbox as MiuixCheckbox
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator as MiuixCircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator as MiuixInfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.IconButton as MiuixIconButton
 import top.yukonga.miuix.kmp.basic.PullToRefresh as MiuixPullToRefresh
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTitle as MiuixSmallTitle
 import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
 import top.yukonga.miuix.kmp.basic.TextField as MiuixTextField
+import top.yukonga.miuix.kmp.basic.ColorPalette as MiuixColorPalette
 import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.ArrowRight
@@ -258,6 +261,10 @@ fun AppsScreen(
     val contentPadding = io.github.hyperisland.ui.LocalContentPadding.current
 
     val topPadding = contentPadding.calculateTopPadding()
+    val listContentPadding = PaddingValues(
+        top = topPadding + 12.dp,
+        bottom = contentPadding.calculateBottomPadding(),
+    )
     val listTranslationY = if (canPullToRefresh) -topPadding else 0.dp
     
     val listContent: @Composable () -> Unit = {
@@ -270,43 +277,32 @@ fun AppsScreen(
                 }
                 .scrollEndHaptic(),
             state = appListState,
-            contentPadding = contentPadding,
+            contentPadding = listContentPadding,
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (state.loading && state.apps.isEmpty()) {
+            state.error?.let {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(200.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        MiuixCircularProgressIndicator()
-                    }
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
                 }
-            } else {
-                state.error?.let {
-                    item {
-                        Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
-                    }
-                }
-                items(filtered, key = { it.packageName }) { app ->
-                    val enabled = state.enabledPackages.contains(app.packageName)
-                    val selected = state.selectedPackages.contains(app.packageName)
-                    AppItemRow(
-                        app = app,
-                        enabled = enabled,
-                        onEnabledChange = { enabledValue -> onAppEnabledChange(app.packageName, enabledValue) },
-                        onClick = {
-                            if (selectionMode) {
-                                onAppSelectedChange(app.packageName)
-                            } else {
-                                onOpenAppChannels(app.packageName)
-                            }
-                        },
-                        selectionMode = selectionMode,
-                        selected = selected,
-                        onSelectedChange = { onAppSelectedChange(app.packageName) },
-                    )
-                }
+            }
+            items(filtered, key = { it.packageName }) { app ->
+                val enabled = state.enabledPackages.contains(app.packageName)
+                val selected = state.selectedPackages.contains(app.packageName)
+                AppItemRow(
+                    app = app,
+                    enabled = enabled,
+                    onEnabledChange = { enabledValue -> onAppEnabledChange(app.packageName, enabledValue) },
+                    onClick = {
+                        if (selectionMode) {
+                            onAppSelectedChange(app.packageName)
+                        } else {
+                            onOpenAppChannels(app.packageName)
+                        }
+                    },
+                    selectionMode = selectionMode,
+                    selected = selected,
+                    onSelectedChange = { onAppSelectedChange(app.packageName) },
+                )
             }
         }
     }
@@ -314,7 +310,7 @@ fun AppsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         if (canPullToRefresh) {
             MiuixPullToRefresh(
-                isRefreshing = state.loading,
+                isRefreshing = state.loading && state.apps.isNotEmpty(),
                 onRefresh = onRefresh,
                 modifier = Modifier
                     .fillMaxSize()
@@ -324,17 +320,35 @@ fun AppsScreen(
                 },
                 pullToRefreshState = pullToRefreshState,
                 topAppBarScrollBehavior = topAppBarScrollBehavior,
-                refreshTexts = listOf("下拉刷新", "松开刷新", "正在刷新..."),
+                refreshTexts = listOf(
+                    textOf("下拉刷新", "Pull to Refresh"),
+                    textOf("松开刷新", "Release to Refresh"),
+                    textOf("正在刷新...", "Refreshing..."),
+                ),
             ) {
                 listContent()
             }
         } else {
             listContent()
         }
+        if (state.loading && state.apps.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                MiuixInfiniteProgressIndicator(
+                    modifier = Modifier.size(72.dp),
+                )
+            }
+        }
     }
     if (showBatchDialog) {
         BatchApplyDialog(
-            title = if (batchForSelected || selectionMode) "批量应用到已选应用的渠道" else "批量应用到已启用应用",
+            title = if (batchForSelected || selectionMode) {
+                textOf("批量应用到已选应用的渠道", "Batch Apply to Selected Apps")
+            } else {
+                textOf("批量应用到已启用应用", "Batch Apply to Enabled Apps")
+            },
             onDismiss = { showBatchDialog = false },
             onApply = { settings ->
                 showBatchDialog = false
@@ -426,7 +440,7 @@ fun AppChannelsScreen(
                         .height(200.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    MiuixCircularProgressIndicator()
+                    MiuixInfiniteProgressIndicator()
                 }
             }
             return@LazyColumn
@@ -441,7 +455,7 @@ fun AppChannelsScreen(
                 ) {
                     Text(it, color = MaterialTheme.colorScheme.error)
                     MiuixButton(onClick = onRefresh) {
-                        Text("重试", color = MaterialTheme.colorScheme.onBackground)
+                        Text(textOf("重试", "Retry"), color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }
@@ -452,7 +466,7 @@ fun AppChannelsScreen(
             item {
                 MiuixCard(modifier = sectionCardModifier(Modifier.fillMaxWidth())) {
                     Text(
-                        text = "请先开启应用总开关后再配置通知渠道",
+                        text = textOf("请先开启应用总开关后再配置通知渠道", "Enable the app switch before configuring notification channels"),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -472,12 +486,12 @@ fun AppChannelsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        "未读取到通知渠道",
+                        textOf("未读取到通知渠道", "No notification channels found"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     MiuixButton(onClick = onRefresh) {
-                        Text("刷新", color = MaterialTheme.colorScheme.onBackground)
+                        Text(textOf("刷新", "Refresh"), color = MaterialTheme.colorScheme.onBackground)
                     }
                 }
             }
@@ -504,7 +518,7 @@ fun AppChannelsScreen(
 
     if (showBatchDialog) {
         BatchApplyDialog(
-            title = "批量应用到已启用渠道",
+            title = textOf("批量应用到已启用渠道", "Batch Apply to Enabled Channels"),
             onDismiss = { showBatchDialog = false },
             onApply = { settings ->
                 showBatchDialog = false
@@ -535,7 +549,7 @@ fun ChannelSettingsScreen(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
         ) {
-            MiuixCircularProgressIndicator()
+            MiuixInfiniteProgressIndicator()
         }
         return
     }
@@ -549,7 +563,7 @@ fun ChannelSettingsScreen(
         ) {
             Text(state.error, color = MaterialTheme.colorScheme.error)
                     MiuixButton(onClick = onRefresh) {
-                        Text("重试", color = MaterialTheme.colorScheme.onBackground)
+                        Text(textOf("重试", "Retry"), color = MaterialTheme.colorScheme.onBackground)
                     }
         }
         return
@@ -562,9 +576,9 @@ fun ChannelSettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("未找到该通知渠道", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(textOf("未找到该通知渠道", "Notification channel not found"), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MiuixButton(onClick = onRefresh) {
-                    Text("刷新", color = MaterialTheme.colorScheme.onBackground)
+                    Text(textOf("刷新", "Refresh"), color = MaterialTheme.colorScheme.onBackground)
                 }
         }
         return
@@ -660,7 +674,7 @@ private fun ChannelListItem(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "重要性: ${channel.importance}",
+                            text = "${textOf("重要性", "Importance")}: ${channel.importance}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
@@ -676,7 +690,7 @@ private fun ChannelListItem(
                 MiuixIconButton(onClick = onOpenSettings, enabled = enabled) {
                     Icon(
                         imageVector = MiuixIcons.Regular.Settings,
-                        contentDescription = "渠道设置",
+                        contentDescription = textOf("渠道设置", "Channel Settings"),
                         tint = if (enabled) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
@@ -691,7 +705,7 @@ private fun ChannelListItem(
             }
             if (channel.description.isNotBlank()) {
                 Text(
-                    "描述: ${channel.description}",
+                    "${textOf("描述", "Description")}: ${channel.description}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -711,24 +725,26 @@ private fun ChannelSettingsContent(
     onSetSetting: (String, String) -> Unit,
     onSetHighlightColor: (String) -> Unit,
 ) {
+    val uiLanguage = io.github.hyperisland.ui.LocalUiLanguage.current
+
     fun triStateOptions(defaultOn: Boolean): List<Pair<String, String>> = listOf(
-        "default" to if (defaultOn) "默认(开启)" else "默认(关闭)",
-        "on" to "开启",
-        "off" to "关闭",
+        "default" to if (defaultOn) textOf(uiLanguage, "默认(开启)", "Default (On)") else textOf(uiLanguage, "默认(关闭)", "Default (Off)"),
+        "on" to textOf(uiLanguage, "开启", "On"),
+        "off" to textOf(uiLanguage, "关闭", "Off"),
     )
 
     val templateOptions = listOf(
-        "generic_progress" to "下载",
-        "notification_island" to "通知超级岛",
-        "notification_island_lite" to "通知超级岛 Lite",
-        "download_lite" to "下载 Lite",
-        "ai_notification_island" to "AI 通知超级岛",
+        "generic_progress" to textOf("下载", "Download"),
+        "notification_island" to textOf("通知超级岛", "Notification Island"),
+        "notification_island_lite" to textOf("通知超级岛 | 精简", "Notification Island|Lite"),
+        "download_lite" to textOf("下载|Lite", "Download|Lite"),
+        "ai_notification_island" to textOf("AI 通知超级岛", "AI Notification Island"),
     )
     val iconModeOptions = listOf(
-        "auto" to "自动",
-        "notif_small" to "通知小图标",
-        "notif_large" to "通知大图标",
-        "app_icon" to "应用图标",
+        "auto" to textOf("自动", "Auto"),
+        "notif_small" to textOf("通知小图标", "Small Notification Icon"),
+        "notif_large" to textOf("通知大图标", "Large Notification Icon"),
+        "app_icon" to textOf("应用图标", "App Icon"),
     )
     val showIslandIconOptions = triStateOptions(defaultOn = true)
     val firstFloatOptions = triStateOptions(defaultOn = false)
@@ -738,90 +754,107 @@ private fun ChannelSettingsContent(
     val preserveStatusBarOptions = triStateOptions(defaultOn = false)
     val restoreLockscreenOptions = triStateOptions(defaultOn = false)
     val dynamicHighlightOptions = listOf(
-        "default" to "默认(关闭)",
-        "on" to "开启",
-        "off" to "关闭",
-        "dark" to "暗",
-        "darker" to "更暗",
+        "default" to textOf("默认(关闭)", "Default (Off)"),
+        "on" to textOf("开启", "On"),
+        "off" to textOf("关闭", "Off"),
+        "dark" to textOf("暗", "Dark"),
+        "darker" to textOf("更暗", "Darker"),
     )
     val outerGlowOptions = triStateOptions(defaultOn = false)
     val rendererOptions = listOf(
-        "image_text_with_buttons_4" to "新图文组件 + 底部文本按钮",
-        "image_text_with_buttons_4_wrap" to "封面信息样式",
-        "image_text_with_right_text_button" to "图文右侧文本按钮",
+        "image_text_with_buttons_4" to textOf("新图文组件 + 底部文本按钮", "Image+Text+Bottom Text Buttons"),
+        "image_text_with_buttons_4_wrap" to textOf("封面组件 + 自动换行", "Cover Info+Auto Wrap"),
+        "image_text_with_right_text_button" to textOf("新图文组件 + 右侧文本按钮", "Image+Text+Right Text Button"),
     )
     var highlightDraft by remember(extras.highlightColor) { mutableStateOf(extras.highlightColor) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(vertical = 0.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        ChannelSectionTitle("模板")
-        ChannelSectionCard {
+        ChannelSectionTitle(textOf("模板", "Template"))
+        ChannelSectionCard(
+            verticalPadding = 0.dp,
+            itemSpacing = 0.dp,
+        ) {
             SettingsDropdownRow(
-                title = "模板",
+                title = textOf("模板", "Template"),
                 options = templateOptions,
                 selectedValue = template,
                 enabled = true,
                 largeText = true,
                 onValueChange = onSetTemplate,
             )
-            SettingsDropdownRow("样式", rendererOptions, extras.renderer, true, largeText = true) {
+            SettingsDropdownRow(textOf("样式", "Style"), rendererOptions, extras.renderer, true, largeText = true) {
                 onSetSetting("renderer", it)
             }
         }
 
-        ChannelSectionTitle("岛")
-        ChannelSectionCard {
-            SettingsDropdownRow("超级岛图标", iconModeOptions, extras.icon, true, largeText = true) { onSetSetting("icon", it) }
-            SettingsDropdownRow("大岛图标", showIslandIconOptions, extras.showIslandIcon, true, largeText = true) {
+        ChannelSectionTitle(textOf("岛", "Island"))
+        ChannelSectionCard(
+            verticalPadding = 0.dp,
+            itemSpacing = 0.dp,
+        ) {
+            SettingsDropdownRow(textOf("超级岛图标", "Dynamic Island Icon"), iconModeOptions, extras.icon, true, largeText = true) { onSetSetting("icon", it) }
+            SettingsDropdownRow(textOf("大岛图标", "Large Island Icon"), showIslandIconOptions, extras.showIslandIcon, true, largeText = true) {
                 onSetSetting("show_island_icon", it)
             }
-            SettingsDropdownRow("初次展开", firstFloatOptions, extras.firstFloat, true, largeText = true) {
+            SettingsDropdownRow(textOf("初次展开", "Expand on First Arrival"), firstFloatOptions, extras.firstFloat, true, largeText = true) {
                 onSetSetting("first_float", it)
             }
-            SettingsDropdownRow("更新展开", enableFloatOptions, extras.enableFloat, true, largeText = true) {
+            SettingsDropdownRow(textOf("更新展开", "Expand on Update"), enableFloatOptions, extras.enableFloat, true, largeText = true) {
                 onSetSetting("enable_float", it)
             }
-            SettingsDropdownRow("消息滚动", marqueeOptions, extras.marquee, true, largeText = true) {
+            SettingsDropdownRow(textOf("消息滚动速度", "Marquee Speed"), marqueeOptions, extras.marquee, true, largeText = true) {
                 onSetSetting("marquee", it)
             }
             InputDialogRow(
-                title = "自动消失时长",
-                subtitle = "点击后在对话框中输入 1-30 秒",
+                title = textOf("自动消失时长", "Auto Dismiss Timeout"),
+                subtitle = textOf("点击后在对话框中输入 1-30 秒", "Tap to enter a value between 1 and 30 seconds"),
                 value = timeout,
                 emptyValueText = "5",
-                dialogTitle = "修改自动消失时长",
-                dialogDescription = "值应该大于等于 1 并小于等于 30",
+                dialogTitle = textOf("修改自动消失时长", "Edit Auto Dismiss Timeout"),
+                dialogDescription = textOf("值应该大于等于 1 并小于等于 30", "The value must be between 1 and 30"),
                 onConfirm = { onSetTimeout(it.trim()) },
             )
             InputDialogRow(
-                title = "高亮颜色",
-                subtitle = "点击后输入 #RRGGBB，留空可清空",
+                title = textOf("高亮颜色", "Highlight Color"),
+                subtitle = textOf("点击后输入 #RRGGBB，留空可清空", "Tap to enter #RRGGBB, or leave blank to clear"),
                 value = highlightDraft,
-                emptyValueText = "未设置",
-                dialogTitle = "修改高亮颜色",
-                dialogDescription = "请输入 #RRGGBB 格式，留空可清空当前颜色",
+                emptyValueText = textOf("未设置", "Not Set"),
+                dialogTitle = textOf("修改高亮颜色", "Edit Highlight Color"),
+                dialogDescription = textOf("请输入 #RRGGBB 格式，留空可清空当前颜色", "Enter a color in #RRGGBB format, or leave blank to clear"),
+                enableColorPalette = true,
                 onConfirm = {
                     val next = it.trim()
                     highlightDraft = next
                     onSetHighlightColor(next)
                 },
             )
+            InputDialogRow(
+                title = textOf("外圈光效颜色", "Outer Glow Color"),
+                subtitle = textOf("点击后输入 #RRGGBB，留空可清空", "Tap to enter #RRGGBB, or leave blank to clear"),
+                value = extras.outEffectColor,
+                emptyValueText = textOf("未设置", "Not Set"),
+                dialogTitle = textOf("修改外圈光效颜色", "Edit Outer Glow Color"),
+                dialogDescription = textOf("请输入 #RRGGBB 格式，留空可清空当前颜色", "Enter a color in #RRGGBB format, or leave blank to clear"),
+                enableColorPalette = true,
+                onConfirm = { onSetSetting("out_effect_color", it.trim()) },
+            )
             SwitchSettingRow(
-                title = "左侧高亮",
+                title = textOf("左侧高亮", "Left Highlight"),
                 checked = extras.showLeftHighlight == "on",
                 onCheckedChange = { onSetSetting("show_left_highlight", if (it) "on" else "off") },
             )
             SwitchSettingRow(
-                title = "右侧高亮",
+                title = textOf("右侧高亮", "Right Highlight"),
                 checked = extras.showRightHighlight == "on",
                 onCheckedChange = { onSetSetting("show_right_highlight", if (it) "on" else "off") },
             )
             SettingsDropdownRow(
-                "高亮动态取色",
+                textOf("高亮动态取色", "Dynamic Highlight Color"),
                 dynamicHighlightOptions,
                 extras.dynamicHighlightColor,
                 true,
@@ -830,36 +863,57 @@ private fun ChannelSettingsContent(
                 onSetSetting("dynamic_highlight_color", it)
             }
             SwitchSettingRow(
-                title = "左侧窄字体",
+                title = textOf("左侧窄字体", "Left Narrow Font"),
                 checked = extras.showLeftNarrowFont == "on",
                 onCheckedChange = { onSetSetting("show_left_narrow_font", if (it) "on" else "off") },
             )
             SwitchSettingRow(
-                title = "右侧窄字体",
+                title = textOf("右侧窄字体", "Right Narrow Font"),
                 checked = extras.showRightNarrowFont == "on",
                 onCheckedChange = { onSetSetting("show_right_narrow_font", if (it) "on" else "off") },
             )
         }
 
-        ChannelSectionTitle("焦点通知")
-        ChannelSectionCard {
-            SettingsDropdownRow("焦点图标", iconModeOptions, extras.focusIcon, true, largeText = true) {
+        ChannelSectionTitle(textOf("焦点通知", "Focus Notification"))
+        ChannelSectionCard(
+            verticalPadding = 0.dp,
+            itemSpacing = 0.dp,
+        ) {
+            SettingsDropdownRow(textOf("焦点图标", "Focus Icon"), iconModeOptions, extras.focusIcon, true, largeText = true) {
                 onSetSetting("focus_icon", it)
             }
-            SettingsDropdownRow("焦点通知", focusOptions, extras.focus, true, largeText = true) { onSetSetting("focus", it) }
+            SettingsDropdownRow(textOf("焦点通知", "Focus Notification"), focusOptions, extras.focus, true, largeText = true) { onSetSetting("focus", it) }
             SettingsDropdownRow(
-                "状态栏图标",
+                textOf("状态栏图标", "Status Bar Icon"),
                 preserveStatusBarOptions,
                 extras.preserveSmallIcon,
                 extras.focus != "off",
                 largeText = true,
             ) { onSetSetting("preserve_small_icon", it) }
-            SettingsDropdownRow("锁屏通知恢复", restoreLockscreenOptions, extras.restoreLockscreen, true, largeText = true) {
+            SettingsDropdownRow(textOf("锁屏通知恢复", "Restore on Lock Screen"), restoreLockscreenOptions, extras.restoreLockscreen, true, largeText = true) {
                 onSetSetting("restore_lockscreen", it)
             }
-            SettingsDropdownRow("外圈光效", outerGlowOptions, extras.outerGlow, true, largeText = true) {
+            SettingsDropdownRow(textOf("外圈光效", "Outer Glow"), outerGlowOptions, extras.outerGlow, true, largeText = true) {
                 onSetSetting("outer_glow", it)
             }
+            InputDialogRow(
+                title = textOf("焦点表达式自定义", "Custom Focus Expression"),
+                subtitle = textOf("点击后输入 JSON，留空可清空", "Tap to enter JSON, or leave blank to clear"),
+                value = extras.focusCustom,
+                emptyValueText = textOf("未设置", "Not Set"),
+                dialogTitle = textOf("修改焦点表达式自定义", "Edit Custom Focus Expression"),
+                dialogDescription = textOf("请输入 JSON 字符串，留空可清空", "Enter a JSON string, or leave blank to clear"),
+                onConfirm = { onSetSetting("focus_custom", it.trim()) },
+            )
+            InputDialogRow(
+                title = textOf("岛表达式自定义", "Custom Island Expression"),
+                subtitle = textOf("点击后输入 JSON，留空可清空", "Tap to enter JSON, or leave blank to clear"),
+                value = extras.islandCustom,
+                emptyValueText = textOf("未设置", "Not Set"),
+                dialogTitle = textOf("修改岛表达式自定义", "Edit Custom Island Expression"),
+                dialogDescription = textOf("请输入 JSON 字符串，留空可清空", "Enter a JSON string, or leave blank to clear"),
+                onConfirm = { onSetSetting("island_custom", it.trim()) },
+            )
         }
     }
 }
@@ -873,10 +927,49 @@ private fun ChannelSectionTitle(title: String) {
 }
 
 @Composable
-private fun ChannelSectionCard(content: @Composable () -> Unit) {
+private fun ChannelSectionCard(
+    verticalPadding: Dp = 8.dp,
+    itemSpacing: Dp = 6.dp,
+    content: @Composable () -> Unit,
+) {
     MiuixCard(modifier = sectionCardModifier(Modifier.fillMaxWidth())) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = verticalPadding),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun BatchSheetSectionCard(content: @Composable () -> Unit) {
+    val isDarkTheme = isAppInDarkTheme()
+    val shape = RoundedCornerShape(18.dp)
+    val containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+        alpha = if (isDarkTheme) 0.42f else 0.65f,
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(containerColor)
+            .then(
+                if (isDarkTheme) {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.36f),
+                        shape = shape,
+                    )
+                } else {
+                    Modifier
+                },
+            ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             content()
@@ -916,6 +1009,7 @@ private fun InputDialogRow(
     emptyValueText: String,
     dialogTitle: String,
     dialogDescription: String,
+    enableColorPalette: Boolean = false,
     onConfirm: (String) -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -1012,6 +1106,15 @@ private fun InputDialogRow(
                     .fillMaxWidth()
                     .focusRequester(inputFocusRequester),
             )
+            if (enableColorPalette) {
+                MiuixColorPalette(
+                    color = parseHexColorOrNull(draft) ?: MaterialTheme.colorScheme.primary,
+                    onColorChanged = { color ->
+                        draft = colorToHexRgb(color)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1069,15 +1172,15 @@ private fun BatchApplyDialog(
         noChange to "不更改",
         "generic_progress" to "下载",
         "notification_island" to "通知超级岛",
-        "notification_island_lite" to "通知超级岛 Lite",
-        "download_lite" to "下载 Lite",
+        "notification_island_lite" to "通知超级岛 | 精简",
+        "download_lite" to "下载|Lite",
         "ai_notification_island" to "AI 通知超级岛",
     )
     val rendererOptions = listOf(
         noChange to "不更改",
         "image_text_with_buttons_4" to "新图文组件 + 底部文本按钮",
-        "image_text_with_buttons_4_wrap" to "封面信息样式",
-        "image_text_with_right_text_button" to "图文右侧文本按钮",
+        "image_text_with_buttons_4_wrap" to "封面组件 + 自动换行",
+        "image_text_with_right_text_button" to "新图文组件 + 右侧文本按钮",
     )
     val dynamicHighlightOptions = listOf(
         noChange to "不更改",
@@ -1107,11 +1210,15 @@ private fun BatchApplyDialog(
     var showLeftNarrowFont by remember { mutableStateOf(noChange) }
     var showRightNarrowFont by remember { mutableStateOf(noChange) }
     var highlightColor by remember { mutableStateOf("") }
+    var outEffectColor by remember { mutableStateOf("") }
+    var focusCustom by remember { mutableStateOf("") }
+    var islandCustom by remember { mutableStateOf("") }
     OverlayBottomSheet(
         show = true,
         title = title,
         onDismissRequest = onDismiss,
         onDismissFinished = {},
+        enableNestedScroll = false,
         startAction = {
             MiuixIconButton(onClick = onDismiss) {
                 FaIcon(
@@ -1154,6 +1261,15 @@ private fun BatchApplyDialog(
                     if (highlightColor.trim().isNotEmpty()) {
                         settings["highlight_color"] = highlightColor.trim()
                     }
+                    if (outEffectColor.trim().isNotEmpty()) {
+                        settings["out_effect_color"] = outEffectColor.trim()
+                    }
+                    if (focusCustom.trim().isNotEmpty()) {
+                        settings["focus_custom"] = focusCustom.trim()
+                    }
+                    if (islandCustom.trim().isNotEmpty()) {
+                        settings["island_custom"] = islandCustom.trim()
+                    }
 
                     onApply(settings)
                 },
@@ -1175,13 +1291,13 @@ private fun BatchApplyDialog(
                     .scrollEndHaptic(),
             ) {
                 ChannelSectionTitle("模板")
-                ChannelSectionCard {
+                BatchSheetSectionCard {
                     SettingsDropdownRow("模板", templateOptions, template, true, largeText = true) { template = it }
                     SettingsDropdownRow("样式", rendererOptions, renderer, true, largeText = true) { renderer = it }
                 }
 
                 ChannelSectionTitle("岛")
-                ChannelSectionCard {
+                BatchSheetSectionCard {
                     SettingsDropdownRow("超级岛图标", iconModeOptions, icon, true, largeText = true) { icon = it }
                     SettingsDropdownRow("大岛图标", triStateOptions, showIslandIcon, true, largeText = true) {
                         showIslandIcon = it
@@ -1192,7 +1308,7 @@ private fun BatchApplyDialog(
                     SettingsDropdownRow("更新展开", triStateOptions, enableFloat, true, largeText = true) {
                         enableFloat = it
                     }
-                    SettingsDropdownRow("消息滚动", triStateOptions, marquee, true, largeText = true) {
+                    SettingsDropdownRow("消息滚动速度", triStateOptions, marquee, true, largeText = true) {
                         marquee = it
                     }
                     InputDialogRow(
@@ -1211,7 +1327,18 @@ private fun BatchApplyDialog(
                         emptyValueText = "不更改",
                         dialogTitle = "修改高亮颜色",
                         dialogDescription = "请输入 #RRGGBB 格式，留空表示不更改",
+                        enableColorPalette = true,
                         onConfirm = { highlightColor = it.trim() },
+                    )
+                    InputDialogRow(
+                        title = "外圈光效颜色",
+                        subtitle = "点击后输入 #RRGGBB，留空表示不更改",
+                        value = outEffectColor,
+                        emptyValueText = "不更改",
+                        dialogTitle = "修改外圈光效颜色",
+                        dialogDescription = "请输入 #RRGGBB 格式，留空表示不更改",
+                        enableColorPalette = true,
+                        onConfirm = { outEffectColor = it.trim() },
                     )
                     SettingsDropdownRow("高亮动态取色", dynamicHighlightOptions, dynamicHighlightColor, true, largeText = true) {
                         dynamicHighlightColor = it
@@ -1231,10 +1358,8 @@ private fun BatchApplyDialog(
                 }
 
                 ChannelSectionTitle("焦点通知")
-                ChannelSectionCard {
-                    SettingsDropdownRow("焦点图标", iconModeOptions, focusIcon, true, largeText = true) {
-                        focusIcon = it
-                    }
+                BatchSheetSectionCard {
+                    SettingsDropdownRow("焦点图标", iconModeOptions, focusIcon, true, largeText = true) { focusIcon = it }
                     SettingsDropdownRow("焦点通知", triStateOptions, focus, true, largeText = true) { focus = it }
                     SettingsDropdownRow("状态栏图标", triStateOptions, preserveSmallIcon, true, largeText = true) {
                         preserveSmallIcon = it
@@ -1245,10 +1370,42 @@ private fun BatchApplyDialog(
                     SettingsDropdownRow("外圈光效", triStateOptions, outerGlow, true, largeText = true) {
                         outerGlow = it
                     }
+                    InputDialogRow(
+                        title = "焦点表达式自定义",
+                        subtitle = "点击后输入 JSON，留空表示不更改",
+                        value = focusCustom,
+                        emptyValueText = "不更改",
+                        dialogTitle = "修改焦点表达式自定义",
+                        dialogDescription = "请输入 JSON 字符串，留空表示不更改",
+                        onConfirm = { focusCustom = it.trim() },
+                    )
+                    InputDialogRow(
+                        title = "岛表达式自定义",
+                        subtitle = "点击后输入 JSON，留空表示不更改",
+                        value = islandCustom,
+                        emptyValueText = "不更改",
+                        dialogTitle = "修改岛表达式自定义",
+                        dialogDescription = "请输入 JSON 字符串，留空表示不更改",
+                        onConfirm = { islandCustom = it.trim() },
+                    )
                 }
             }
         },
     )
+}
+
+private fun parseHexColorOrNull(raw: String): Color? {
+    val text = raw.trim()
+    if (text.isBlank()) return null
+    val normalized = if (text.startsWith("#")) text else "#$text"
+    return runCatching { Color(android.graphics.Color.parseColor(normalized)) }.getOrNull()
+}
+
+private fun colorToHexRgb(color: Color): String {
+    val red = (color.red * 255f).toInt().coerceIn(0, 255)
+    val green = (color.green * 255f).toInt().coerceIn(0, 255)
+    val blue = (color.blue * 255f).toInt().coerceIn(0, 255)
+    return String.format("#%02X%02X%02X", red, green, blue)
 }
 
 @Composable

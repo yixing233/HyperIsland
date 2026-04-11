@@ -36,7 +36,7 @@ import top.yukonga.miuix.kmp.icon.extended.All
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.Button as MiuixButton
 import top.yukonga.miuix.kmp.basic.Card as MiuixCard
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator as MiuixCircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator as MiuixInfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.PullToRefresh as MiuixPullToRefresh
 import top.yukonga.miuix.kmp.basic.Switch as MiuixSwitch
 import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
@@ -105,7 +105,7 @@ fun BlacklistScreen(
                             .height(200.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        MiuixCircularProgressIndicator()
+                    MiuixInfiniteProgressIndicator()
                     }
                 }
             }

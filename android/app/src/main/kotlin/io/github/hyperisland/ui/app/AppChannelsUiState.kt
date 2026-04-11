@@ -39,4 +39,7 @@ data class ChannelExtraSettings(
     val showLeftNarrowFont: String = "off",
     val showRightNarrowFont: String = "off",
     val outerGlow: String = "default",
+    val outEffectColor: String = "",
+    val focusCustom: String = "",
+    val islandCustom: String = "",
 )
